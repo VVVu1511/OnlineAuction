@@ -5,7 +5,7 @@ function Category(){
     const categories_2 = ["Điện tử","Điện tử","Điện tử","Điện tử"];
     
     return (
-        <div className="container mt-5">
+        <div className="mt-5">
             <p className="h2">DANH MỤC</p>
 
             <div className="row">

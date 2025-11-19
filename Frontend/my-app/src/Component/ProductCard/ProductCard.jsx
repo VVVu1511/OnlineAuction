@@ -1,7 +1,7 @@
 function ProductCard(){
     return (
         <>
-            <div className="card" style={{ width: '40rem',fontSize: '6rem'}}>
+            <div className="card">
                 <img className="card-img-top img-fluid" src="/Shirt1/shirt1.jpg" alt="" />
                 <div className="card-body">
                     <p className="text-center card-title">Tên sản phẩm</p>

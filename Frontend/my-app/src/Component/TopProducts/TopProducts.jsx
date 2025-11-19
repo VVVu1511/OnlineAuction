@@ -4,33 +4,63 @@ function TopProducts(){
     
     
     return (
-        <div className="container">
-            <p className="">Top 5 sản phẩm gần kết thúc</p>
+        <div>
+            <p >Top 5 sản phẩm gần kết thúc</p>
             <div className="row">
-                <ProductCard />
-                <ProductCard />
-                <ProductCard />
-                <ProductCard />
-                <ProductCard />
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
             </div>
             
 
             <p className="">Top 5 sản phẩm có nhiều lượt ra giá nhất</p>
-            <div className="row">
-                <ProductCard />
-                <ProductCard />
-                <ProductCard />
-                <ProductCard />
-                <ProductCard />
+            <div className="row mx-auto">
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
             </div>
 
             <p className="">Top 5 sản phẩm có giá cao nhất</p>
             <div className="row">
-                <ProductCard />
-                <ProductCard />
-                <ProductCard />
-                <ProductCard />
-                <ProductCard />
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
+                <div className="col-2">
+                    <ProductCard/>
+                </div>
             </div>
         </div>
     );

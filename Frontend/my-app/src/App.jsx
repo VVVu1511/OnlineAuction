@@ -5,6 +5,8 @@ import Header from './Component/Header/Header'
 import Category from './Component/Category/Category'
 import TopProducts from './Component/TopProducts/TopProducts'
 import ProductCard from './Component/ProductCard/ProductCard'
+import Register from './Component/Register/Register'
+import ProductInfor from './Component/ProductInfor/ProductInfor'
 
 function App() {
   
@@ -41,10 +43,19 @@ function App() {
       path='/login'
       element={
         <>
-          
+          <Register />
         </>
       }
     />
+
+    <Route 
+      path='/productInfor'
+      element={
+        <>
+          <ProductInfor />
+        </>
+      }
+    ></Route>
 
     </Routes>
   )
