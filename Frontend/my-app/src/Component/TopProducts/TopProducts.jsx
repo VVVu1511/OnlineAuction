@@ -5,7 +5,7 @@ function TopProducts(){
     
     return (
         <div>
-            <p >Top 5 sản phẩm gần kết thúc</p>
+            <p className="mt-3">Top 5 sản phẩm gần kết thúc</p>
             <div className="row">
                 <div className="col-2">
                     <ProductCard/>
@@ -25,7 +25,7 @@ function TopProducts(){
             </div>
             
 
-            <p className="">Top 5 sản phẩm có nhiều lượt ra giá nhất</p>
+            <p className="mt-3">Top 5 sản phẩm có nhiều lượt ra giá nhất</p>
             <div className="row mx-auto">
                 <div className="col-2">
                     <ProductCard/>
@@ -44,7 +44,7 @@ function TopProducts(){
                 </div>
             </div>
 
-            <p className="">Top 5 sản phẩm có giá cao nhất</p>
+            <p className="mt-3">Top 5 sản phẩm có giá cao nhất</p>
             <div className="row">
                 <div className="col-2">
                     <ProductCard/>

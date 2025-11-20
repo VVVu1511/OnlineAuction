@@ -7,6 +7,7 @@ import TopProducts from './Component/TopProducts/TopProducts'
 import ProductCard from './Component/ProductCard/ProductCard'
 import Register from './Component/Register/Register'
 import ProductInfor from './Component/ProductInfor/ProductInfor'
+import Footer from './Component/Footer/Footer'
 
 function App() {
   
@@ -27,6 +28,7 @@ function App() {
             <div className="col-2"></div>
           </div>
           
+          <Footer />
         </>
     } />
 
@@ -40,13 +42,21 @@ function App() {
     />
 
     <Route
-      path='/login'
+      path='/register'
       element={
         <>
-          <Register />
+          <div className="bg-danger">
+            <Register />
+          </div>
+
         </>
       }
     />
+
+    <Route
+      path='/login'>
+        
+    </Route>
 
     <Route 
       path='/productInfor'
