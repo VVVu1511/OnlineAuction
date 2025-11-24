@@ -43,7 +43,7 @@ router.delete('', async(req,res) => {
     }
 });
 
-router.get('/getAll', async(req,res) => {
+router.get('/all', async(req,res) => {
     try{
         const data = await categoryService.getAll();
     
@@ -55,5 +55,32 @@ router.get('/getAll', async(req,res) => {
         res.status(500).json({ message: "Error getting all categories", error: err.message});
     }
 });
+
+router.get('/child/:id', async(req,res) => {
+    try{
+        const id = parseInt(req.params.id);
+        const data = await categoryService.getChild(id);
+    
+        res.status(201).json({data: data, message: 'Get child categories successfully'});
+    }
+    catch(err){
+        console.error(err);
+
+        res.status(500).json({ message: "Error getting child categories", error: err.message});
+    }
+})
+
+router.get('/allParent', async(req,res) => {
+    try{
+        const data = await categoryService.getParent();
+    
+        res.status(201).json({data: data, message: 'Get all parent categories successfully'});
+    }
+    catch(err){
+        console.error(err);
+
+        res.status(500).json({ message: "Error getting all parent categories", error: err.message});
+    }
+})
 
 export default router;

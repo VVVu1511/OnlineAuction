@@ -27,7 +27,7 @@ function Header() {
             </div>
 
             {/* Logo + Search + Cart */}
-            <div className="d-flex justify-content-between align-items-center mb-4">
+            <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
                 
                 {/* Logo */}
                 <div className="d-flex align-items-center">

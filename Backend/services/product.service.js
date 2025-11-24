@@ -187,3 +187,67 @@ export async function deleteProduct(id) {
     }
 }
 
+export async function getBestBidder(id) {
+    try {
+        return await db('BID_HISTORY')
+            .where({product_id: id})
+            .join('USER','USER.id', 'BID_HISTORY.user_id')
+            .orderBy('price','desc')
+            .first()
+            .select('USER.*');
+            
+
+    } catch (err) {
+        console.error('Error getting best bidder', err);
+        throw err;
+    }
+}
+
+export async function getSellerInfor(product_id) {
+    try {
+        return await db('PRODUCT')
+            .where('PRODUCT.id',product_id)
+            .join('USER','USER.id', 'PRODUCT.seller')
+            .select('USER.*');
+            
+
+    } catch (err) {
+        console.error('Error getting selling information', err);
+        throw err;
+    }
+}
+
+export async function get5relatedProducts(productId) {
+    try {
+        
+        const parentCatRow = await db('PRODUCT')
+            .where('PRODUCT.id', productId)
+            .join('PRODUCT_CATEGORY', 'PRODUCT.id', 'PRODUCT_CATEGORY.product_id')
+            .join('CATEGORY_PARENT', 'PRODUCT_CATEGORY.category_id', 'CATEGORY_PARENT.child_id')
+            .select('CATEGORY_PARENT.parent_id')
+            .first();
+
+        if (!parentCatRow) return []; 
+
+        const parentId = parentCatRow.parent_id;
+
+        const childCategories = await db('CATEGORY_PARENT')
+            .where('CATEGORY_PARENT.parent_id', parentId)
+            .select('child_id');
+
+        const childCategoryIds = childCategories.map(cat => cat.child_id);
+
+        const relatedProducts = await db('PRODUCT')
+            .join('PRODUCT_CATEGORY', 'PRODUCT.id', 'PRODUCT_CATEGORY.product_id')
+            .whereIn('PRODUCT_CATEGORY.category_id', childCategoryIds)
+            .whereNot('PRODUCT.id', productId)
+            .select('PRODUCT.*')
+            .limit(5);
+
+        return relatedProducts;
+
+    } catch (err) {
+        console.error('Error getting 5 related products', err);
+        throw err;
+    }
+}

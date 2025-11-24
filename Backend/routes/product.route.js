@@ -205,5 +205,46 @@ router.delete('/:id', async(req,res) => {
     }
 })
 
+router.get('/bestBidder/:id', async(req,res) => {
+    try{
+        const id = parseInt(req.params.id);
+
+        const data = await productService.getBestBidder(id);
+
+        res.status(201).json({data: data, message: 'Get best bidder successfully!'}); 
+    }
+
+    catch(error){
+        res.status(404).json({ error: error.message, message: 'Error getting best bidder'});
+    }
+})
+
+router.get('/sellerInfor/:id', async (req,res) => {
+    try{
+        const id = parseInt(req.params.id);
+
+        const data = await productService.getSellerInfor(id);
+
+        res.status(201).json({data: data, message: 'Get seller information successfully!'}); 
+    }
+
+    catch(error){
+        res.status(404).json({ error: error.message, message: 'Error getting seller information'});
+    }
+})
+
+router.get('/related/:id', async (req,res) => {
+    try{
+        const id = parseInt(req.params.id);
+
+        const data = await productService.get5relatedProducts(id);
+
+        res.status(201).json({data: data, message: 'Get 5 related products successfully!'}); 
+    }
+
+    catch(error){
+        res.status(404).json({ error: error.message, message: 'Error getting 5 related products'});
+    }
+})
 
 export default router;

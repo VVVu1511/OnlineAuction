@@ -23,7 +23,7 @@ function App() {
           <div className="row" style={{paddingTop: '100px'}}>
             <div className="col-2 bg-secondary-subtle"></div>
 
-            <div className="col-8">
+            <div className="col-8 mb-5 pt-4">
               <Category />
               <TopProducts />
             </div>
@@ -48,7 +48,7 @@ function App() {
     />
 
 
-   <Route
+    <Route
       path="/login"
       element={
           <div
