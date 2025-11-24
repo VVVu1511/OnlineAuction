@@ -191,6 +191,19 @@ router.get('/:id',async(req,res) => {
     }
 });
 
+router.delete('/:id', async(req,res) => {
+    try{
+        const id = parseInt(req.params.id);
+
+        await productService.deleteProduct(id);
+
+        res.status(201).json({data: productInfor, message: 'Delete product successfully!'}); 
+    }
+
+    catch(error){
+        res.status(404).json({ error: error.message, message: 'Error deleting product'});
+    }
+})
 
 
 export default router;

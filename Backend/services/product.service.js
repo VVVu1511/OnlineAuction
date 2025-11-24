@@ -174,3 +174,16 @@ export async function new_bid(data) {
     }
 }
 
+export async function deleteProduct(id) {
+    try {
+        await db('PRODUCT')
+            .where({id: id})
+            .delete();
+            
+
+    } catch (err) {
+        console.error('Error deleting product', err);
+        throw err;
+    }
+}
+

@@ -1,19 +1,45 @@
-function ProductCard(){
+import { useNavigate } from "react-router-dom";
+
+
+function ProductCard({data}){
+    const navigate = useNavigate();
+    
+    const handleClick = () => {
+        navigate('/productInfor', {state: {product: data}});
+    }
+    
     return (
-        <>
-            <div className="card">
-                <img className="card-img-top img-fluid" src="/Shirt1/shirt1.jpg" alt="" />
-                <div className="card-body">
-                    <p className="text-center card-title">Tên sản phẩm</p>
-                    <p className="text-center card-text">Giá hiện tại</p>
-                    <p className="text-center card-text">Best Bidder</p>
-                    <p className="text-center card-text">Giá mua ngay</p>
-                    <p className="text-center card-text">Ngày đăng</p>
-                    <p className="text-center card-text">Thời gian còn lại</p>
-                    <p className="text-center card-text">Số lượt ra giá hiện tại</p>
-                </div>
-            </div>
-        </>
+        <div onClick={handleClick}>
+            <div className="card" style={{ width: "160px" }}>
+    <img
+        className="card-img-top img-fluid mt-2"
+        src={`http://localhost:3000/static/images/${data.id}/${data.image_path[0]}`}
+        alt=""
+        style={{ height: "120px", objectFit: "cover" }}
+    />
+
+    <div className="card-body p-2">
+        <p className="card-title text-center truncate">{data.name}</p>
+
+        <p className="card-text text-center truncate">
+            💰 {data.current_price} đ
+        </p>
+
+        <p className="card-text text-center truncate">
+            🧑 {data.best_bidder}
+        </p>
+
+        <p className="card-text text-center truncate">
+            🚀 {data.time_left}
+        </p>
+
+        <p className="card-text text-center truncate">
+            🔥 Bids: {data.bid_counts}
+        </p>
+    </div>
+</div>
+
+        </div>
     );
 }
 
