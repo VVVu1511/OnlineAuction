@@ -5,6 +5,25 @@ import { isAuth } from '../../../app/middlewares/auth.mdw.js'
 
 const router = express.Router();
 
+router.post('/login', async(req,res) => {
+    try{
+        const password = await accountService.getPasswordByUsername(req.body.username);
+
+        const valid = bcrypt.compareSync(req.body.password, password);
+
+        if(!valid){
+            throw err;
+        }
+
+        res.status(201).json({message: 'Login successfully'});
+    }
+    catch(err){
+        console.error(err);
+
+        res.status(500).json({ message: "Error log in", error: err.message});
+    }
+})
+
 router.post('/register', async (req,res) => {
     try{
         const hashPassword = bcrypt.hashSync(req.body.password, 10);
@@ -30,11 +49,47 @@ router.post('/register', async (req,res) => {
     }
 
     catch(error){
-        console.error(error);
-
         res.status(500).json({ message: "Error registering user", error: error.message});
     }
     
+})
+
+router.put('/email', async(req,res) => {
+    try{
+        await accountService.updateEmail(req.body);
+    }
+
+    catch(error){
+        res.status(500).json({ message: "Error updating email!", error: error.message});
+    }
+})
+
+router.put('/full_name', async(req,res) => {
+    try{
+        await accountService.updateFullName(req.body);
+    }
+
+    catch(error){
+        res.status(500).json({ message: "Error updating full name!", error: error.message});
+    }
+})
+
+router.put('/password', async(req,res) => {
+    try{
+        const password = await accountService.getPasswordByUsername(req.body.user_id);
+
+        const valid = bcrypt.compareSync(req.body.old_password, password);
+
+        if(!valid){
+            throw error;
+        }
+        
+        await accountService.updatePassword(req.body);
+    }
+
+    catch(error){
+        res.status(500).json({ message: "Error updating full name!", error: error.message});
+    }
 })
 
 export default router;
