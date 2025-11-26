@@ -1,7 +1,6 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
 import * as accountService from '../services/account.service.js'
-import { isAuth } from '../../../app/middlewares/auth.mdw.js'
 
 const router = express.Router();
 
@@ -26,6 +25,21 @@ router.post('/login', async(req,res) => {
 
 router.post('/register', async (req,res) => {
     try{
+        const captcha = req.body.captcha;
+
+        const googleVerifyURL = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`;
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        await accountService.sendOtp(user.id, otp);
+        
+        const response = await fetch(googleVerifyURL, { method: "POST" });
+        const data = await response.json();
+
+        if (!data.success) {
+            return res.status(400).json({ message: "CAPTCHA failed!" });
+        }
+
         const hashPassword = bcrypt.hashSync(req.body.password, 10);
     
         const user = {
@@ -91,5 +105,17 @@ router.put('/password', async(req,res) => {
         res.status(500).json({ message: "Error updating full name!", error: error.message});
     }
 })
+
+router.post("/verify-otp", async (req, res) => {
+    const { userId, otp } = req.body;
+    if (!userId || !otp) return res.status(400).json({ message: "Missing data" });
+
+    const valid = await accountService.verifyOtp(userId, otp);
+    if (valid) {
+        return res.json({ success: true, message: "OTP verified" });
+    } else {
+        return res.status(400).json({ success: false, message: "Invalid OTP" });
+    }
+});
 
 export default router;

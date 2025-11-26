@@ -49,14 +49,16 @@ export async function getAll() {
 export async function getChild(parent_id) {
     try {
         return await db('CATEGORY_PARENT')
-            .select('child_id')
-            .where({parent_id: parent_id});
+            .where({ parent_id })
+            .join('CATEGORY', 'CATEGORY.id', '=', 'CATEGORY_PARENT.child_id')
+            .select('CATEGORY.*');
             
     } catch (err) {
         console.error('Cannot get all categories', err);
         throw err;
     }
 }
+
 
 export async function getParent() {
     try {

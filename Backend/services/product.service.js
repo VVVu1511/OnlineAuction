@@ -48,7 +48,6 @@ export async function getTop5Price() {
     }
 }
 
-
 export async function getTop5BidCounts() {
     try{
         return db('PRODUCT')
@@ -61,7 +60,6 @@ export async function getTop5BidCounts() {
         throw err;
     }
 }
-
 
 export async function getTop5NearEnd() {
     try{
@@ -104,7 +102,6 @@ export async function getByCategory(cat_id) {
     }
 }
 
-
 export async function search(keyword) {
     return await db('PRODUCT')
         .whereRaw(`fts @@ plainto_tsquery('simple', unaccent(?))`, [keyword]);
@@ -135,7 +132,6 @@ export async function addWatchList(user_id, product_id) {
         throw err;
     }
 }
-
 
 export async function delWatchList(user_id, product_id) {
     try {

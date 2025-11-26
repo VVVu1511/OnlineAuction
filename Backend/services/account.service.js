@@ -54,3 +54,28 @@ export async function updatePassword(data) {
     }
 }
 
+// services/otp.service.js
+const otpStore = {}; // { userId: { otp, expiresAt } }
+
+export async function sendOtp(userId, otp) {
+    otpStore[userId] = {
+        otp,
+        expiresAt: Date.now() + 5 * 60 * 1000, // 5 phút
+    };
+    console.log(`OTP for user ${userId}: ${otp}`);
+    // TODO: gửi email hoặc sms ở đây
+}
+
+export async function verifyOtp(userId, otp) {
+    const record = otpStore[userId];
+    if (!record) return false;
+    if (record.expiresAt < Date.now()) {
+        delete otpStore[userId];
+        return false;
+    }
+    if (record.otp === otp) {
+        delete otpStore[userId];
+        return true;
+    }
+    return false;
+}

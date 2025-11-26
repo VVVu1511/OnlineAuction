@@ -9,6 +9,8 @@ import Register from './Component/Register/Register'
 import ProductInfor from './Component/ProductInfor/ProductInfor'
 import Footer from './Component/Footer/Footer'
 import Login from './Component/Login/Login'
+import ProductGrid from './Component/ProductGrid/ProductGrid'
+import CategoryDetail from './Component/CategoryDetail/CategoryDetail'
 
 function App() {
   
@@ -83,6 +85,28 @@ function App() {
       }
     ></Route>
 
+
+      <Route 
+        path='/productGridWithCat'
+        element={
+          <>
+            <Header />
+          
+          <div className="row">
+            <div className="col-2 bg-secondary-subtle"></div>
+
+            <div className="col-8 d-flex">
+              <CategoryDetail />
+              <ProductGrid />
+            </div>
+
+            <div className="col-2 bg-secondary-subtle"></div>
+          </div>
+
+          <Footer />
+          </>
+        }
+      ></Route>
     </Routes>
   )
 }
