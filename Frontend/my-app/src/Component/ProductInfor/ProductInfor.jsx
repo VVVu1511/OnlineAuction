@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import ProductCard from "../ProductCard/ProductCard";
+import { FaHeart } from "react-icons/fa";
 
 dayjs.extend(relativeTime);
 
@@ -14,8 +15,28 @@ function ProductInfor() {
     const [qaHistory, setQaHistory] = useState([]);
     const [seller, setSeller] = useState({});
     const [bestBidder, setBestBidder] = useState({});
+    const [history, setHistory] = useState([]);
 
+    const handleClick = () => {
     
+    //check state (red or none)
+    //red -> undone, none-> love
+
+    fetch(`http://localhost:3000/product/watchlist/${product.id}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            product_id: product.id,   
+        }),
+    })
+        .then((res) => res.json())
+        .then((data) => setSeller(data))
+        .catch((err) => console.error(err));
+};
+
+
     useEffect(() => {
         if (product) {
             //fetch seller
@@ -37,7 +58,10 @@ function ProductInfor() {
             fetch(`http://localhost:3000/product/Q_A/${product.id}`)
                 .then(res => res.json())
                 .then(data => setQaHistory(data.data));
-        }
+            fetch(`'http://localhost:3000/product/bid_history/${product.id}`)
+                .then(res => res.json())
+                .then(data => setHistory(data.data));
+            }
     }, [product]);
 
     if (!product) return <p>Product not found.</p>;
@@ -80,6 +104,7 @@ function ProductInfor() {
                     <p><strong>Bid Counts:</strong> {product.bid_counts}</p>
                     <p><strong>Description:</strong> {product.description}</p>
                     <p><strong>Uploaded:</strong> {dayjs(product.upload_date).format('YYYY-MM-DD HH:mm')}</p>
+                    <FaHeart onClick={() => handleClick()} className="text-red-500 text-3xl" />;
                 </div>
             </div>
 
@@ -110,6 +135,26 @@ function ProductInfor() {
                 </div>
             </div>
 
+            {/*/Bid History*/}
+            <table>
+                <th>
+                    <td>Thời điểm</td>
+                    <td>Người mua</td>
+                    <td>Giá</td>
+                </th>
+                
+                {
+                    history.map((item,idx) => (
+                        <tr key={idx} className="mb-2 border p-2 rounded">
+                            <td>{item.time}</td>
+                            <td>{item.user_id}</td>
+                            <td>{item.price}</td>
+                        </tr>
+                    ))
+                }
+            </table>
+            
+
             {/* Q&A History */}
             <div className="mb-4">
                 <h5>Q&A History</h5>
@@ -121,6 +166,9 @@ function ProductInfor() {
                     </div>
                 ))}
             </div>
+
+            
+
         </div>
     );
 }

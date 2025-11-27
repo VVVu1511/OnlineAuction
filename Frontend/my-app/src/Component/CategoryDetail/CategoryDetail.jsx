@@ -19,7 +19,7 @@ function CategoryDetail(){
 
     const handleClick = (id) => {
         navigate('/productGridWithCat', {
-            state: { category_id: id }
+            state: { category_id: category_id, current_category_id: id }
         });
     };
 
