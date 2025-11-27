@@ -49,16 +49,16 @@ app.get('/auth/google/callback',
 );
 
 // ---------- FACEBOOK LOGIN ----------
-// app.get('/auth/facebook',
-//     passport.authenticate('facebook')
-// );
+app.get('/auth/facebook',
+    passport.authenticate('facebook')
+);
 
-// app.get('/auth/facebook/callback',
-//     passport.authenticate('facebook'),
-//     (req, res) => {
-//         res.redirect("/");
-//     }
-// );
+app.get('/auth/facebook/callback',
+    passport.authenticate('facebook'),
+    (req, res) => {
+        res.redirect("/");
+    }
+);
 
 app.listen(PORT, function () {
     console.log(`Server is running on http://localhost:${PORT}`);

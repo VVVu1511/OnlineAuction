@@ -58,7 +58,9 @@ function ProductInfor() {
             fetch(`http://localhost:3000/product/Q_A/${product.id}`)
                 .then(res => res.json())
                 .then(data => setQaHistory(data.data));
-            fetch(`'http://localhost:3000/product/bid_history/${product.id}`)
+            
+            //fetch bid history
+            fetch(`http://localhost:3000/product/bid_history/${product.id}`)
                 .then(res => res.json())
                 .then(data => setHistory(data.data));
             }
@@ -96,15 +98,24 @@ function ProductInfor() {
                 </div>
 
                 <div className="col-md-8">
-                    <h2>{product.name}</h2>
-                    <p><strong>Current Price:</strong> {product.current_price}</p>
-                    {product.sell_price && <p><strong>Buy Now Price:</strong> {product.sell_price}</p>}
-                    <p><strong>Time Left:</strong> {displayTimeLeft}</p>
-                    <p><strong>Best Bidder:</strong> {bestBidder.username} | Score: {bestBidder.score || '-'}</p>
-                    <p><strong>Bid Counts:</strong> {product.bid_counts}</p>
-                    <p><strong>Description:</strong> {product.description}</p>
-                    <p><strong>Uploaded:</strong> {dayjs(product.upload_date).format('YYYY-MM-DD HH:mm')}</p>
-                    <FaHeart onClick={() => handleClick()} className="text-red-500 text-3xl" />;
+                    <div className="d-flex p-5">
+                        <div>
+                            <h2>{product.name}</h2>
+                            <p><strong>Current Price:</strong> {product.current_price}</p>
+                            {product.sell_price && <p><strong>Buy Now Price:</strong> {product.sell_price}</p>}
+                            <p><strong>Time Left:</strong> {displayTimeLeft}</p>
+                            <p><strong>Best Bidder:</strong> {bestBidder.username} | Score: {bestBidder.score || '-'}</p>
+                            <p><strong>Bid Counts:</strong> {product.bid_counts}</p>
+                            <p><strong>Description:</strong> {product.description}</p>
+                            <p><strong>Uploaded:</strong> {dayjs(product.upload_date).format('YYYY-MM-DD HH:mm')}</p>
+                        </div>
+
+                        <div className="">
+                            <FaHeart onClick={() => handleClick()} className="text-end text-red-500 text-3xl " />
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
 
@@ -135,29 +146,34 @@ function ProductInfor() {
                 </div>
             </div>
 
-            {/*/Bid History*/}
-            <table>
-                <th>
-                    <td>Thời điểm</td>
-                    <td>Người mua</td>
-                    <td>Giá</td>
-                </th>
-                
-                {
-                    history.map((item,idx) => (
-                        <tr key={idx} className="mb-2 border p-2 rounded">
+            {/* Bid History */}
+            <table className="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Thời điểm</th>
+                        <th>Người mua</th>
+                        <th>Giá</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {history.map((item, idx) => (
+                        <tr key={idx}>
                             <td>{item.time}</td>
                             <td>{item.user_id}</td>
                             <td>{item.price}</td>
                         </tr>
-                    ))
-                }
+                    ))}
+                </tbody>
             </table>
+
             
 
-            {/* Q&A History */}
+            {/* Q&A */}
+            
+
             <div className="mb-4">
-                <h5>Q&A History</h5>
+                <h5>Q&A</h5>
                 {qaHistory.length === 0 && <p>No questions yet.</p>}
                 {qaHistory.map((qa, idx) => (
                     <div key={idx} className="mb-2 border p-2 rounded">

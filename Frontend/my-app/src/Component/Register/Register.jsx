@@ -5,7 +5,6 @@ import { FaFacebook, FaGoogle } from "react-icons/fa";
 
 function Register() {
     const navigate = useNavigate();
-
     const [captchaToken, setCaptchaToken] = useState("");
 
     const handleSubmit = (e) => {
@@ -33,9 +32,16 @@ function Register() {
         })
             .then(res => res.json())
             .then(result => {
+                if (result.success) {
+                    alert("Register success! Please verify OTP.");
+                    // Go to OTP screen and pass userId
+                    navigate("/verify-otp", { state: { userId: result.userId } });
+                } else {
+                    alert(result.message);
+                }
+                
                 console.log("Success", result);
                 alert("Register success!");
-                navigate("/login");
             })
             .catch(err => {
                 console.error("Error", err);
@@ -45,7 +51,6 @@ function Register() {
     const GOOGLE_AUTH_URL = "http://localhost:3000/auth/google";
     const FACEBOOK_AUTH_URL = "http://localhost:3000/auth/facebook";
 
-    
     return (
         <div
             className="d-flex justify-content-center align-items-center"
@@ -117,7 +122,7 @@ function Register() {
                 {/* reCAPTCHA */}
                 <div className="mb-3 d-flex justify-content-center">
                     <ReCAPTCHA
-                        sitekey="YOUR_RECAPTCHA_SITE_KEY"
+                        sitekey="6Ld8pBksAAAAAG6ByWiUXsH77Do6NLFkH1W0DAAx"
                         onChange={(token) => setCaptchaToken(token)}
                     />
                 </div>

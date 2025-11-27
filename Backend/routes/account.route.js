@@ -31,11 +31,9 @@ router.post('/register', async (req,res) => {
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        await accountService.sendOtp(user.id, otp);
-        
         const response = await fetch(googleVerifyURL, { method: "POST" });
         const data = await response.json();
-
+        
         if (!data.success) {
             return res.status(400).json({ message: "CAPTCHA failed!" });
         }
@@ -43,7 +41,7 @@ router.post('/register', async (req,res) => {
         const hashPassword = bcrypt.hashSync(req.body.password, 10);
     
         const user = {
-            id: 0,
+            id: 10,
             username: req.body.fullName,
             password: hashPassword,
             address: req.body.address,
@@ -57,9 +55,9 @@ router.post('/register', async (req,res) => {
             throw new Error("Email already exists");
         }
     
-        await accountService.add(user);
+        const result = await accountService.add(user);
 
-        res.status(201).json({message: 'User registered successfully'});
+        res.status(201).json({data: result,message: 'User registered successfully'});
     }
 
     catch(error){

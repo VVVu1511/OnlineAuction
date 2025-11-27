@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom';
 
 function ProductGrid() {
     const location = useLocation();
-    const { current_category_id } = location.state || {};
+    const { category_id, current_category_id } = location.state || {};
 
     const [sortType, setSortType] = useState(null);
     const [products, setProducts] = useState([]);
@@ -14,14 +14,14 @@ function ProductGrid() {
     const productsPerPage = 5; // 3 rows * 5 columns
 
     useEffect(() => {
-        if (!category_id) return;
+        if (!current_category_id) return;
         fetch(`http://localhost:3000/product/getByCat/${current_category_id}`)
             .then(res => res.json())
             .then(data => {
                 setProducts(data.data);
                 setCurrentPage(1); // reset page when category changes
             });
-    }, [category_id]);
+    }, [current_category_id]);
 
     // Sort products
     const handleSort = (type) => {
