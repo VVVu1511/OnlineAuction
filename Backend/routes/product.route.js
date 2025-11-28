@@ -13,16 +13,18 @@ router.post('/checkCanBid', authMiddleware, async (req, res) => {
         const product = await productService.getProductById(product_id);
         if (!product) return res.status(404).json({ message: 'Product not found' });
 
-        // Lấy 10 đánh giá gần nhất
+        // Lấy 10 đánh giá gần nhất, full, đếm +, chia SL
         const recentReviews = await productService.getRecentReviews(userId, 10);
         let canBid = false;
         let reason = '';
 
         if (recentReviews.length === 0) {
+            //haven't been rated
             canBid = product.allow_unrated_bids;
             if (!canBid) reason = 'You are not allowed to bid without ratings.';
+
         } else {
-            const positiveCount = recentReviews.filter(r => r.score > 0).length;
+            const positiveCount = recentReviews.filter(r => r.rating > 0).length;
             const rate = positiveCount / recentReviews.length;
             canBid = rate >= 0.8;
             if (!canBid) reason = `Your positive rating is too low (${Math.round(rate*100)}%).`;

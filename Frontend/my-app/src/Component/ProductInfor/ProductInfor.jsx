@@ -71,10 +71,10 @@ function ProductInfor() {
 
             const checkData = await checkRes.json();
 
-            if (!checkRes.ok) {
-                alert(`Lỗi kiểm tra quyền đặt giá: ${checkData.message}`);
-                return;
-            }
+            // if (!checkRes.ok) {
+            //     alert(`Lỗi kiểm tra quyền đặt giá: ${checkData.message}`);
+            //     return;
+            // }
 
             if (!checkData.canBid) {
                 alert(`Bạn không thể đặt giá: ${checkData.reason}`);

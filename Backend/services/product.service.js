@@ -251,3 +251,22 @@ export async function get5relatedProducts(productId) {
         throw err;
     }
 }
+
+export async function getRecentReviews(userId, number = 10) {
+    try {
+        const reviews = await db('USER_RATING')
+            .join('USERS as rater', 'USER_RATING.rater_id', 'rater.id')
+            .where('USER_RATING.rated_id', userId)  // reviews about this user
+            .orderBy('USER_RATING.created_at', 'desc')
+            .limit(number)
+            .select(
+                'USER_RATING.rating',
+            );
+
+        return reviews;
+    } catch (err) {
+        console.error('Error getting recent reviews', err);
+        throw err;
+    }
+}
+
