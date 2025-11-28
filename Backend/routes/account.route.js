@@ -1,27 +1,47 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
 import * as accountService from '../services/account.service.js'
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
-router.post('/login', async(req,res) => {
-    try{
-        const password = await accountService.getPasswordByUsername(req.body.username);
+router.post('/login', async (req, res) => {
+    try {
+        const data = await accountService.getAllByEmail(req.body.email);
 
-        const valid = bcrypt.compareSync(req.body.password, password);
-
-        if(!valid){
-            throw err;
+        if (!data || !data.password) {
+            return res.status(400).json({ message: "Wrong username or password" , data: data});
         }
 
-        res.status(201).json({message: 'Login successfully'});
-    }
-    catch(err){
-        console.error(err);
+        const valid = bcrypt.compareSync(req.body.password, data.password);
 
-        res.status(500).json({ message: "Error log in", error: err.message});
+        if (!valid) {
+            return res.status(400).json({ message: "Wrong username or password" });
+        }
+
+        // Create JWT
+        const payload = {
+            id: data.id,
+            address: data.address,
+            score: data.score,
+            role: data.role,
+            full_name: data.full_name,
+            email: req.body.email,
+        };
+
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        res.status(200).json({ 
+            success: true,
+            message: "Login successfully",
+            token 
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: "Error log in", error: err.message });
     }
-})
+});
 
 router.post('/register', async (req,res) => {
     try{
@@ -29,9 +49,8 @@ router.post('/register', async (req,res) => {
 
         const googleVerifyURL = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`;
 
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
         const response = await fetch(googleVerifyURL, { method: "POST" });
+
         const data = await response.json();
         
         if (!data.success) {
@@ -41,12 +60,11 @@ router.post('/register', async (req,res) => {
         const hashPassword = bcrypt.hashSync(req.body.password, 10);
     
         const user = {
-            id: 10,
-            username: req.body.fullName,
             password: hashPassword,
             address: req.body.address,
             email: req.body.email,
-            score: 10 
+            score: 10,
+            full_name: req.body.fullName
         }
 
         const allEmail = await accountService.findAllEmail();
@@ -57,7 +75,12 @@ router.post('/register', async (req,res) => {
     
         const result = await accountService.add(user);
 
-        res.status(201).json({data: result,message: 'User registered successfully'});
+        res.status(201).json({
+            success: true,
+            userId: result[0],     
+            message: "User registered successfully. OTP sent."
+        });
+
     }
 
     catch(error){
@@ -104,16 +127,38 @@ router.put('/password', async(req,res) => {
     }
 })
 
-router.post("/verify-otp", async (req, res) => {
-    const { userId, otp } = req.body;
-    if (!userId || !otp) return res.status(400).json({ message: "Missing data" });
+router.post("/send-otp", async (req, res) => {
+    const { email } = req.body;
 
-    const valid = await accountService.verifyOtp(userId, otp);
-    if (valid) {
-        return res.json({ success: true, message: "OTP verified" });
-    } else {
-        return res.status(400).json({ success: false, message: "Invalid OTP" });
+    if (!email) {
+        return res.status(400).json({ success: false, message: "Email is required" });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    try {
+        
+        await accountService.sendOtp(email, otp);
+
+        res.json({ success: true, message: "OTP sent successfully" });
+    
+    } catch (error) {
+        console.error("Send OTP failed:", error);
+        res.status(500).json({ success: false, message: "Failed to send OTP"});
     }
 });
+
+router.post("/verify-otp", async (req, res) => {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ message: "Missing data" });
+
+    const valid = accountService.verifyOtp(email, otp);
+    if (valid.success) {
+        return res.json({ success: true, message: "OTP verified" });
+    } else {
+        return res.status(400).json({ success: false, message: valid.message });
+    }
+});
+
 
 export default router;

@@ -1,5 +1,6 @@
 import db from '../utils/db.js'
 
+
 export async function getQ_A(id) {
     try{
         const ques_ans = await db('QUESTION_ANSWER').select('*')

@@ -11,6 +11,7 @@ import Footer from './Component/Footer/Footer'
 import Login from './Component/Login/Login'
 import ProductGrid from './Component/ProductGrid/ProductGrid'
 import CategoryDetail from './Component/CategoryDetail/CategoryDetail'
+import OTP from './Component/OTP/OTP'
 
 function App() {
   
@@ -107,6 +108,28 @@ function App() {
           </>
         }
       ></Route>
+
+        <Route 
+        path='/verify-otp'
+        element={
+          <>
+            <Header />
+          
+          <div className="row">
+            <div className="col-2 bg-secondary-subtle"></div>
+
+            <div className="col-8 d-flex">
+              <OTP />
+            </div>
+
+            <div className="col-2 bg-secondary-subtle"></div>
+          </div>
+
+          <Footer />
+          </>
+        }
+      ></Route>
+
     </Routes>
   )
 }

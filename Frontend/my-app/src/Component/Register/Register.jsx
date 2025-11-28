@@ -5,57 +5,59 @@ import { FaFacebook, FaGoogle } from "react-icons/fa";
 
 function Register() {
     const navigate = useNavigate();
+
+    const [email, setEmail] = useState("");
+    const [fullName, setFullName] = useState("");
+    const [address, setAddress] = useState("");
+    const [password, setPassword] = useState("");
     const [captchaToken, setCaptchaToken] = useState("");
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const handleSubmit = async (e) => {
+    
+    e.preventDefault();
 
-        const data = {
-            email: document.querySelector("#email").value,
-            fullName: document.querySelector("#fullName").value,
-            address: document.querySelector("#address").value,
-            password: document.querySelector("#password").value,
-            captcha: captchaToken
-        };
+    if (!captchaToken) {
+        alert("Please verify reCAPTCHA!");
+        return;
+    }
 
-        if (!captchaToken) {
-            alert("Please verify reCAPTCHA!");
-            return;
-        }
-
-        fetch("http://localhost:3000/account/register", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-        })
-            .then(res => res.json())
-            .then(result => {
-                if (result.success) {
-                    alert("Register success! Please verify OTP.");
-                    // Go to OTP screen and pass userId
-                    navigate("/verify-otp", { state: { userId: result.userId } });
-                } else {
-                    alert(result.message);
-                }
-                
-                console.log("Success", result);
-                alert("Register success!");
-            })
-            .catch(err => {
-                console.error("Error", err);
-            });
+    const userData = {
+        email,
+        fullName,
+        address,
+        password,
+        captcha: captchaToken
     };
+
+    try {
+        // Step 1: Send OTP email
+        const res = await fetch("http://localhost:3000/account/send-otp", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            alert("OTP has been sent to your email. Please check.");
+
+            // Step 2: Navigate to OTP page with userData
+            navigate("/verify-otp", { state: { userData } });
+        } else {
+            alert(data.message || "Failed to send OTP");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Server error!");
+    }
+};
 
     const GOOGLE_AUTH_URL = "http://localhost:3000/auth/google";
     const FACEBOOK_AUTH_URL = "http://localhost:3000/auth/facebook";
 
     return (
-        <div
-            className="d-flex justify-content-center align-items-center"
-            style={{ minHeight: "80vh" }}
-        >
+        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "80vh" }}>
             <form
                 className="w-100 w-md-50 border p-4 rounded shadow"
                 style={{ maxWidth: "1000px", minWidth: "600px" }}
@@ -63,63 +65,54 @@ function Register() {
             >
                 <h2 className="text-center mb-4">Đăng Ký</h2>
 
-                {/* Email */}
                 <div className="mb-3">
-                    <label htmlFor="email" className="form-label">
-                        Email address
-                    </label>
+                    <label className="form-label">Email address</label>
                     <input
                         type="email"
                         required
                         className="form-control"
-                        id="email"
                         placeholder="you@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                     />
                 </div>
 
-                {/* Full Name */}
                 <div className="mb-3">
-                    <label htmlFor="fullName" className="form-label">
-                        Full Name
-                    </label>
+                    <label className="form-label">Full Name</label>
                     <input
                         type="text"
                         required
                         className="form-control"
-                        id="fullName"
                         placeholder="Nguyen Van A"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
                     />
                 </div>
 
-                {/* Address */}
                 <div className="mb-3">
-                    <label htmlFor="address" className="form-label">
-                        Address
-                    </label>
+                    <label className="form-label">Address</label>
                     <input
                         type="text"
                         required
                         className="form-control"
-                        id="address"
                         placeholder="123 Đường ABC, Hà Nội"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
                     />
                 </div>
 
-                {/* Password */}
                 <div className="mb-3">
-                    <label htmlFor="password" className="form-label">
-                        Password
-                    </label>
+                    <label className="form-label">Password</label>
                     <input
                         type="password"
                         required
                         className="form-control"
-                        id="password"
                         placeholder="********"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                     />
                 </div>
 
-                {/* reCAPTCHA */}
                 <div className="mb-3 d-flex justify-content-center">
                     <ReCAPTCHA
                         sitekey="6Ld8pBksAAAAAG6ByWiUXsH77Do6NLFkH1W0DAAx"
@@ -127,7 +120,6 @@ function Register() {
                     />
                 </div>
 
-                {/* Social login */}
                 <div className="d-flex justify-content-center align-items-center mb-3 gap-3">
                     <button
                         type="button"
@@ -146,7 +138,6 @@ function Register() {
                     </button>
                 </div>
 
-                {/* Submit button */}
                 <button type="submit" className="btn btn-success w-100">
                     Đăng Ký
                 </button>

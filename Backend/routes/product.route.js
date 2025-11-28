@@ -1,8 +1,9 @@
 import express from 'express'
 import * as productService from '../services/product.service.js'
+import authMiddleware from "../middleware/auth.js"; // adjust path
+
 
 const router = express.Router();
-
 
 router.post('/bid_history', async function (req,res) {
     try{
@@ -28,31 +29,57 @@ router.get('/bid_history/:product_id', async function (req,res) {
     }
 })
 
-router.delete('/watchlist/:id', async function (req,res) {
-    try{
-        const id = parseInt(req.params.id);
+router.delete('/watchlist', authMiddleware, async function (req,res) {
+    try {
+        const userID = req.user.id;
+         // decoded token set by middleware
+        const productId = req.body.productId;
 
-        await productService.delWatchList(id, req.body.product_id);
-        
-        res.status(201).json({message: 'Delete product of watch list successfully!'});
-    }
-    catch(error){
-        res.status(404).json({error: error.message, message: 'Error deleting product of watch list'});
+        if (!productId) return res.status(400).json({ message: "Missing product ID" });
+
+        // Add to watchlist
+        await productService.delWatchList(userID, productId);
+
+        res.status(201).json({ 
+            success: true,
+            message: 'Product added to watchlist successfully!',
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error deleting product of watchlist', 
+            error: error.message,
+        });
     }
 })
 
-router.post('/watchlist/:id', async function (req,res) {
-    try{
-        const id = parseInt(req.params.id);
+router.post('/watchlist', authMiddleware, async function (req, res) {
+    try {
+        const userID = req.user.id;
+         // decoded token set by middleware
+        const productId = req.body.productId;
 
-        await productService.addWatchList(id, req.body.product_id);
-        
-        res.status(201).json({message: 'Add new product to watch list successfully!'});
+        if (!productId) return res.status(400).json({ message: "Missing product ID" });
+
+        // Add to watchlist
+        await productService.addWatchList(userID, productId);
+
+        res.status(201).json({ 
+            success: true,
+            message: 'Product added to watchlist successfully!',
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error adding product to watchlist', 
+            error: error.message,
+        });
     }
-    catch(error){
-        res.status(404).json({error: error.message, message: 'Error adding new product to watch list'});
-    }
-})
+});
 
 router.get('/watchlist/:id', async function (req,res)  {
     try{

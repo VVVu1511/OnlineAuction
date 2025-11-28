@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import ProductCard from "../ProductCard/ProductCard";
-import { FaHeart } from "react-icons/fa";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
+import useWatchlist from "../../hooks/useWatchList.js";
 
 dayjs.extend(relativeTime);
 
@@ -17,39 +18,21 @@ function ProductInfor() {
     const [bestBidder, setBestBidder] = useState({});
     const [history, setHistory] = useState([]);
 
-    const handleClick = () => {
-    
-    //check state (red or none)
-    //red -> undone, none-> love
-
-    fetch(`http://localhost:3000/product/watchlist/${product.id}`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            product_id: product.id,   
-        }),
-    })
-        .then((res) => res.json())
-        .then((data) => setSeller(data))
-        .catch((err) => console.error(err));
-};
-
+    const [liked, toggleLike] = useWatchlist(false); // use shared hook
 
     useEffect(() => {
         if (product) {
-            //fetch seller
+            // fetch seller
             fetch(`http://localhost:3000/product/sellerInfor/${product.id}`)
                 .then(res => res.json())
-                .then(data => setSeller(data));
+                .then(data => setSeller(data.data[0]));
 
-            //fetch best bidder
+            // fetch best bidder
             fetch(`http://localhost:3000/product/bestBidder/${product.id}`)
                 .then(res => res.json())
-                .then(data => setBestBidder(data));
+                .then(data => setBestBidder(data.data));
 
-            // fetch 5 related products in same category
+            // fetch 5 related products
             fetch(`http://localhost:3000/product/related/${product.id}`)
                 .then(res => res.json())
                 .then(data => setRelatedProducts(data.data));
@@ -58,12 +41,12 @@ function ProductInfor() {
             fetch(`http://localhost:3000/product/Q_A/${product.id}`)
                 .then(res => res.json())
                 .then(data => setQaHistory(data.data));
-            
-            //fetch bid history
+
+            // fetch bid history
             fetch(`http://localhost:3000/product/bid_history/${product.id}`)
                 .then(res => res.json())
                 .then(data => setHistory(data.data));
-            }
+        }
     }, [product]);
 
     if (!product) return <p>Product not found.</p>;
@@ -71,25 +54,24 @@ function ProductInfor() {
     const endTime = dayjs(product.upload_date).add(product.time_left, "seconds");
     const now = dayjs();
     const displayTimeLeft = endTime.diff(now, 'day') < 3
-        ? endTime.fromNow()  // relative time if less than 3 days
+        ? endTime.fromNow()
         : endTime.format('YYYY-MM-DD HH:mm');
 
     return (
         <div className="container py-5">
-            {/* Product images and main info */}
             <div className="row mb-4">
                 <div className="col-md-4">
-                    <img 
-                        src={`http://localhost:3000/static/images/${product.id}/${product.image_path[0]}`} 
-                        alt={product.name} 
-                        className="img-fluid mb-2" 
+                    <img
+                        src={`http://localhost:3000/static/images/${product.id}/${product.image_path[0]}`}
+                        alt={product.name}
+                        className="img-fluid mb-2"
                     />
                     <div className="row g-2">
                         {product.image_path.slice(1).map((img, idx) => (
                             <div className="col-4" key={idx}>
-                                <img 
-                                    src={`http://localhost:3000/static/images/${product.id}/${img}`} 
-                                    alt={`${product.name} ${idx + 2}`} 
+                                <img
+                                    src={`http://localhost:3000/static/images/${product.id}/${img}`}
+                                    alt={`${product.name} ${idx + 2}`}
                                     className="img-fluid"
                                 />
                             </div>
@@ -98,24 +80,34 @@ function ProductInfor() {
                 </div>
 
                 <div className="col-md-8">
-                    <div className="d-flex p-5">
+                    <div className="d-flex p-5 justify-content-between align-items-start">
                         <div>
                             <h2>{product.name}</h2>
                             <p><strong>Current Price:</strong> {product.current_price}</p>
                             {product.sell_price && <p><strong>Buy Now Price:</strong> {product.sell_price}</p>}
                             <p><strong>Time Left:</strong> {displayTimeLeft}</p>
-                            <p><strong>Best Bidder:</strong> {bestBidder.username} | Score: {bestBidder.score || '-'}</p>
                             <p><strong>Bid Counts:</strong> {product.bid_counts}</p>
                             <p><strong>Description:</strong> {product.description}</p>
                             <p><strong>Uploaded:</strong> {dayjs(product.upload_date).format('YYYY-MM-DD HH:mm')}</p>
                         </div>
 
-                        <div className="">
-                            <FaHeart onClick={() => handleClick()} className="text-end text-red-500 text-3xl " />
+                        {/* Heart icon with toggle */}
+                        <div className="ms-3">
+                            {liked ? (
+                                <FaHeart
+                                    onClick={(e) => { e.stopPropagation(); toggleLike(product.id); }}
+                                    className="text-3xl cursor-pointer text-red-500"
+                                />
+                            ) : (
+                                <FaRegHeart
+                                    onClick={(e) => { e.stopPropagation(); toggleLike(product.id); }}
+                                    className="text-3xl cursor-pointer text-gray-400"
+                                />
+                            )}
                         </div>
+
+                        
                     </div>
-
-
                 </div>
             </div>
 
@@ -123,14 +115,13 @@ function ProductInfor() {
             <div className="row mb-4">
                 <div className="col-md-6">
                     <h5>Seller Info</h5>
-                    <p>Name: {seller.username}</p>
+                    <p>Name: {seller.full_name}</p>
                     <p>Score: {seller.score}</p>
                 </div>
-
                 <div className="col-md-6">
                     <h5>Current Highest Bidder</h5>
-                    <p>Name: {product.best_bidder}</p>
-                    <p>Score: {product.best_bidder_score || '-'}</p>
+                    <p>Name: {bestBidder.full_name}</p>
+                    <p>Score: {bestBidder.score || '-'}</p>
                 </div>
             </div>
 
@@ -155,7 +146,6 @@ function ProductInfor() {
                         <th>Giá</th>
                     </tr>
                 </thead>
-
                 <tbody>
                     {history.map((item, idx) => (
                         <tr key={idx}>
@@ -167,11 +157,7 @@ function ProductInfor() {
                 </tbody>
             </table>
 
-            
-
             {/* Q&A */}
-            
-
             <div className="mb-4">
                 <h5>Q&A</h5>
                 {qaHistory.length === 0 && <p>No questions yet.</p>}
@@ -182,9 +168,6 @@ function ProductInfor() {
                     </div>
                 ))}
             </div>
-
-            
-
         </div>
     );
 }

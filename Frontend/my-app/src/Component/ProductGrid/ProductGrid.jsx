@@ -4,47 +4,53 @@ import { useLocation } from 'react-router-dom';
 
 function ProductGrid() {
     const location = useLocation();
-    const { category_id, current_category_id } = location.state || {};
+    const { current_category_id, keyword } = location.state || {};
 
     const [sortType, setSortType] = useState(null);
     const [products, setProducts] = useState([]);
 
-    // Pagination states
     const [currentPage, setCurrentPage] = useState(1);
-    const productsPerPage = 5; // 3 rows * 5 columns
+    const productsPerPage = 5;
 
     useEffect(() => {
-        if (!current_category_id) return;
-        fetch(`http://localhost:3000/product/getByCat/${current_category_id}`)
+        let url = "";
+
+        if (current_category_id) {
+            url = `http://localhost:3000/product/getByCat/${current_category_id}`;
+        } else if (keyword) {
+            url = `http://localhost:3000/product/search?q=${encodeURIComponent(keyword)}`;
+        } else {
+            return;
+        }
+
+        fetch(url)
             .then(res => res.json())
             .then(data => {
                 setProducts(data.data);
-                setCurrentPage(1); // reset page when category changes
+                setCurrentPage(1);
             });
-    }, [current_category_id]);
 
-    // Sort products
+    }, [current_category_id, keyword]);
+
     const handleSort = (type) => {
         setSortType(type);
 
-        let sortedProducts = [...products];
+        let sorted = [...products];
 
         if (type === 'time') {
-            sortedProducts.sort((a, b) => b.time_left - a.time_left);
+            sorted.sort((a, b) => b.time_left - a.time_left);
         } else if (type === 'price') {
-            sortedProducts.sort((a, b) => a.price - b.price);
+            sorted.sort((a, b) => a.price - b.price);
         }
 
-        setProducts(sortedProducts);
-        setCurrentPage(1); // reset page after sorting
+        setProducts(sorted);
+        setCurrentPage(1);
     };
 
-    // --- Pagination logic ---
     const indexOfLast = currentPage * productsPerPage;
     const indexOfFirst = indexOfLast - productsPerPage;
     const currentProducts = products.slice(indexOfFirst, indexOfLast);
 
-    // Split 5 per row
     const rows = [];
     for (let i = 0; i < currentProducts.length; i += 5) {
         rows.push(currentProducts.slice(i, i + 5));
@@ -62,6 +68,7 @@ function ProductGrid() {
                 >
                     Thời gian giảm dần
                 </button>
+
                 <button 
                     className={`btn btn-primary ${sortType === 'price' ? 'active' : ''}`}
                     onClick={() => handleSort('price')}
@@ -85,8 +92,8 @@ function ProductGrid() {
 
             {/* Pagination */}
             <div className="d-flex justify-content-center mt-4 gap-2">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((num) => (
-                    <button 
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(num => (
+                    <button
                         key={num}
                         className={`btn btn-outline-primary ${num === currentPage ? 'active' : ''}`}
                         onClick={() => setCurrentPage(num)}
@@ -95,7 +102,6 @@ function ProductGrid() {
                     </button>
                 ))}
             </div>
-
         </div>
     );
 }
