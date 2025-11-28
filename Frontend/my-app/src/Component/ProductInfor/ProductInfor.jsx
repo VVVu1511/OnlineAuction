@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import ProductCard from "../ProductCard/ProductCard";
-import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { FaDollarSign, FaHeart, FaRegHeart } from "react-icons/fa";
 import useWatchlist from "../../hooks/useWatchList.js";
 
 dayjs.extend(relativeTime);
@@ -57,6 +57,62 @@ function ProductInfor() {
         ? endTime.fromNow()
         : endTime.format('YYYY-MM-DD HH:mm');
 
+    const handleBidClick = async () => {
+        try {
+            // Step 1: Check if user can bid
+            const checkRes = await fetch(`http://localhost:3000/product/checkCanBid`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({ product_id: product.id })
+            });
+
+            const checkData = await checkRes.json();
+
+            if (!checkRes.ok) {
+                alert(`Lỗi kiểm tra quyền đặt giá: ${checkData.message}`);
+                return;
+            }
+
+            if (!checkData.canBid) {
+                alert(`Bạn không thể đặt giá: ${checkData.reason}`);
+                return;
+            }
+
+            // Step 2: Ask user to confirm bid
+            const confirmBid = window.confirm(`Giá đề nghị tối thiểu: ${checkData.suggestedPrice}\nBạn có muốn đặt giá này không?`);
+            if (!confirmBid) return;
+
+            // Step 3: Place bid
+            const bidRes = await fetch(`http://localhost:3000/product/bid`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify({
+                    product_id: product.id,
+                    price: checkData.suggestedPrice
+                })
+            });
+
+            const bidData = await bidRes.json();
+
+            if (bidRes.ok) {
+                alert(`Đặt giá thành công! Giá: ${bidData.final_price}`);
+            } else {
+                alert(`Không thể đặt giá: ${bidData.message}`);
+            }
+
+        } catch (err) {
+            console.error(err);
+            alert("Lỗi khi đặt giá!");
+        }
+    };
+
+
     return (
         <div className="container py-5">
             <div className="row mb-4">
@@ -90,20 +146,27 @@ function ProductInfor() {
                             <p><strong>Description:</strong> {product.description}</p>
                             <p><strong>Uploaded:</strong> {dayjs(product.upload_date).format('YYYY-MM-DD HH:mm')}</p>
                         </div>
-
-                        {/* Heart icon with toggle */}
-                        <div className="ms-3">
+                        
+                        <div className="ms-3 d-flex flex-column align-items-center">
+                            {/* Heart */}
                             {liked ? (
                                 <FaHeart
                                     onClick={(e) => { e.stopPropagation(); toggleLike(product.id); }}
-                                    className="text-3xl cursor-pointer text-red-500"
+                                    className="text-3xl cursor-pointer text-red-500 mb-2"
                                 />
                             ) : (
                                 <FaRegHeart
                                     onClick={(e) => { e.stopPropagation(); toggleLike(product.id); }}
-                                    className="text-3xl cursor-pointer text-gray-400"
+                                    className="text-3xl cursor-pointer text-gray-400 mb-2"
                                 />
                             )}
+
+                            {/* Bid Icon */}
+                            <FaDollarSign
+                                onClick={(e) => { e.stopPropagation(); handleBidClick(); }}
+                                className="text-3xl cursor-pointer text-green-500"
+                                title="Place a bid"
+                            />
                         </div>
 
                         

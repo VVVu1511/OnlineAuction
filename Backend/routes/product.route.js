@@ -5,16 +5,70 @@ import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
 
-router.post('/bid_history', async function (req,res) {
-    try{
-        await productService.new_bid(req.body);
-        
-        res.status(201).json({message: 'Add new bid history successfully!'});
+router.post('/checkCanBid', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { product_id } = req.body;
+
+        const product = await productService.getProductById(product_id);
+        if (!product) return res.status(404).json({ message: 'Product not found' });
+
+        // Lấy 10 đánh giá gần nhất
+        const recentReviews = await productService.getRecentReviews(userId, 10);
+        let canBid = false;
+        let reason = '';
+
+        if (recentReviews.length === 0) {
+            canBid = product.allow_unrated_bids;
+            if (!canBid) reason = 'You are not allowed to bid without ratings.';
+        } else {
+            const positiveCount = recentReviews.filter(r => r.score > 0).length;
+            const rate = positiveCount / recentReviews.length;
+            canBid = rate >= 0.8;
+            if (!canBid) reason = `Your positive rating is too low (${Math.round(rate*100)}%).`;
+        }
+
+        const minPrice = product.current_price + product.bid_step;
+
+        res.json({
+            canBid,
+            reason,
+            suggestedPrice: minPrice
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error checking bid eligibility' });
     }
-    catch(error){
-        res.status(404).json({error: error.message, message: 'Error adding new bid'});
+});
+
+router.post('/bid', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { product_id, price } = req.body;
+
+        const product = await productService.getProductById(product_id);
+        if (!product) return res.status(404).json({ message: 'Product not found' });
+
+        // Kiểm tra giá hợp lệ
+        const minPrice = product.current_price + product.bid_step;
+        if (price < minPrice) return res.status(400).json({ message: `Bid must be at least ${minPrice}` });
+
+        await productService.new_bid({
+            user_id: userId,
+            product_id,
+            time: new Date(),
+            price
+        });
+
+        res.status(201).json({ message: 'Bid placed successfully', final_price: price });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error placing bid' });
     }
-})
+});
+
 
 router.get('/bid_history/:product_id', async function (req,res) {
     try{

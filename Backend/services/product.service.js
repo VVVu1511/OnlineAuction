@@ -161,15 +161,18 @@ export async function getBidHistory(product_id) {
 
 export async function new_bid(data) {
     try {
-        await db('BID_HISTORY')
-            .insert({user_id: data.user_id,product_id: data.product_id,time: data.time, price: data.price});
-            
-
+        await db('BID_HISTORY').insert({
+            user_id: data.user_id,
+            product_id: data.product_id,
+            time: data.time || new Date(),
+            price: data.price
+        });
     } catch (err) {
         console.error('Cannot add new bid', err);
         throw err;
     }
 }
+
 
 export async function deleteProduct(id) {
     try {
