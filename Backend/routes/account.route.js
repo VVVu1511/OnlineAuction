@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
+// router.use(authMiddleware);
 
 router.post('/login', async (req, res) => {
     try {
@@ -161,11 +162,11 @@ router.post("/verify-otp", async (req, res) => {
     }
 });
 
-router.get('/rating', authMiddleware, async(req,res) => {
+router.get('/rating', async(req,res) => {
     try {
         const userId = req.user.id;
         
-        const rating = accountService.getRating(userId);
+        const rating = await accountService.getRating(userId);
 
         res.status(201).json({ message: 'Get rating OK!', data: rating });
 
@@ -175,15 +176,15 @@ router.get('/rating', authMiddleware, async(req,res) => {
     }
 })
 
-router.get('/profile', authMiddleware, async (req,res) => {
+router.get('/profile', async (req,res) => {
     res.status(201).json({ message: 'Get profile', data: req.user});
 })
 
-router.get('/win', authMiddleware, async(req,res) => {
+router.get('/win', async(req,res) => {
     try {
         const userId = req.user.id;
         
-        const winProducts = accountService.getWinProducts(userId);
+        const winProducts = await accountService.getWinProducts(userId);
 
         res.status(201).json({ message: 'Get win products OK!', data: winProducts });
 
@@ -192,6 +193,89 @@ router.get('/win', authMiddleware, async(req,res) => {
         res.status(500).json({ message: 'Error getting win products' });
     }
 })
+
+router.delete('/watchlist', async function (req,res) {
+    try {
+        const userID = req.user.id;
+         // decoded token set by middleware
+        const productId = req.body.productId;
+
+        if (!productId) return res.status(400).json({ message: "Missing product ID" });
+
+        // Add to watchlist
+        await accountService.delWatchList(userID, productId);
+
+        res.status(201).json({ 
+            success: true,
+            message: 'Product added to watchlist successfully!',
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error deleting product of watchlist', 
+            error: error.message,
+        });
+    }
+})
+
+router.post('/watchlist', async function (req, res) {
+    try {
+        const userID = req.user.id;
+         // decoded token set by middleware
+        const productId = req.body.productId;
+
+        if (!productId) return res.status(400).json({ message: "Missing product ID" });
+
+        // Add to watchlist
+        await accountService.addWatchList(userID, productId);
+
+        res.status(201).json({ 
+            success: true,
+            message: 'Product added to watchlist successfully!',
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Error adding product to watchlist', 
+            error: error.message,
+        });
+    }
+});
+
+router.get('/watchlist', async function (req,res)  {
+    try{
+        const id = req.user.id;
+
+        const data = await accountService.getWatchList(id);
+        
+        res.status(201).json({data: data , message: 'Get watch list successfully!'});
+    }
+    catch(error){
+        res.status(404).json({error: error.message, message: 'Error getting watch list'});
+    }
+})
+
+router.put('/requestSell', async (req, res) => {
+    try {
+        const user_id = req.user.id;
+
+        // Gọi service để request sell
+        await accountService.requestSell(user_id);
+
+        res.status(200).json({
+            success: true,
+            message: 'Yêu cầu nâng cấp Seller đã được gửi! Admin sẽ duyệt.'
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 
 
 

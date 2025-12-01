@@ -3,6 +3,8 @@ import { createClient } from '@supabase/supabase-js';
 import accountRouter from '../Backend/routes/account.route.js';
 import productRouter from '../Backend/routes/product.route.js';
 import categoryRouter from '../Backend/routes/category.route.js';
+import biddingRouter from '../Backend/routes/bidding.route.js';
+import contactRouter from '../Backend/routes/contact.route.js';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -36,6 +38,8 @@ app.use('/static', express.static(path.join(__dirname, 'static')));
 app.use('/account', accountRouter);
 app.use('/product', productRouter);
 app.use('/category', categoryRouter);
+app.use('/bidding', biddingRouter);
+app.use('/contact',contactRouter);
 
 // ---------- GOOGLE LOGIN ----------
 app.get('/auth/google',

@@ -7,18 +7,27 @@ function TopProducts() {
     const [top5Price, setTop5Price] = useState([]);
 
     useEffect(() => {
-        fetch("http://localhost:3000/product/top5NearEnd", {"method": "GET"})
-            .then(res => res.json())
+        const token = localStorage.getItem("token");
+
+        const authFetch = (url) =>
+            fetch(url, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json"
+                }
+            }).then(res => res.json());
+
+        authFetch("http://localhost:3000/product/top5NearEnd")
             .then(data => setTop5End(data.data));
 
-        fetch("http://localhost:3000/product/top5BidCounts", {"method": "GET"})
-            .then(res => res.json())
+        authFetch("http://localhost:3000/product/top5BidCounts")
             .then(data => setTop5Bid(data.data));
 
-        fetch("http://localhost:3000/product/top5Price", {"method": "GET"})
-            .then(res => res.json())
+        authFetch("http://localhost:3000/product/top5Price")
             .then(data => setTop5Price(data.data));
     }, []);
+
 
     return (
         <div>

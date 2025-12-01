@@ -16,7 +16,7 @@ export default function useWatchlist(initialLiked = false) {
 
         try {
             const method = liked ? "DELETE" : "POST";
-            const res = await fetch(`http://localhost:3000/product/watchlist`, {
+            const res = await fetch(`http://localhost:3000/account/watchlist`, {
                 method,
                 headers: {
                     "Content-Type": "application/json",

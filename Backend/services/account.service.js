@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import db from "../utils/db.js"
 import dotenv from "dotenv";
+import authMiddleware from "../middleware/auth.js"; // adjust path
 
 dotenv.config();
 
@@ -150,6 +151,59 @@ export async function getWinProducts(userId) {
     }
 }
 
+export async function getWatchList(user_id) {
+    try {
+        const list = await db('WATCHLIST')
+            .join('PRODUCT', 'WATCHLIST.product_id', 'PRODUCT.id')
+            .select('PRODUCT.*')
+            .where('WATCHLIST.user_id', user_id);
+
+        return list;
+
+    } catch (err) {
+        console.error('Cannot get watch list', err);
+        throw err;
+    }
+}
+
+export async function addWatchList(user_id, product_id) {
+    try {
+        await db('WATCHLIST')
+            .insert({user_id: user_id, product_id: product_id});
+
+    } catch (err) {
+        console.error('Cannot add watch list', err);
+        throw err;
+    }
+}
+
+export async function delWatchList(user_id, product_id) {
+    try {
+        await db('WATCHLIST')
+            .where({user_id: user_id, product_id: product_id})
+            .delete();
+
+    } catch (err) {
+        console.error('Cannot delete 1 row watch list', err);
+        throw err;
+    }
+}
+
+export async function requestSell(user_id) {
+    try {
+        // Cập nhật cột request_sell = true
+        await db('USER')
+        .where({ id: user_id })
+        .update({
+            request_sell: true,
+            request_expire: db.raw(`CURRENT_TIMESTAMP + interval '7 days'`)
+  });
+
+    } catch (err) {
+        console.error('Error requesting sell', err);
+        throw err;
+    }
+}
 
 
 

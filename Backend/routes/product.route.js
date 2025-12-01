@@ -2,151 +2,8 @@ import express from 'express'
 import * as productService from '../services/product.service.js'
 import authMiddleware from "../middleware/auth.js"; // adjust path
 
-
 const router = express.Router();
-
-router.post('/checkCanBid', authMiddleware, async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const { product_id } = req.body;
-
-        const product = await productService.getProductById(product_id);
-        if (!product) return res.status(404).json({ message: 'Product not found' });
-
-        // Lấy 10 đánh giá gần nhất, full, đếm +, chia SL
-        const recentReviews = await productService.getReviews(userId);
-        let canBid = false;
-        let reason = '';
-
-        if (recentReviews.length === 0) {
-            //haven't been rated
-            // canBid = product.allow_unrated_bids;
-            if (!canBid) reason = 'You are not allowed to bid without ratings.';
-        } else {
-            const positiveCount = recentReviews.filter(r => r.rating > 0).length;
-            const rate = positiveCount / recentReviews.length;
-            canBid = rate >= 0.8;
-            if (!canBid) reason = `Your positive rating is too low (${Math.round(rate*100)}%).`;
-        }
-
-        const minPrice = product.current_price + product.bid_step;
-
-        res.json({
-            canBid,
-            reason,
-            suggestedPrice: minPrice
-        });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error checking bid eligibility' });
-    }
-});
-
-router.post('/bid', authMiddleware, async (req, res) => {
-    try {
-        const userId = req.user.id;
-        const { product_id, price } = req.body;
-
-        const product = await productService.getProductById(product_id);
-        if (!product) return res.status(404).json({ message: 'Product not found' });
-
-        // Kiểm tra giá hợp lệ
-        const minPrice = product.current_price + product.bid_step;
-        if (price < minPrice) return res.status(400).json({ message: `Bid must be at least ${minPrice}` });
-
-        await productService.new_bid({
-            user_id: userId,
-            product_id,
-            time: new Date(),
-            price
-        });
-
-        res.status(201).json({ message: 'Bid placed successfully', final_price: price });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error placing bid' });
-    }
-});
-
-router.get('/bid_history/:product_id', async function (req,res) {
-    try{
-        const product_id = parseInt(req.params.product_id);
-
-        const data = await productService.getBidHistory(product_id);
-        
-        res.status(201).json({data:data ,message: 'Get bid history successfully!'});
-    }
-    catch(error){
-        res.status(404).json({error: error.message, message: 'Error getting bid history'});
-    }
-})
-
-router.delete('/watchlist', authMiddleware, async function (req,res) {
-    try {
-        const userID = req.user.id;
-         // decoded token set by middleware
-        const productId = req.body.productId;
-
-        if (!productId) return res.status(400).json({ message: "Missing product ID" });
-
-        // Add to watchlist
-        await productService.delWatchList(userID, productId);
-
-        res.status(201).json({ 
-            success: true,
-            message: 'Product added to watchlist successfully!',
-        });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error deleting product of watchlist', 
-            error: error.message,
-        });
-    }
-})
-
-router.post('/watchlist', authMiddleware, async function (req, res) {
-    try {
-        const userID = req.user.id;
-         // decoded token set by middleware
-        const productId = req.body.productId;
-
-        if (!productId) return res.status(400).json({ message: "Missing product ID" });
-
-        // Add to watchlist
-        await productService.addWatchList(userID, productId);
-
-        res.status(201).json({ 
-            success: true,
-            message: 'Product added to watchlist successfully!',
-        });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error adding product to watchlist', 
-            error: error.message,
-        });
-    }
-});
-
-router.get('/watchlist', authMiddleware, async function (req,res)  {
-    try{
-        const id = req.user.id;
-
-        const data = await productService.getWatchList(id);
-        
-        res.status(201).json({data: data , message: 'Get watch list successfully!'});
-    }
-    catch(error){
-        res.status(404).json({error: error.message, message: 'Error getting watch list'});
-    }
-})
+router.use(authMiddleware);
 
 router.get('/search', async function (req, res) {
     try{
@@ -223,7 +80,6 @@ router.get('/top5Price', async(req,res) => {
 router.post('/add', async(req,res) => {
     try{
         const data = {
-            id: 0,
             name: req.body.name,
             image_path: JSON.stringify(req.body.image_path),
             current_price: req.body.current_price,
@@ -327,5 +183,48 @@ router.get('/related/:id', async (req,res) => {
         res.status(404).json({ error: error.message, message: 'Error getting 5 related products'});
     }
 })
+
+router.put('/appendDescription/:id', async (req, res) => {
+    const productId = parseInt(req.params.id);
+    const { newDescription } = req.body;
+
+    try {
+        const updatedProduct = await productService.appendDescription(productId, newDescription);
+        
+        res.status(200).json({
+            success: true,
+            message: 'Description updated successfully!',
+            data: updatedProduct
+        });
+    } catch (err) {
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
+
+router.get('/myActiveProducts', async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const products = await productService.getActiveProducts(userId);
+        res.json({ success: true, data: products });
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/myWonProducts', async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const products = await productService.getWonProducts(userId);
+        res.json({ success: true, data: products });
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+});
+
 
 export default router;

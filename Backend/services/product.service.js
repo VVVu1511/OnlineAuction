@@ -108,71 +108,6 @@ export async function search(keyword) {
         .whereRaw(`fts @@ plainto_tsquery('simple', unaccent(?))`, [keyword]);
 }
 
-export async function getWatchList(user_id) {
-    try {
-        const list = await db('WATCHLIST')
-            .join('PRODUCT', 'WATCHLIST.product_id', 'PRODUCT.id')
-            .select('PRODUCT.*')
-            .where('WATCHLIST.user_id', user_id);
-
-        return list;
-
-    } catch (err) {
-        console.error('Cannot get watch list', err);
-        throw err;
-    }
-}
-
-export async function addWatchList(user_id, product_id) {
-    try {
-        await db('WATCHLIST')
-            .insert({user_id: user_id, product_id: product_id});
-
-    } catch (err) {
-        console.error('Cannot add watch list', err);
-        throw err;
-    }
-}
-
-export async function delWatchList(user_id, product_id) {
-    try {
-        await db('WATCHLIST')
-            .where({user_id: user_id, product_id: product_id})
-            .delete();
-
-    } catch (err) {
-        console.error('Cannot delete 1 row watch list', err);
-        throw err;
-    }
-}
-
-export async function getBidHistory(product_id) {
-    try {
-        return await db('BID_HISTORY')
-            .select('*')    
-            .where({product_id: product_id});
-            
-
-    } catch (err) {
-        console.error('Cannot get bid history', err);
-        throw err;
-    }
-}
-
-export async function new_bid(data) {
-    try {
-        await db('BID_HISTORY').insert({
-            user_id: data.user_id,
-            product_id: data.product_id,
-            time: data.time || new Date(),
-            price: data.price
-        });
-    } catch (err) {
-        console.error('Cannot add new bid', err);
-        throw err;
-    }
-}
-
 export async function deleteProduct(id) {
     try {
         await db('PRODUCT')
@@ -278,4 +213,42 @@ export async function getProductById(productId) {
         console.error('Error fetching product by ID', err);
         throw err;
     }
+}
+
+export async function appendDescription(productId, newDescription) {
+    // Lấy sản phẩm, kiểm tra quyền
+    const product = await db('PRODUCT').where({ id: productId }).first();
+    if (!product) throw new Error('Product not found');
+
+    // Append mô tả mới vào mô tả cũ
+    const updatedDescription = product.description
+        ? product.description + "\n" + newDescription
+        : newDescription;
+
+    // Cập nhật vào DB
+    await db('PRODUCT')
+        .where({ id: productId })
+        .update({ description: updatedDescription });
+
+    // Trả về sản phẩm đã cập nhật
+    return { ...product, description: updatedDescription };
+}
+
+// 1️⃣ Lấy sản phẩm đang đăng & còn hạn
+export async function getActiveProducts(userId) {
+    return await db('PRODUCT')
+        .where({ seller: userId })
+        .whereNull('winner')        // chưa có người thắng
+        .andWhere('time_left', '>', 0) // còn thời gian (giả sử time_left là số giây còn lại)
+        .orderBy('upload_date', 'desc')
+        .select('*');
+}
+
+// 2️⃣ Lấy sản phẩm đã có người thắng
+export async function getWonProducts(userId) {
+    return await db('PRODUCT')
+        .where({ seller: userId })
+        .whereNotNull('winner')   // đã có người thắng
+        .orderBy('upload_date', 'desc')
+        .select('*');
 }

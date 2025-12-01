@@ -12,7 +12,7 @@ import Login from './Component/Login/Login'
 import ProductGrid from './Component/ProductGrid/ProductGrid'
 import CategoryDetail from './Component/CategoryDetail/CategoryDetail'
 import OTP from './Component/OTP/OTP'
-import Profile from './Component/Profile/Profile'
+import ProfileRouter from './Component/Profile/ProfileRouter'
 
 function App() {
   
@@ -141,7 +141,7 @@ function App() {
             <div className="col-2 bg-secondary-subtle"></div>
 
             <div className="col-8 d-flex">
-              <Profile />
+              <ProfileRouter />
             </div>
 
             <div className="col-2 bg-secondary-subtle"></div>

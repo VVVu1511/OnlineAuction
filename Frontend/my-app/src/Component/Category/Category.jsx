@@ -6,11 +6,19 @@ function Category() {
     const [category, setCategory] = useState([]);
 
     useEffect(() => {
-        fetch(`http://localhost:3000/category/allParent`)
-            .then(res => res.json())
-            .then(data => setCategory(data.data))
-            .catch(err => console.error(err));
+        const token = localStorage.getItem("token");
+
+        fetch("http://localhost:3000/category/allParent", {
+            headers: {
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            }
+        })
+        .then(res => res.json())
+        .then(data => setCategory(data.data))
+        .catch(err => console.error(err));
     }, []);
+
 
     const images = [
         "/Categories/phone.webp",
