@@ -135,9 +135,9 @@ router.post('/watchlist', authMiddleware, async function (req, res) {
     }
 });
 
-router.get('/watchlist/:id', async function (req,res)  {
+router.get('/watchlist', authMiddleware, async function (req,res)  {
     try{
-        const id = parseInt(req.params.id);
+        const id = req.user.id;
 
         const data = await productService.getWatchList(id);
         

@@ -17,15 +17,15 @@ function Header() {
 
     const handleLogout = () => {
         localStorage.removeItem("token");
-        localStorage.removeItem("userEmail"); // if you stored email
+        localStorage.removeItem("userEmail");
         setIsLoggedIn(false);
+        navigate('/'); // redirect to home after logout
     };
 
     const [product, setProduct] = useState([]);
     const handleSearch = () => {
         const searchKW = document.getElementById("search").value.trim();
         if (!searchKW) return;
-
         navigate("/productGridWithCat", { state: { keyword: searchKW } });
     };
 
@@ -51,7 +51,11 @@ function Header() {
                     </>
                 ) : (
                     <div className="d-flex align-items-center gap-2">
-                        <FaUser size={20} />
+                        <FaUser 
+                            size={20} 
+                            style={{ cursor: "pointer" }}
+                            onClick={() => navigate("/profile")} 
+                        />
                         <button 
                             className="btn btn-outline-light btn-sm"
                             onClick={handleLogout}
@@ -64,7 +68,6 @@ function Header() {
 
             {/* Logo + Search + Cart */}
             <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
-                
                 {/* Logo */}
                 <div className="d-flex align-items-center">
                     <h2 className="mb-0">Online Auction</h2>
@@ -80,7 +83,7 @@ function Header() {
                             placeholder="Tra cứu sản phẩm..." 
                         />
                         <span className="input-group-text bg-white">
-                            <FaSearch onClick={() => handleSearch()} color="gray" />
+                            <FaSearch onClick={handleSearch} color="gray" />
                         </span>
                     </div>
                 </div>

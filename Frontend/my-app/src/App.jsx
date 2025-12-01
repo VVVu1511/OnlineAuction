@@ -12,6 +12,7 @@ import Login from './Component/Login/Login'
 import ProductGrid from './Component/ProductGrid/ProductGrid'
 import CategoryDetail from './Component/CategoryDetail/CategoryDetail'
 import OTP from './Component/OTP/OTP'
+import Profile from './Component/Profile/Profile'
 
 function App() {
   
@@ -130,6 +131,26 @@ function App() {
         }
       ></Route>
 
+        <Route 
+        path='/profile'
+        element={
+          <>
+            <Header />
+          
+          <div className="row">
+            <div className="col-2 bg-secondary-subtle"></div>
+
+            <div className="col-8 d-flex">
+              <Profile />
+            </div>
+
+            <div className="col-2 bg-secondary-subtle"></div>
+          </div>
+
+          <Footer />
+          </>
+        }
+      ></Route>
     </Routes>
   )
 }

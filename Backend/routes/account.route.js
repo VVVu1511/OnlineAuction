@@ -2,6 +2,7 @@ import express from 'express'
 import bcrypt from 'bcryptjs'
 import * as accountService from '../services/account.service.js'
 import jwt from "jsonwebtoken";
+import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
 
@@ -159,6 +160,39 @@ router.post("/verify-otp", async (req, res) => {
         return res.status(400).json({ success: false, message: valid.message });
     }
 });
+
+router.get('/rating', authMiddleware, async(req,res) => {
+    try {
+        const userId = req.user.id;
+        
+        const rating = accountService.getRating(userId);
+
+        res.status(201).json({ message: 'Get rating OK!', data: rating });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error getting rating' });
+    }
+})
+
+router.get('/profile', authMiddleware, async (req,res) => {
+    res.status(201).json({ message: 'Get profile', data: req.user});
+})
+
+router.get('/win', authMiddleware, async(req,res) => {
+    try {
+        const userId = req.user.id;
+        
+        const winProducts = accountService.getWinProducts(userId);
+
+        res.status(201).json({ message: 'Get win products OK!', data: winProducts });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error getting win products' });
+    }
+})
+
 
 
 export default router;

@@ -122,3 +122,35 @@ export function verifyOtp(email, otp) {
 
     return { success: true, message: "OTP verified" };
 }
+
+export async function getRating(userId) {
+    try {
+        const ratings = await db('RATING')
+            .where('rated_id', userId)
+            .select('*');
+        return ratings;
+        
+    } catch (err) {
+        console.error("Failed to get rating", err);
+        throw err;
+    }
+}
+
+export async function getWinProducts(userId) {
+    try {
+        const win = await db('PRODUCT')
+            .where('winner', userId)
+            .select('*');
+        
+        return win;
+        
+    } catch (err) {
+        console.error("Failed to get win products", err);
+        throw err;
+    }
+}
+
+
+
+
+
