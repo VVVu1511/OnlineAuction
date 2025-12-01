@@ -14,15 +14,14 @@ router.post('/checkCanBid', authMiddleware, async (req, res) => {
         if (!product) return res.status(404).json({ message: 'Product not found' });
 
         // Lấy 10 đánh giá gần nhất, full, đếm +, chia SL
-        const recentReviews = await productService.getRecentReviews(userId, 10);
+        const recentReviews = await productService.getReviews(userId);
         let canBid = false;
         let reason = '';
 
         if (recentReviews.length === 0) {
             //haven't been rated
-            canBid = product.allow_unrated_bids;
+            // canBid = product.allow_unrated_bids;
             if (!canBid) reason = 'You are not allowed to bid without ratings.';
-
         } else {
             const positiveCount = recentReviews.filter(r => r.rating > 0).length;
             const rate = positiveCount / recentReviews.length;
@@ -70,7 +69,6 @@ router.post('/bid', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Error placing bid' });
     }
 });
-
 
 router.get('/bid_history/:product_id', async function (req,res) {
     try{

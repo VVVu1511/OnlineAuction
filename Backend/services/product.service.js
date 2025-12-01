@@ -173,7 +173,6 @@ export async function new_bid(data) {
     }
 }
 
-
 export async function deleteProduct(id) {
     try {
         await db('PRODUCT')
@@ -252,21 +251,31 @@ export async function get5relatedProducts(productId) {
     }
 }
 
-export async function getRecentReviews(userId, number = 10) {
+export async function getReviews(userId) {
     try {
-        const reviews = await db('USER_RATING')
-            .join('USERS as rater', 'USER_RATING.rater_id', 'rater.id')
-            .where('USER_RATING.rated_id', userId)  // reviews about this user
-            .orderBy('USER_RATING.created_at', 'desc')
-            .limit(number)
-            .select(
-                'USER_RATING.rating',
-            );
+        let query = db('RATING')
+            .where('rated_id', userId) // reviews about this user
+            .select('rating');
 
+        const reviews = await query;
         return reviews;
     } catch (err) {
-        console.error('Error getting recent reviews', err);
+        console.error('Error getting reviews', err);
         throw err;
     }
 }
 
+export async function getProductById(productId) {
+    try {
+        const product = await db('PRODUCT')
+            .where('id', productId)
+            .first(); // lấy một dòng duy nhất
+
+        if (!product) return null;
+
+        return product;
+    } catch (err) {
+        console.error('Error fetching product by ID', err);
+        throw err;
+    }
+}

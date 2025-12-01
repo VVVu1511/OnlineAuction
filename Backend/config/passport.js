@@ -2,6 +2,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import { Strategy as FacebookStrategy } from "passport-facebook";
 import dotenv from "dotenv";
+import db from "../utils/db.js"
 
 dotenv.config();
 
@@ -20,24 +21,76 @@ passport.use(new GoogleStrategy(
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: "http://localhost:3000/auth/google/callback",
     },
-    (accessToken, refreshToken, profile, done) => {
-        console.log("Google profile:", profile);
-        return done(null, profile);
+    async (accessToken, refreshToken, profile, done) => {
+        try {
+            const email = profile.emails?.[0]?.value;
+            const fullName = profile.displayName;
+
+            if (!email) return done(new Error("Google has no email"), null);
+
+            // Check exist
+            let user = await db("USER").where({ email }).first();
+
+            // Create new
+            if (!user) {
+                const [newUser] = await db("USER")
+                    .insert({
+                        full_name: fullName,
+                        email,
+                        password: null,
+                        address: null,
+                        role: 2,
+                    })
+                    .returning("*");
+
+                user = newUser;
+            }
+
+            return done(null, user);
+        } catch (err) {
+            return done(err, null);
+        }
     }
 ));
 
+
 // ---------------- FACEBOOK LOGIN ----------------
-// passport.use(new FacebookStrategy(
-//     {
-//         clientID: process.env.FB_APP_ID,
-//         clientSecret: process.env.FB_SECRET,
-//         callbackURL: "http://localhost:3000/auth/facebook/callback",
-//         profileFields: ["id", "displayName", "photos", "email"],
-//     },
-//     (accessToken, refreshToken, profile, done) => {
-//         console.log("Facebook profile:", profile);
-//         return done(null, profile);
-//     }
-// ));
+passport.use(new FacebookStrategy(
+    {
+        clientID: process.env.FB_APP_ID,
+        clientSecret: process.env.FB_SECRET,
+        callbackURL: "http://localhost:3000/auth/facebook/callback",
+        profileFields: ["id", "displayName", "photos", "email"],
+    },
+    async (accessToken, refreshToken, profile, done) => {
+        try {
+            const email = profile.emails?.[0]?.value;
+            const fullName = profile.displayName;
+
+            if (!email) return done(new Error("Facebook has no email"), null);
+
+            let user = await db("USER").where({ email }).first();
+
+            if (!user) {
+                const [newUser] = await db("USER")
+                    .insert({
+                        full_name: fullName,
+                        email,
+                        password: null,
+                        address: null,
+                        role: 2,
+                    })
+                    .returning("*");
+
+                user = newUser;
+            }
+
+            return done(null, user);
+        } catch (err) {
+            return done(err, null);
+        }
+    }
+));
+
 
 export default passport;
