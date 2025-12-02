@@ -4,7 +4,6 @@ import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
 
-router.use(authMiddleware);
 
 router.post('',async(req,res) => {
     try{

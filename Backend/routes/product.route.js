@@ -3,7 +3,7 @@ import * as productService from '../services/product.service.js'
 import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
-router.use(authMiddleware);
+
 
 router.get('/search', async function (req, res) {
     try{
@@ -204,7 +204,7 @@ router.put('/appendDescription/:id', async (req, res) => {
     }
 });
 
-router.get('/myActiveProducts', async (req, res) => {
+router.get('/myActiveProducts',authMiddleware, async (req, res) => {
     const userId = req.user.id;
 
     try {
@@ -215,7 +215,7 @@ router.get('/myActiveProducts', async (req, res) => {
     }
 });
 
-router.get('/myWonProducts', async (req, res) => {
+router.get('/myWonProducts',authMiddleware, async (req, res) => {
     const userId = req.user.id;
 
     try {
@@ -225,6 +225,7 @@ router.get('/myWonProducts', async (req, res) => {
         res.status(400).json({ success: false, message: err.message });
     }
 });
+
 
 
 export default router;

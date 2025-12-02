@@ -10,7 +10,7 @@ export default function BidderProfile({ user, token }) {
 
     const [formData, setFormData] = useState({
         email: user.email,
-        fullName: user.fullName,
+        fullName: user.full_name,
         oldPassword: "",
         newPassword: ""
     });
@@ -24,21 +24,23 @@ export default function BidderProfile({ user, token }) {
         loadBidderData();
     }, []);
 
-    const loadBidderData = async () => {
-        //load profile
-        //set for form data
-        
+    const loadBidderData = async () => {        
         const [reviewsRes, favRes, bidRes, wonRes] = await Promise.all([
-            fetch("/account/rating", { headers }),
-            fetch("/account/watchlist", { headers }),
-            fetch("/account/bidding", { headers }),
-            fetch("/account/win", { headers }),
+            fetch("http://localhost:3000/account/rating", { headers }),
+            fetch("http://localhost:3000/account/watchlist", { headers }),
+            fetch("http://localhost:3000/bidding", { headers }),
+            fetch("http://localhost:3000/account/win", { headers }),
         ]);
 
-        setReviews(await reviewsRes.json());
-        setFavorites(await favRes.json());
-        setBidding(await bidRes.json());
-        setWon(await wonRes.json());
+        const reviewsJson = await reviewsRes.json();
+        const favJson = await favRes.json();
+        const bidJson = await bidRes.json();
+        const wonJson = await wonRes.json();
+
+        setReviews(reviewsJson.data);
+        setFavorites(favJson.data);
+        setBidding(bidJson.data);
+        setWon(wonJson.data);
     };
 
     const handleChange = (e) => {
@@ -80,7 +82,6 @@ export default function BidderProfile({ user, token }) {
 
     return (
         <div className="container mt-3">
-            <h2>Hồ sơ Bidder</h2>
 
             {/* ==== PERSONAL INFO ==== */}
             <div className="border p-3 rounded mt-3">
@@ -89,7 +90,8 @@ export default function BidderProfile({ user, token }) {
                 {!editMode ? (
                     <>
                         <p><strong>Email:</strong> {user.email}</p>
-                        <p><strong>Họ tên:</strong> {user.fullName}</p>
+                        <p><strong>Họ tên:</strong> {user.full_name}</p>
+                        <p><strong>Địa chỉ:</strong> {user.address}</p>
                         <button className="btn btn-primary" onClick={() => setEditMode(true)}>
                             Chỉnh sửa hồ sơ
                         </button>
@@ -169,14 +171,14 @@ export default function BidderProfile({ user, token }) {
                 {won.length === 0 ? <p>Chưa thắng sản phẩm nào</p> : (
                     <ul>
                         {won.map((w, i) => (
-                            <li key={i}>{w.name} – Giá cuối: {w.final_price.toLocaleString()}</li>
+                            <li key={i}>{w.name} – Giá cuối: {w.current_price.toLocaleString()}</li>
                         ))}
                     </ul>
                 )}
             </div>
 
             {/* ==== UPGRADE TO SELLER ==== */}
-            <div className="border p-3 rounded mt-3">
+            <div className="border p-3 rounded mt-3 mb-5">
                 <h4>Nâng cấp thành Seller</h4>
 
                 {upgradeRequestSent ? (

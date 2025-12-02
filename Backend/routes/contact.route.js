@@ -3,7 +3,6 @@ import * as contactService from '../services/contact.service.js'
 import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
-router.use(authMiddleware);
 
 router.put('/answer', authMiddleware, async (req, res) => {
     const { productId, questionId, answer } = req.body;

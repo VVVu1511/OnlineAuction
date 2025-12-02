@@ -5,7 +5,6 @@ import jwt from "jsonwebtoken";
 import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
-// router.use(authMiddleware);
 
 router.post('/login', async (req, res) => {
     try {
@@ -162,7 +161,7 @@ router.post("/verify-otp", async (req, res) => {
     }
 });
 
-router.get('/rating', async(req,res) => {
+router.get('/rating',authMiddleware, async(req,res) => {
     try {
         const userId = req.user.id;
         
@@ -176,11 +175,11 @@ router.get('/rating', async(req,res) => {
     }
 })
 
-router.get('/profile', async (req,res) => {
+router.get('/profile',authMiddleware, async (req,res) => {
     res.status(201).json({ message: 'Get profile', data: req.user});
 })
 
-router.get('/win', async(req,res) => {
+router.get('/win',authMiddleware, async(req,res) => {
     try {
         const userId = req.user.id;
         
@@ -194,7 +193,7 @@ router.get('/win', async(req,res) => {
     }
 })
 
-router.delete('/watchlist', async function (req,res) {
+router.delete('/watchlist',authMiddleware, async function (req,res) {
     try {
         const userID = req.user.id;
          // decoded token set by middleware
@@ -220,7 +219,7 @@ router.delete('/watchlist', async function (req,res) {
     }
 })
 
-router.post('/watchlist', async function (req, res) {
+router.post('/watchlist',authMiddleware, async function (req, res) {
     try {
         const userID = req.user.id;
          // decoded token set by middleware
@@ -246,7 +245,7 @@ router.post('/watchlist', async function (req, res) {
     }
 });
 
-router.get('/watchlist', async function (req,res)  {
+router.get('/watchlist',authMiddleware, async function (req,res)  {
     try{
         const id = req.user.id;
 
@@ -259,7 +258,7 @@ router.get('/watchlist', async function (req,res)  {
     }
 })
 
-router.put('/requestSell', async (req, res) => {
+router.put('/requestSell', authMiddleware, async (req, res) => {
     try {
         const user_id = req.user.id;
 
@@ -276,6 +275,17 @@ router.put('/requestSell', async (req, res) => {
     }
 });
 
+router.put('/updateRequestSell', async (req,res) => {
+    
+    //update according to val of input
+    
+})
+
+router.delete('/:id', async(req,res) => {
+    
+
+    //delete account
+})
 
 
 

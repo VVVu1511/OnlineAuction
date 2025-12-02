@@ -5,9 +5,8 @@ import * as productService from '../services/product.service.js'
 import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
-router.use(authMiddleware);
 
-router.get('', async function (req,res)  {
+router.get('',authMiddleware, async function (req,res)  {
     try{
         const id = req.user.id;
 
@@ -39,7 +38,7 @@ router.put('/refuse', async (req, res) => {
     }
 });
 
-router.post('/checkCanBid', async (req, res) => {
+router.post('/checkCanBid',authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
         const { product_id } = req.body;
@@ -77,7 +76,7 @@ router.post('/checkCanBid', async (req, res) => {
     }
 });
 
-router.post('/bid', async (req, res) => {
+router.post('/bid',authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
         const { product_id, price } = req.body;

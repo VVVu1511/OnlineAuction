@@ -16,22 +16,22 @@ export default function ProfileRouter() {
     }, []);
 
     const loadProfile = async () => {
-        const res = await fetch("/account/profile", {
+        const res = await fetch("http://localhost:3000/account/profile", {
             headers: { Authorization: `Bearer ${token}` }
         });
         const data = await res.json();
-        setUser(data);
+        setUser(data.data);
     };
 
     if (!user) return <p>Loading...</p>;
 
     // role: 3 = bidder, 2 = seller, 1 = admin
     switch (user.role) {
-        case 3:
+        case "3":
             return <BidderProfile user={user} token={token} />;
-        case 2:
+        case "2":
             return <SellerProfile user={user} token={token} />;
-        case 1:
+        case "1":
             return <AdminProfile user={user} token={token} />;
         default:
             return <p>Unknown role</p>;
