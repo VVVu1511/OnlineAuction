@@ -5,13 +5,15 @@ import relativeTime from "dayjs/plugin/relativeTime";
 import ProductCard from "../ProductCard/ProductCard";
 import { FaDollarSign, FaHeart, FaRegHeart } from "react-icons/fa";
 import useWatchlist from "../../hooks/useWatchList.js";
+import ProductDescription from "./ProductDescription.jsx";
 
 dayjs.extend(relativeTime);
 
 function ProductInfor() {
     const location = useLocation();
     const { product, isLiked } = location.state || {};
-
+    const [role, setRole] = useState("");
+    const [userId, setUserId] = useState("");
     const [relatedProducts, setRelatedProducts] = useState([]);
     const [qaHistory, setQaHistory] = useState([]);
     const [seller, setSeller] = useState({});
@@ -19,8 +21,28 @@ function ProductInfor() {
     const [history, setHistory] = useState([]);
     const [question, setQuestion] = useState("");
     const [askStatus, setAskStatus] = useState(""); // để show message gửi thành công
+    const [denyBidders, setDenyBidders] = useState([]);
 
     const [liked, toggleLike] = useWatchlist(isLiked); // use shared hook
+
+    const fetchProfile = async () => {
+        try {
+            const res = await fetch("http://localhost:3000/account/profile", {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`
+                }
+            });
+            const data = await res.json();
+            setRole(data.data.role_description); // hoặc data.data.role tuỳ backend
+            setUserId(data.data.id);
+
+        } catch (err) {
+            console.error("Lỗi fetch profile:", err);
+        }
+    };
+
+    fetchProfile();
 
     useEffect(() => {
         if (product) {
@@ -45,9 +67,14 @@ function ProductInfor() {
                 .then(data => setQaHistory(data.data));
 
             // fetch bid history
-            fetch(`http://localhost:3000/product/bid_history/${product.id}`)
+            fetch(`http://localhost:3000/bidding/bid_history/${product.id}`)
                 .then(res => res.json())
                 .then(data => setHistory(data.data));
+            
+            // fetch denied bidders
+            fetch(`http://localhost:3000/bidding/denyBidder/:${product_id}`)
+                .then(res => res.json())
+                .then(data => setDenyBidders(data.data));
         }
     }, [product]);
 
@@ -110,7 +137,6 @@ function ProductInfor() {
     };
 
     const handleAskSeller = async () => {
-    
         if (!question.trim()) {
             alert("Vui lòng nhập câu hỏi!");
             return;
@@ -146,6 +172,80 @@ function ProductInfor() {
         }
     };
 
+    const handleAnswerChange = (index, value) => {
+        setQaHistory(prev => {
+            const updated = [...prev];
+            updated[index].answerInput = value;
+            return updated;
+        });
+    };
+
+    const handleAnswerSubmit = async (questionId, index) => {
+        try {
+            const token = localStorage.getItem("token");
+
+            const res = await fetch("http://localhost:3000/contact/answer", {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ questionId, answer: qaHistory[index].answerInput, productId: product.id })
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                alert(data.message || "Lỗi hệ thống");
+                return;
+            }
+
+            // Update UI sau khi trả lời thành công
+            setQaHistory(prev => {
+                const updated = [...prev];
+                updated[index].answer = updated[index].answerInput;
+                delete updated[index].answerInput;
+                return updated;
+            });
+
+            alert("Trả lời thành công!");
+
+        } catch (err) {
+            console.error(err);
+            alert("Lỗi kết nối server");
+        }
+    };
+
+    const handleDenyBidder = async (userId) => {
+        if (!window.confirm("Bạn có chắc muốn từ chối bidder này?")) return;
+
+        try {
+            const res = await fetch(`http://localhost:3000/bidding/denyBidder/${product.id}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: JSON.stringify({ bidderId: userId }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                // Xóa các lượt đấu giá liên quan đến bidder này trong local state
+                setHistory(prev => prev.filter(item => item.user_id !== userId));
+
+                alert("Bidder đã bị từ chối thành công!");
+
+                // Nếu muốn, có thể fetch lại thông tin current highest bidder
+                // fetchBestBidder();
+            } else {
+                alert(data.message || "Từ chối thất bại");
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Lỗi khi từ chối bidder");
+        }
+    };
 
     return (
         <div className="container py-5">
@@ -177,31 +277,39 @@ function ProductInfor() {
                             {product.sell_price && <p><strong>Buy Now Price:</strong> {product.sell_price}</p>}
                             <p><strong>Time Left:</strong> {displayTimeLeft}</p>
                             <p><strong>Bid Counts:</strong> {product.bid_counts}</p>
-                            <p><strong>Description:</strong> {product.description}</p>
+                            
+                            <ProductDescription product={product} userId={userId}  />
+                            
                             <p><strong>Uploaded:</strong> {dayjs(product.upload_date).format('YYYY-MM-DD HH:mm')}</p>
                         </div>
                         
-                        <div className="ms-3 d-flex flex-column align-items-center">
-                            {/* Heart */}
-                            {liked ? (
+                        {role === "bidder" && (
+                            <div className="ms-3 d-flex flex-column align-items-center">
+                                {/* Heart */}
+                                {liked ? (
                                 <FaHeart
-                                    onClick={(e) => { toggleLike(product.id); }}
+                                    onClick={() => toggleLike(product.id)}
                                     style={{ color: "red", fontSize: "1.5rem", cursor: "pointer", marginBottom: "0.5rem" }}
                                 />
                                 ) : (
                                 <FaRegHeart
-                                    onClick={(e) => { toggleLike(product.id); }}
+                                    onClick={() => toggleLike(product.id)}
                                     style={{ color: "gray", fontSize: "1.5rem", cursor: "pointer", marginBottom: "0.5rem" }}
                                 />
                                 )}
 
-                            {/* Bid Icon */}
-                            <FaDollarSign
-                                onClick={(e) => { e.stopPropagation(); handleBidClick(); }}
-                                style={{ color: "green", fontSize: "1.5rem", cursor: "pointer" }}
-                                title="Place a bid"
-                            />
-                        </div>
+                                {/* Bid Icon - only show if not denied */}
+                                {!denyBidders.some(b => b.user_id === userId) && (
+                                <FaDollarSign
+                                    onClick={(e) => { e.stopPropagation(); handleBidClick(); }}
+                                    style={{ color: "green", fontSize: "1.5rem", cursor: "pointer" }}
+                                    title="Place a bid"
+                                />
+                                )}
+                            </div>
+                        )}
+
+
 
                         
                     </div>
@@ -238,21 +346,35 @@ function ProductInfor() {
             <table className="table table-striped table-hover">
                 <thead>
                     <tr>
-                        <th>Thời điểm</th>
-                        <th>Người mua</th>
-                        <th>Giá</th>
+                    <th>Thời điểm</th>
+                    <th>Người đặt</th>
+                    <th>Giá</th>
+                    <th>Hành động</th> {/* thêm cột cho nút X */}
                     </tr>
                 </thead>
                 <tbody>
                     {history.map((item, idx) => (
-                        <tr key={idx}>
-                            <td>{item.time}</td>
-                            <td>{item.user_id}</td>
-                            <td>{item.price}</td>
-                        </tr>
+                    <tr key={idx}>
+                        <td>{item.time}</td>
+                        <td>{item.user_id}</td>
+                        <td>{item.price}</td>
+
+                        {product.seller === userId && (
+                            <td>
+                                <button 
+                                className="btn btn-sm btn-danger" 
+                                onClick={() => handleDenyBidder(item.user_id)}
+                                >
+                                X
+                                </button>
+                            </td>
+                        )}
+                        
+                    </tr>
                     ))}
                 </tbody>
             </table>
+
 
             {/* Q&A */}
             <div className="mb-4">
@@ -261,9 +383,8 @@ function ProductInfor() {
                 {qaHistory.map((qa, idx) => (
                     <div key={idx} className="mb-2 border p-2 rounded">
                         <p><strong>{idx + 1}:</strong> {qa.question}</p>
-                        <p> {qa.answer || "Not answered yet"}</p>
-                        
-                                {/* {user.role === "seller" && !qa.answer ? (
+
+                        {role === "seller" && !qa.answer ? (
                         <div className="d-flex">
                             <input
                                 type="text"
@@ -279,32 +400,33 @@ function ProductInfor() {
                                 Trả lời
                             </button>
                         </div>
-                    ) : (
-                        <p>{qa.answer || "Not answered yet"}</p>
-                    )} */}
-
+                        ) : (
+                            <p>{qa.answer || "Not answered yet"}</p>
+                        )}
                     </div>
                 ))}
             </div>
             
-    
             {/* Ask Seller  */}
-            <div className="mb-4">
-                <h5>Ask Seller</h5>
-                <div className="d-flex">
-                    <input
-                        type="text"
-                        className="form-control me-2"
-                        placeholder="Nhập câu hỏi của bạn..."
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                    />
-                    <button className="btn btn-primary" onClick={handleAskSeller}>
-                    Gửi
-                    </button>
+            {role === "bidder" && (
+                <div className="mb-4">
+                    <h5>Ask Seller</h5>
+                    <div className="d-flex">
+                        <input
+                            type="text"
+                            className="form-control me-2"
+                            placeholder="Nhập câu hỏi của bạn..."
+                            value={question}
+                            onChange={(e) => setQuestion(e.target.value)}
+                        />
+                        <button className="btn btn-primary" onClick={handleAskSeller}>
+                            Gửi
+                        </button>
+                    </div>
+                    {askStatus && <small className="text-success mt-1 d-block">{askStatus}</small>}
                 </div>
-                {askStatus && <small className="text-success mt-1 d-block">{askStatus}</small>}
-            </div>
+            )}
+
 
         </div>
     );

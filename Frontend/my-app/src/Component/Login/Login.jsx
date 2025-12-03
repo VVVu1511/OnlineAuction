@@ -28,6 +28,16 @@ function Login() {
                 // Save token for future API requests
                 localStorage.setItem("token", data.token);
 
+                const profile = await fetch("http://localhost:3000/account/profile", {
+                    method: "GET",           
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${data.token}`   // thêm token vào đây
+                    }
+                });
+
+                localStorage.setItem("role", profile.role_description);
+
                 // Optionally save user email or other info if needed
                 localStorage.setItem("userEmail", email);
 

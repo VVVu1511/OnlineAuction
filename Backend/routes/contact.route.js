@@ -8,7 +8,7 @@ router.put('/answer', authMiddleware, async (req, res) => {
     const { productId, questionId, answer } = req.body;
 
     try {
-        const updatedQuestion = await answerQuestion(productId, questionId, answer);
+        const updatedQuestion = await contactService.answerQuestion(productId, questionId, answer);
         res.status(200).json({
             success: true,
             message: 'Answer updated successfully!',

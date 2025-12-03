@@ -77,3 +77,56 @@ export async function new_bid(data) {
         throw err;
     }
 }
+
+export async function denyBidder(productId, bidderId) {
+    try {
+        // 1. Mark bidder as denied
+        // await trx('DENIED_BIDDERS')
+        // .insert({ product_id: productId, user_id: bidderId })
+        // .onConflict(['product_id', 'user_id'])
+        // .ignore();
+
+        // 2. Delete all bids by this bidder
+        await db('BID_HISTORY')
+        .where({ product_id: productId, user_id: bidderId })
+        .del();
+
+        await db('DENIED_BIDDERS')
+            .insert({ product_id: productId, user_id: bidderId });
+
+        // 3. Get current highest bid after deletion
+        const highestBid = await db('BID_HISTORY')
+                                .where({ product_id: productId })
+                                .orderBy([{ column: 'price', order: 'desc' }, { column: 'time', order: 'asc' }])
+                                .first();
+
+        if (highestBid) {
+        // Update current_price in PRODUCT table
+            await db('PRODUCT')
+                .where({ id: productId })
+                .update({ current_price: highestBid.price });
+        } else {
+        // No bids left, reset product price to start_price
+            // const product = await trx('PRODUCT').where({ id: productId }).first();
+            // if (product) {
+            //     await trx('PRODUCT')
+            //     .where({ id: productId })
+            //     .update({ current_price: product.start_price });
+            // }
+        }
+
+        return highestBid || null;
+
+    } catch (err) {
+        throw err;
+    }
+}
+
+export async function getDeniedBidders(productId) {
+    // return array of denied bidders with user info
+    const rows = await db('DENIED_BIDDERS')
+        .select('user_id') // select the columns you need
+        .where('product_id', productId);
+
+    return rows;
+}

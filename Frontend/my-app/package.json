@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "dayjs": "^1.11.19",
+    "quill": "^2.0.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-google-recaptcha": "^3.1.0",

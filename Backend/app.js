@@ -76,7 +76,7 @@ app.get('/auth/google/callback',
 
 // ---------- FACEBOOK LOGIN ----------
 app.get('/auth/facebook',
-    passport.authenticate('facebook', { scope: ['email'] })
+    passport.authenticate('facebook', { scope: [] })
 );
 
 app.get('/auth/facebook/callback',

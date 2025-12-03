@@ -116,5 +116,31 @@ router.get('/bid_history/:product_id', async function (req,res) {
     }
 })
 
+router.post('/denyBidder/:product_id', authMiddleware, async (req, res) => {
+    const productId = req.params.product_id;
+    const { bidderId } = req.body;
+
+    if (!bidderId) return res.status(400).json({ success: false, message: "Missing bidderId" });
+
+    try {
+        const result = await biddingService.denyBidder(productId, bidderId);
+        res.json({ success: true, data: result });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+router.get('/denyBidder/:product_id', authMiddleware, async (req, res) => {
+    const productId = req.params.product_id;
+
+    try {
+        const deniedBidders = await getDeniedBidders(productId);
+        res.json({ success: true, data: deniedBidders });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Lỗi khi lấy danh sách bị từ chối' });
+    }
+});
 
 export default router;
