@@ -38,17 +38,17 @@ export async function askSeller({ userId, productId, question }) {
             })
             .returning('*'); // PostgreSQL syntax
 
-        // TODO: send email to seller
-        // const seller = await db('users')
-        //     .join('product', 'product.seller_id', 'users.id')
-        //     .select('users.email')
+        //send email to seller
+        // const seller = await db('USER')
+        //     .join('product', 'product.seller_id', 'USER.id')
+        //     .select('USER.email')
         //     .where('product.id', productId)
         //     .first();
         // if (seller?.email) {
         //     sendEmail(
         //         seller.email,
         //         `New question for your product`,
-        //         `A buyer asked: "${question}"\nView product: http://your-site.com/product/${productId}`
+        //         `A buyer asked: "${question}"\nView product: http://localhost:5173/productInfor`
         //     );
         // }
 
