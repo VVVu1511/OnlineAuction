@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 export default function useWatchlist(initialLiked = false) {
     const [liked, setLiked] = useState(initialLiked);
     const navigate = useNavigate();
-
     const toggleLike = async (productId) => {
         const token = localStorage.getItem("token");
         

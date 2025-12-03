@@ -90,43 +90,39 @@ router.post('/register', async (req,res) => {
     
 })
 
-router.put('/email', async(req,res) => {
-    try{
-        await accountService.updateEmail(req.body);
-    }
+router.put('/update',authMiddleware, async (req, res) => {
+    try {
+        const {email, full_name, old_password, new_password } = req.body;
+        const user_id = req.user.id;
 
-    catch(error){
-        res.status(500).json({ message: "Error updating email!", error: error.message});
-    }
-})
-
-router.put('/full_name', async(req,res) => {
-    try{
-        await accountService.updateFullName(req.body);
-    }
-
-    catch(error){
-        res.status(500).json({ message: "Error updating full name!", error: error.message});
-    }
-})
-
-router.put('/password', async(req,res) => {
-    try{
-        const password = await accountService.getPasswordByUsername(req.body.user_id);
-
-        const valid = bcrypt.compareSync(req.body.old_password, password);
-
-        if(!valid){
-            throw error;
+        // Update email
+        if (email) {
+            await accountService.updateEmail({ user_id, email });
         }
-        
-        await accountService.updatePassword(req.body);
-    }
 
-    catch(error){
-        res.status(500).json({ message: "Error updating full name!", error: error.message});
+        // Update full name
+        if (full_name) {
+            await accountService.updateFullName({ user_id, full_name });
+        }
+
+        // Update password
+        if (old_password && new_password) {
+            const storedPassword = await accountService.getPasswordByUsername(user_id);
+
+            const valid = bcrypt.compareSync(old_password, storedPassword);
+
+            if (!valid) {
+                return res.status(400).json({ message: "Old password is incorrect!" });
+            }
+
+            await accountService.updatePassword({ user_id, new_password });
+        }
+
+        res.json({ message: "Update profile successfully!" });
+    } catch (error) {
+        res.status(500).json({ message: "Error updating profile!", error: error.message });
     }
-})
+});
 
 router.post("/send-otp", async (req, res) => {
     const { email } = req.body;

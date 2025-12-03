@@ -4,6 +4,27 @@ import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
 
+router.get('/myActiveProducts',authMiddleware, async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const products = await productService.getActiveProducts(userId);
+        res.json({ success: true, data: products });
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+});
+
+router.get('/myWonProducts',authMiddleware, async (req, res) => {
+    const userId = req.user.id;
+
+    try {
+        const products = await productService.getWonProducts(userId);
+        res.json({ success: true, data: products });
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+});
 
 router.get('/search', async function (req, res) {
     try{
@@ -203,29 +224,5 @@ router.put('/appendDescription/:id', async (req, res) => {
         });
     }
 });
-
-router.get('/myActiveProducts',authMiddleware, async (req, res) => {
-    const userId = req.user.id;
-
-    try {
-        const products = await productService.getActiveProducts(userId);
-        res.json({ success: true, data: products });
-    } catch (err) {
-        res.status(400).json({ success: false, message: err.message });
-    }
-});
-
-router.get('/myWonProducts',authMiddleware, async (req, res) => {
-    const userId = req.user.id;
-
-    try {
-        const products = await productService.getWonProducts(userId);
-        res.json({ success: true, data: products });
-    } catch (err) {
-        res.status(400).json({ success: false, message: err.message });
-    }
-});
-
-
 
 export default router;

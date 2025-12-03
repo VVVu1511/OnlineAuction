@@ -8,10 +8,14 @@ function ProductGrid() {
 
     const [sortType, setSortType] = useState(null);
     const [products, setProducts] = useState([]);
+    const [favorites, setFavorites] = useState([]);
 
     const [currentPage, setCurrentPage] = useState(1);
     const productsPerPage = 5;
 
+    const token = localStorage.getItem("token"); // <-- lấy token trực tiếp
+
+    // Fetch products
     useEffect(() => {
         let url = "";
 
@@ -29,14 +33,30 @@ function ProductGrid() {
                 setProducts(data.data);
                 setCurrentPage(1);
             });
-
     }, [current_category_id, keyword]);
+
+    // Fetch favorites if token exists
+    useEffect(() => {
+        if (!token) return;
+
+        fetch('http://localhost:3000/account/watchlist', {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success && data.data) {
+                setFavorites(data.data);
+            }
+        })
+        .catch(err => console.error("Error fetching favorites:", err));
+    }, [token]);
 
     const handleSort = (type) => {
         setSortType(type);
 
         let sorted = [...products];
-
         if (type === 'time') {
             sorted.sort((a, b) => b.time_left - a.time_left);
         } else if (type === 'price') {
@@ -57,6 +77,8 @@ function ProductGrid() {
     }
 
     const totalPages = Math.ceil(products.length / productsPerPage);
+
+    const isFavorite = (product) => favorites.some(f => f.id === product.id);
 
     return (
         <div>
@@ -83,7 +105,10 @@ function ProductGrid() {
                     <div className="row mb-3" key={rowIndex}>
                         {row.map((product, index) => (
                             <div className="col-2" key={index}>
-                                <ProductCard data={product} />
+                                <ProductCard 
+                                    data={product} 
+                                    liked={token ? isFavorite(product) : false} 
+                                />
                             </div>
                         ))}
                     </div>

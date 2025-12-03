@@ -1,12 +1,23 @@
-import { useNavigate } from "react-router-dom";
-import { FaHeart, FaRegHeart } from "react-icons/fa";
+import { useNavigate } from "react-router-dom"; 
+import { FaHeart, FaRegHeart } from "react-icons/fa"; 
 import useWatchlist from "../../hooks/useWatchList.js";
+import { useState, useEffect } from "react";
 
-function ProductCard({ data }) {
+export default function ProductCard({ data, liked=false }) {
     const navigate = useNavigate();
-    const [liked, toggleLike] = useWatchlist(false); // initial liked false
+    const [isLiked, toggleIsLiked] = useWatchlist(liked);
 
-    const handleClick = () => navigate("/productInfor", { state: { product: data } });
+    // 🔹 local state để đồng bộ với prop liked khi mở ProductInfor
+    const [currentLiked, setCurrentLiked] = useState(liked);
+
+    // 🔹 cập nhật currentLiked khi toggle
+    const handleToggle = (productId) => {
+        toggleIsLiked(productId);   // đổi watchlist như bình thường
+        setCurrentLiked(prev => !prev);  // đồng bộ local state
+    };
+
+    const handleClick = () => 
+        navigate("/productInfor", { state: { product: data, isLiked: currentLiked } });
 
     return (
         <div onClick={handleClick} className="position-relative">
@@ -28,13 +39,11 @@ function ProductCard({ data }) {
 
             <div
                 className="position-absolute"
-                style={{ top: "5px", right: "10px", cursor: "pointer", color: liked ? "red" : "gray" }}
-                onClick={(e) => { e.stopPropagation(); toggleLike(data.id); }}
+                style={{ top: "5px", right: "10px", cursor: "pointer", color: currentLiked ? "red" : "gray" }}
+                onClick={(e) => { e.stopPropagation(); handleToggle(data.id); }}
             >
-                {liked ? <FaHeart /> : <FaRegHeart />}
+                {currentLiked ? <FaHeart /> : <FaRegHeart />}
             </div>
         </div>
     );
 }
-
-export default ProductCard;

@@ -23,10 +23,8 @@ export async function getAllByEmail(email) {
 export async function updateEmail(data) {
     try {
         await db('USER')
-            .where({id: data.user_id})
-            .update({email: data.new_email});
-            
-
+            .where({ id: data.user_id })
+            .update({ email: data.email });   // <── sửa
     } catch (err) {
         console.error('Cannot update email', err);
         throw err;
@@ -36,10 +34,8 @@ export async function updateEmail(data) {
 export async function updateFullName(data) {
     try {
         await db('USER')
-            .where({id: data.user_id})
-            .update({full_name: data.new_name});
-            
-
+            .where({ id: data.user_id })
+            .update({ full_name: data.full_name });   // <── sửa
     } catch (err) {
         console.error('Cannot update full name', err);
         throw err;
@@ -51,10 +47,8 @@ export async function updatePassword(data) {
         const hashed = bcrypt.hashSync(data.new_password, 10);
 
         await db('USER')
-            .where({id: data.user_id})
-            .update({password: hashed});
-            
-
+            .where({ id: data.user_id })
+            .update({ password: hashed });    
     } catch (err) {
         console.error('Cannot update password', err);
         throw err;

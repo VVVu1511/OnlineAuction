@@ -10,15 +10,17 @@ dayjs.extend(relativeTime);
 
 function ProductInfor() {
     const location = useLocation();
-    const { product } = location.state || {};
+    const { product, isLiked } = location.state || {};
 
     const [relatedProducts, setRelatedProducts] = useState([]);
     const [qaHistory, setQaHistory] = useState([]);
     const [seller, setSeller] = useState({});
     const [bestBidder, setBestBidder] = useState({});
     const [history, setHistory] = useState([]);
+    const [question, setQuestion] = useState("");
+    const [askStatus, setAskStatus] = useState(""); // để show message gửi thành công
 
-    const [liked, toggleLike] = useWatchlist(false); // use shared hook
+    const [liked, toggleLike] = useWatchlist(isLiked); // use shared hook
 
     useEffect(() => {
         if (product) {
@@ -107,6 +109,43 @@ function ProductInfor() {
         }
     };
 
+    const handleAskSeller = async () => {
+    
+        if (!question.trim()) {
+            alert("Vui lòng nhập câu hỏi!");
+            return;
+        }
+
+        try {
+            const res = await fetch("http://localhost:3000/contact/ask", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("token")}`
+            },
+            body: JSON.stringify({
+                product_id: product.id,
+                question: question.trim()
+            })
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                setAskStatus("Gửi câu hỏi thành công! Người bán sẽ nhận email.");
+                setQuestion(""); // reset input
+                // refresh Q&A nếu muốn show ngay
+                setQaHistory(prev => [...prev, { question: question.trim(), answer: null }]);
+            } else {
+                alert(data.message || "Gửi câu hỏi thất bại.");
+            }
+
+        } catch (err) {
+            console.error(err);
+            alert("Lỗi khi gửi câu hỏi.");
+        }
+    };
+
 
     return (
         <div className="container py-5">
@@ -146,20 +185,20 @@ function ProductInfor() {
                             {/* Heart */}
                             {liked ? (
                                 <FaHeart
-                                    onClick={(e) => { e.stopPropagation(); toggleLike(product.id); }}
-                                    className="text-3xl cursor-pointer text-red-500 mb-2"
+                                    onClick={(e) => { toggleLike(product.id); }}
+                                    style={{ color: "red", fontSize: "1.5rem", cursor: "pointer", marginBottom: "0.5rem" }}
                                 />
-                            ) : (
+                                ) : (
                                 <FaRegHeart
-                                    onClick={(e) => { e.stopPropagation(); toggleLike(product.id); }}
-                                    className="text-3xl cursor-pointer text-gray-400 mb-2"
+                                    onClick={(e) => { toggleLike(product.id); }}
+                                    style={{ color: "gray", fontSize: "1.5rem", cursor: "pointer", marginBottom: "0.5rem" }}
                                 />
-                            )}
+                                )}
 
                             {/* Bid Icon */}
                             <FaDollarSign
                                 onClick={(e) => { e.stopPropagation(); handleBidClick(); }}
-                                className="text-3xl cursor-pointer text-green-500"
+                                style={{ color: "green", fontSize: "1.5rem", cursor: "pointer" }}
                                 title="Place a bid"
                             />
                         </div>
@@ -189,7 +228,7 @@ function ProductInfor() {
                 <div className="row">
                     {relatedProducts.map((p, idx) => (
                         <div className="col-2" key={idx}>
-                            <ProductCard data={p} />
+                            <ProductCard data={p}  />
                         </div>
                     ))}
                 </div>
@@ -222,10 +261,51 @@ function ProductInfor() {
                 {qaHistory.map((qa, idx) => (
                     <div key={idx} className="mb-2 border p-2 rounded">
                         <p><strong>{idx + 1}:</strong> {qa.question}</p>
-                        <p><strong>Seller:</strong> {qa.answer || "Not answered yet"}</p>
+                        <p> {qa.answer || "Not answered yet"}</p>
+                        
+                                {/* {user.role === "seller" && !qa.answer ? (
+                        <div className="d-flex">
+                            <input
+                                type="text"
+                                className="form-control me-2"
+                                placeholder="Nhập câu trả lời..."
+                                value={qa.answerInput || ""}
+                                onChange={(e) => handleAnswerChange(idx, e.target.value)}
+                            />
+                            <button
+                                className="btn btn-success"
+                                onClick={() => handleAnswerSubmit(qa.id, idx)}
+                            >
+                                Trả lời
+                            </button>
+                        </div>
+                    ) : (
+                        <p>{qa.answer || "Not answered yet"}</p>
+                    )} */}
+
                     </div>
                 ))}
             </div>
+            
+    
+            {/* Ask Seller  */}
+            <div className="mb-4">
+                <h5>Ask Seller</h5>
+                <div className="d-flex">
+                    <input
+                        type="text"
+                        className="form-control me-2"
+                        placeholder="Nhập câu hỏi của bạn..."
+                        value={question}
+                        onChange={(e) => setQuestion(e.target.value)}
+                    />
+                    <button className="btn btn-primary" onClick={handleAskSeller}>
+                    Gửi
+                    </button>
+                </div>
+                {askStatus && <small className="text-success mt-1 d-block">{askStatus}</small>}
+            </div>
+
         </div>
     );
 }

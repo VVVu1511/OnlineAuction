@@ -24,3 +24,37 @@ export async function answerQuestion(productId, questionId, sellerId, answer) {
     // 4️⃣ Trả về câu hỏi đã cập nhật
     return { ...question, answer };
 }
+
+export async function askSeller({ userId, productId, question }) {
+    try {
+        // Insert question into QUESTION_ANSWER table
+        const [inserted] = await db('QUESTION_ANSWER')
+            .insert({
+                product_id: productId,
+                user_id: userId,
+                question: question,
+                answer: null,
+                created_at: db.fn.now() // Knex function for NOW()
+            })
+            .returning('*'); // PostgreSQL syntax
+
+        // TODO: send email to seller
+        // const seller = await db('users')
+        //     .join('product', 'product.seller_id', 'users.id')
+        //     .select('users.email')
+        //     .where('product.id', productId)
+        //     .first();
+        // if (seller?.email) {
+        //     sendEmail(
+        //         seller.email,
+        //         `New question for your product`,
+        //         `A buyer asked: "${question}"\nView product: http://your-site.com/product/${productId}`
+        //     );
+        // }
+
+        return { success: true, data: inserted };
+    } catch (err) {
+        console.error("askSeller error:", err);
+        throw new Error("Database error while asking seller");
+    }
+}

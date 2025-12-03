@@ -234,7 +234,6 @@ export async function appendDescription(productId, newDescription) {
     return { ...product, description: updatedDescription };
 }
 
-// 1️⃣ Lấy sản phẩm đang đăng & còn hạn
 export async function getActiveProducts(userId) {
     return await db('PRODUCT')
         .where({ seller: userId })
@@ -244,7 +243,6 @@ export async function getActiveProducts(userId) {
         .select('*');
 }
 
-// 2️⃣ Lấy sản phẩm đã có người thắng
 export async function getWonProducts(userId) {
     return await db('PRODUCT')
         .where({ seller: userId })
