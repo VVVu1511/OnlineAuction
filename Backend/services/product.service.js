@@ -1,5 +1,5 @@
 import db from '../utils/db.js'
-
+import * as contactService from '../services/contact.service.js'
 
 export async function getQ_A(id) {
     try{
@@ -113,9 +113,8 @@ export async function deleteProduct(id) {
         await db('PRODUCT')
             .where({id: id})
             .delete();
-            
-
-    } catch (err) {
+    } 
+    catch (err) {
         console.error('Error deleting product', err);
         throw err;
     }
@@ -249,4 +248,18 @@ export async function getWonProducts(userId) {
         .whereNotNull('winner')   // đã có người thắng
         .orderBy('upload_date', 'desc')
         .select('*');
+}
+
+export async function productEndBid(productId) {
+    // Chuyển state sản phẩm từ active → ended
+    await db('PRODUCT')
+        .where({ id: productId })
+        .update({ state_id: 2 });
+
+    // Lấy đầy đủ thông tin sản phẩm
+    const product = await getProductInfor(productId);
+
+    await contactService.emailEndBid(product.best_bidder, product.seller, product.id);
+
+    return { productId, status: "ended" };
 }

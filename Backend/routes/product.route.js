@@ -225,4 +225,35 @@ router.put('/appendDescription/:id', async (req, res) => {
     }
 });
 
+router.put('/endAuction/:id', authMiddleware, async (req, res) => {
+    // Check admin
+    if (req.user.role_description !== "admin") {
+        return res.status(403).json({
+            success: false,
+            message: 'Not admin'
+        });
+    }
+
+    try {
+        const productId = parseInt(req.params.id);
+
+        const result = await productService.productEndBid(productId);
+
+        return res.json({
+            success: true,
+            message: "Auction ended successfully",
+            data: result
+        });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({
+            success: false,
+            message: "Error ending auction",
+            error: err.message
+        });
+    }
+});
+
+
 export default router;

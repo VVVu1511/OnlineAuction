@@ -1,5 +1,5 @@
 @baseUrl = http://localhost:3000/account
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE0IiwiYWRkcmVzcyI6IjQ1NiDEkcaw4budbmcgQSwgcGjGsOG7nW5nIEIsIFRQSENNIiwicm9sZSI6IjMiLCJmdWxsX25hbWUiOiJWxakgVsSDbiBWxakiLCJlbWFpbCI6InZ2dnUyM0BjbGMuZml0dXMuZWR1LnZuIiwiaWF0IjoxNzY0OTA4NjQ5LCJleHAiOjE3NjQ5MTIyNDl9.L2rgqkcc6kpYKKdQx5OHCV4M7tf8fIym-1wKE5hfszg
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE0IiwiYWRkcmVzcyI6IjQ1NiDEkcaw4budbmcgQSwgcGjGsOG7nW5nIEIsIFRQSENNIiwicm9sZSI6IjMiLCJmdWxsX25hbWUiOiJWxakgVsSDbiBWxakiLCJlbWFpbCI6InZ2dnUyM0BjbGMuZml0dXMuZWR1LnZuIiwiaWF0IjoxNzY0OTE5MDExLCJleHAiOjE3NjQ5MjI2MTF9.N04cOhPbGcm_8RVeQwFaXp1py70H1lkaABhEBdJ-aMI
 
 ###
 # LOGIN
@@ -7,8 +7,8 @@ POST {{baseUrl}}/login
 Content-Type: application/json
 
 {
-    "email": "vvvu23@clc.fitus.edu.vn",
-    "password": "123456"
+    "email": "Vanvu151105@gmail.com",
+    "password": "12345"
 }
 
 ###

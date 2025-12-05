@@ -94,6 +94,12 @@ router.post('/bid',authMiddleware, async (req, res) => {
         const minPrice = product.current_price + product.bid_step;
         if (price < minPrice) return res.status(400).json({ message: `Bid must be at least ${minPrice}` });
 
+        //if price == sell price ? -> end
+        //if timeup -> end
+        if(price == product.sell_price){
+            await productService.productEndBid(product_id);
+        }
+
         await biddingService.new_bid({
             user_id: userId,
             product_id,

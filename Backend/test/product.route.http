@@ -1,5 +1,5 @@
 @baseUrl = http://localhost:3000/product
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE0IiwiYWRkcmVzcyI6IjQ1NiDEkcaw4budbmcgQSwgcGjGsOG7nW5nIEIsIFRQSENNIiwicm9sZSI6IjMiLCJmdWxsX25hbWUiOiJWxakgVsSDbiBWxakiLCJlbWFpbCI6InZ2dnUyM0BjbGMuZml0dXMuZWR1LnZuIiwiaWF0IjoxNzY0OTAyNDU0LCJleHAiOjE3NjQ5MDYwNTR9.WO2lEF18SuKWiQFc_004KRslA3b0gfntYL5AbzrlWAo
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEzIiwiYWRkcmVzcyI6Ik5ndXllbiBWYW4gUXVhIiwicm9sZSI6IjIiLCJmdWxsX25hbWUiOiJWdSBWdSIsImVtYWlsIjoiVmFudnUxNTExMDVAZ21haWwuY29tIiwiaWF0IjoxNzY0OTIxODU2LCJleHAiOjE3NjQ5MjU0NTZ9.hPkB_9snC-Hgz-Ge0bZef0WKxmGBexfT60edALz8Hgk
 
 ### Get my active products
 GET {{baseUrl}}/myActiveProducts
@@ -64,6 +64,15 @@ GET {{baseUrl}}/related/1
 
 ### Append description
 PUT {{baseUrl}}/appendDescription/1
+Content-Type: application/json
+
+{
+    "newDescription": "Additional details about the product..."
+}
+
+### End bidding
+PUT {{baseUrl}}/endAuction/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {

@@ -1,18 +1,28 @@
 import express from 'express';
 import * as contactService from '../services/contact.service.js'
+import * as productService from '../services/product.service.js'
 import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
 
 router.put('/answer', authMiddleware, async (req, res) => {
     if(!req.user.id || req.user.role_description !== "seller"){
-            res.status(500).json({ message: `Not a bidder` });
+            res.status(500).json({ message: `Not a seller` });
         }
-    
+
     const { productId, questionId, answer } = req.body;
+
+    const product = await productService.getProductInfor(productId);
+
+    if(req.user.id !== product.seller){
+        res.status(500).json({ message: `Not seller of this product!` });
+    }
 
     try {
         const updatedQuestion = await contactService.answerQuestion(productId, questionId, answer);
+
+        await contactService.emailAnswering(productId, questionId, answer);
+
         res.status(200).json({
             success: true,
             message: 'Answer updated successfully!',

@@ -138,11 +138,81 @@ export async function emailForSeller(params) {
 // Người bán        
 }
 
-export async function emailEndBid(params) {
+export async function emailEndBid(best_bidderId, sellerId, productId) {
+    try {
+        const best_bidder = await accountService.findAllById(best_bidderId);
+        const seller = await accountService.findAllById(sellerId);
+        const product = await productService.getProductInfor(productId);
 
-    //     Đấu giá kết thúc
-// Người bán
-// Người thắng
+        // --------------------------------------
+        // CASE 1: Có người thắng đấu giá
+        // --------------------------------------
+        if (best_bidder) {
+            // Gửi cho người thắng
+            await sendMail(
+                best_bidder.email,
+                "Chúc mừng! Bạn đã thắng phiên đấu giá 🎉",
+                `
+                <h2>🎉 Bạn đã thắng đấu giá!</h2>
+                <p>Xin chào <b>${best_bidder.full_name}</b>,</p>
+                <p>Bạn là người trả giá cao nhất cho sản phẩm:</p>
+
+                <p><b>${product.name}</b></p>
+                <p>Giá thắng: <b>${product.current_price.toLocaleString()} VND</b></p>
+
+                <p>Chúng tôi sẽ sớm liên hệ để hoàn tất giao dịch.</p>
+                <hr>
+                <p>Cảm ơn bạn đã tham gia đấu giá!</p>
+                `
+            );
+
+            // Gửi cho người bán
+            await sendMail(
+                seller.email,
+                "Phiên đấu giá đã kết thúc — Có người thắng",
+                `
+                <h2>📦 Đấu giá đã kết thúc</h2>
+                <p>Chào <b>${seller.full_name}</b>,</p>
+
+                <p>Sản phẩm của bạn: <b>${product.name}</b></p>
+                <p>Đã có người thắng đấu giá:</p>
+
+                <p><b>${best_bidder.full_name}</b> — giá ${product.current_price.toLocaleString()} VND</p>
+
+                <p>Vui lòng liên hệ người thắng để hoàn tất giao dịch.</p>
+                `
+            );
+
+            return { success: true, message: "Emails sent to seller & winner." };
+        }
+
+        // --------------------------------------
+        // CASE 2: Không có người bid nào
+        // --------------------------------------
+        await sendMail(
+            seller.email,
+            "Phiên đấu giá đã kết thúc — Không có người mua",
+            `
+            <h2>⚠️ Đấu giá kết thúc</h2>
+            <p>Chào <b>${seller.full_name}</b>,</p>
+
+            <p>Rất tiếc, sản phẩm <b>${product.name}</b> không có ai tham gia đặt giá.</p>
+
+            <p>Bạn có thể:</p>
+            <ul>
+                <li>Đăng bán lại sản phẩm</li>
+                <li>Giảm giá khởi điểm</li>
+                <li>Giữ sản phẩm để đấu giá sau</li>
+            </ul>
+            `
+        );
+
+        return { success: true, message: "Email sent to seller (no bidders)." };
+
+    } catch (err) {
+        console.error("EmailEndBid error:", err);
+        throw new Error("Unable to send email.");
+    }
 }
 
 export async function emailAsking(bidderId, productId, question) {
@@ -191,8 +261,81 @@ export async function emailAsking(bidderId, productId, question) {
     }
 }
 
-export async function emailAnswering(params) {
+export async function emailAnswering(productId, questionId, answer) {
+    try {
+        const data = await findById(questionId);
+        if (!data) {
+            throw new Error("Question not found");
+        }
 
-    //     Người bán trả lời
-// Các người mua tham gia đấu giá & các người mua có đặt câu hỏi    
+        const question = data.question;
+        
+        // 1️⃣ Lấy danh sách user đã đấu giá
+        const bidUsers = await db('BID_HISTORY')
+            .where({ product_id: productId })
+            .select('user_id');
+
+        // 2️⃣ Lấy danh sách user đã đặt câu hỏi
+        const questionUsers = await db('QUESTION_ANSWER')
+            .where({ product_id: productId })
+            .select('user_id');
+
+        // 3️⃣ Gộp user_id, loại trùng
+        const userIds = Array.from(
+            new Set([
+                ...bidUsers.map(u => u.user_id),
+                ...questionUsers.map(u => u.user_id)
+            ])
+        );
+
+        if (userIds.length === 0) return;
+
+        // 4️⃣ Lấy email + tên của tất cả user cần thông báo
+        const users = await db('USER')
+            .whereIn('id', userIds)
+            .select('email', 'full_name');
+
+        // 5️⃣ Lấy thông tin sản phẩm để đưa vào email
+        const product = await db('PRODUCT')
+            .where({ id: productId })
+            .select('name')
+            .first();
+
+        // 6️⃣ Gửi email cho từng người
+        const subject = `Người bán vừa trả lời câu hỏi về sản phẩm "${product.name}"`;
+
+        for (const user of users) {
+            const text = `
+                Xin chào ${user.full_name},
+
+                Người bán đã trả lời câu hỏi về sản phẩm **${product.name}**.
+
+                Câu hỏi:
+                "${question}"
+
+                Trả lời:
+                "${answer}"
+
+                Vui lòng đăng nhập vào hệ thống để xem chi tiết.
+
+                Trân trọng,
+                Hệ thống đấu giá
+                `;
+
+            await sendMail(user.email, subject, text);
+        }
+
+        return { success: true };
+
+    } catch (err) {
+        console.error("emailAnswering error:", err);
+        throw err;
+    }
+}
+
+export async function findById(id) {
+    return db('QUESTION_ANSWER')
+        .where({ id })
+        .select('*')
+        .first();
 }
