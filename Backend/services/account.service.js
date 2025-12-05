@@ -199,6 +199,19 @@ export async function requestSell(user_id) {
     }
 }
 
+export async function findAllById(id) {
+    try {
+        const user = await db("USER")
+            .where("id", id)
+            .first(); // lấy 1 dòng
+
+        return user; // trả về object user hoặc undefined
+    } catch (err) {
+        console.error("findAllById error:", err);
+        throw new Error("Error finding user by id");
+    }
+}
+
 
 
 

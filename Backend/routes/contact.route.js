@@ -5,6 +5,10 @@ import authMiddleware from "../middleware/auth.js"; // adjust path
 const router = express.Router();
 
 router.put('/answer', authMiddleware, async (req, res) => {
+    if(!req.user.id || req.user.role_description !== "seller"){
+            res.status(500).json({ message: `Not a bidder` });
+        }
+    
     const { productId, questionId, answer } = req.body;
 
     try {
@@ -23,6 +27,10 @@ router.put('/answer', authMiddleware, async (req, res) => {
 });
 
 router.post('/ask', authMiddleware, async (req, res) => {
+    if(!req.user.id || req.user.role_description !== "bidder"){
+        res.status(500).json({ message: `Not a bidder` });
+    }
+
     try {
         const userId = req.user.id; // from authMiddleware
         const { product_id, question } = req.body;
@@ -32,6 +40,7 @@ router.post('/ask', authMiddleware, async (req, res) => {
         }
 
         const result = await contactService.askSeller({ userId, productId: product_id, question });
+        await contactService.emailAsking(userId, product_id , question);
 
         res.json({ success: true, data: result.data });
 
@@ -40,6 +49,8 @@ router.post('/ask', authMiddleware, async (req, res) => {
         res.status(500).json({ success: false, message: err.message || "Server error" });
     }
 });
+
+
 
 
 export default router;

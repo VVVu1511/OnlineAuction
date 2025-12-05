@@ -1,0 +1,71 @@
+@baseUrl = http://localhost:3000/product
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE0IiwiYWRkcmVzcyI6IjQ1NiDEkcaw4budbmcgQSwgcGjGsOG7nW5nIEIsIFRQSENNIiwicm9sZSI6IjMiLCJmdWxsX25hbWUiOiJWxakgVsSDbiBWxakiLCJlbWFpbCI6InZ2dnUyM0BjbGMuZml0dXMuZWR1LnZuIiwiaWF0IjoxNzY0OTAyNDU0LCJleHAiOjE3NjQ5MDYwNTR9.WO2lEF18SuKWiQFc_004KRslA3b0gfntYL5AbzrlWAo
+
+### Get my active products
+GET {{baseUrl}}/myActiveProducts
+Authorization: Bearer {{token}}
+
+### Get my won products
+GET {{baseUrl}}/myWonProducts
+Authorization: Bearer {{token}}
+
+### Search products
+GET {{baseUrl}}/search?q=iphone
+
+### Get product info
+GET {{baseUrl}}/infor/1
+
+### Get Q&A
+GET {{baseUrl}}/Q_A/1
+
+### Get top 5 bid counts
+GET {{baseUrl}}/top5BidCounts
+
+### Get top 5 near end
+GET {{baseUrl}}/top5NearEnd
+
+### Get top 5 highest price
+GET {{baseUrl}}/top5Price
+
+### Add product
+POST {{baseUrl}}/add
+Content-Type: application/json
+
+{
+    "name": "Macbook Pro 2021",
+    "image_path": ["img1.jpg", "img2.jpg"],
+    "current_price": 1000,
+    "best_bidder": null,
+    "sell_price": 1500,
+    "upload_date": "2025-01-01",
+    "time_left": "2025-12-01",
+    "bid_counts": 0,
+    "seller": 14,
+    "description": "Brand new"
+}
+
+### Get products by category
+GET {{baseUrl}}/getByCat/2
+
+### Get product by ID
+GET {{baseUrl}}/1
+
+### Delete product
+DELETE {{baseUrl}}/1
+
+### Get best bidder
+GET {{baseUrl}}/bestBidder/1
+
+### Get seller info
+GET {{baseUrl}}/sellerInfor/1
+
+### Get 5 related products
+GET {{baseUrl}}/related/1
+
+### Append description
+PUT {{baseUrl}}/appendDescription/1
+Content-Type: application/json
+
+{
+    "newDescription": "Additional details about the product..."
+}

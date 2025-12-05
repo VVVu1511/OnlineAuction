@@ -5,8 +5,12 @@ import authMiddleware from "../middleware/auth.js"; // adjust path
 const router = express.Router();
 
 
-router.post('',async(req,res) => {
+router.post('',authMiddleware ,async(req,res) => {
     try{
+        if(!req.user.role_description || req.user.role_description !== "admin"){
+            res.status(500).json({ success: false, message: "Not admin" });
+        }
+
         await categoryService.addNewCategory(req.body.description);
     
         res.status(201).json({message: 'Add category successfully'});
@@ -18,8 +22,12 @@ router.post('',async(req,res) => {
     }
 });
 
-router.put('', async(req,res) => {
+router.put('', authMiddleware, async(req,res) => {
     try{
+        if(!req.user.role_description || req.user.role_description !== "admin"){
+            res.status(500).json({ success: false, message: "Not admin" });
+        }
+
         await categoryService.updateCategory(req.body);
     
         res.status(201).json({message: 'Update category successfully'});
@@ -31,9 +39,12 @@ router.put('', async(req,res) => {
     }
 });
 
-router.delete('', async(req,res) => {
+router.delete('', authMiddleware, async(req,res) => {
     try{
-        
+        if(!req.user.role_description || req.user.role_description !== "admin"){
+            res.status(500).json({ success: false, message: "Not admin" });
+        }
+
         await categoryService.deleteCategory(req.body.id);
     
         res.status(201).json({message: 'Delete category successfully'});

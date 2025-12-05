@@ -1,0 +1,23 @@
+@baseUrl = http://localhost:3000/contact
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE0IiwiYWRkcmVzcyI6IjQ1NiDEkcaw4budbmcgQSwgcGjGsOG7nW5nIEIsIFRQSENNIiwicm9sZSI6IjMiLCJmdWxsX25hbWUiOiJWxakgVsSDbiBWxakiLCJlbWFpbCI6InZ2dnUyM0BjbGMuZml0dXMuZWR1LnZuIiwiaWF0IjoxNzY0OTA4NjQ5LCJleHAiOjE3NjQ5MTIyNDl9.L2rgqkcc6kpYKKdQx5OHCV4M7tf8fIym-1wKE5hfszg
+
+### Ask question
+POST {{baseUrl}}/ask
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "product_id": 1,
+    "question": "Is this product still available?"
+}
+
+### Answer question
+PUT {{baseUrl}}/answer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "productId": 1,
+    "questionId": 10,
+    "answer": "Yes, it is still available!"
+}

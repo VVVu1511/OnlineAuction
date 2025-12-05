@@ -1,0 +1,39 @@
+@baseUrl = http://localhost:3000/category
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE0IiwiYWRkcmVzcyI6IjQ1NiDEkcaw4budbmcgQSwgcGjGsOG7nW5nIEIsIFRQSENNIiwicm9sZSI6IjMiLCJmdWxsX25hbWUiOiJWxakgVsSDbiBWxakiLCJlbWFpbCI6InZ2dnUyM0BjbGMuZml0dXMuZWR1LnZuIiwiaWF0IjoxNzY0OTAyNDU0LCJleHAiOjE3NjQ5MDYwNTR9.WO2lEF18SuKWiQFc_004KRslA3b0gfntYL5AbzrlWAo
+
+### Add new category
+POST {{baseUrl}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "description": "New Category"
+}
+
+### Update category
+PUT {{baseUrl}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "id": 5,
+    "description": "Điện thoại"
+}
+
+### Delete category
+DELETE {{baseUrl}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "id": 13
+}
+
+### Get all categories
+GET {{baseUrl}}/all
+
+### Get child categories
+GET {{baseUrl}}/child/2
+
+### Get all parent categories
+GET {{baseUrl}}/allParent

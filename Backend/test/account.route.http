@@ -1,0 +1,117 @@
+@baseUrl = http://localhost:3000/account
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE0IiwiYWRkcmVzcyI6IjQ1NiDEkcaw4budbmcgQSwgcGjGsOG7nW5nIEIsIFRQSENNIiwicm9sZSI6IjMiLCJmdWxsX25hbWUiOiJWxakgVsSDbiBWxakiLCJlbWFpbCI6InZ2dnUyM0BjbGMuZml0dXMuZWR1LnZuIiwiaWF0IjoxNzY0OTA4NjQ5LCJleHAiOjE3NjQ5MTIyNDl9.L2rgqkcc6kpYKKdQx5OHCV4M7tf8fIym-1wKE5hfszg
+
+###
+# LOGIN
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+    "email": "vvvu23@clc.fitus.edu.vn",
+    "password": "123456"
+}
+
+###
+# REGISTER
+POST {{baseUrl}}/register
+Content-Type: application/json
+
+{
+    "fullName": "Test User",
+    "email": "newuser@example.com",
+    "password": "123456",
+    "address": "HCM",
+    "captcha": "test"
+}
+
+###
+# SEND OTP
+POST {{baseUrl}}/send-otp
+Content-Type: application/json
+
+{
+    "email": "Vanvu151105@gmail.com",
+    "otp": "123456"
+}
+
+###
+# VERIFY OTP
+POST {{baseUrl}}/verify-otp
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "otp": "123456"
+}
+
+###
+# UPDATE PROFILE (email, full name, password)
+PUT {{baseUrl}}/update
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "email": "changed@example.com",
+  "full_name": "New Name",
+  "old_password": "123456",
+  "new_password": "654321"
+}
+
+###
+# GET RATING
+GET {{baseUrl}}/rating
+Authorization: Bearer {{token}}
+
+###
+# GET PROFILE
+GET {{baseUrl}}/profile
+Authorization: Bearer {{token}}
+
+###
+# GET WIN PRODUCTS
+GET {{baseUrl}}/win
+Authorization: Bearer {{token}}
+
+###
+# ADD WATCHLIST
+POST {{baseUrl}}/watchlist
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "productId": 1
+}
+
+###
+# DELETE WATCHLIST
+DELETE {{baseUrl}}/watchlist
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "productId": 1
+}
+
+###
+# GET WATCHLIST
+GET {{baseUrl}}/watchlist
+Authorization: Bearer {{token}}
+
+###
+# REQUEST SELL UPGRADE
+PUT {{baseUrl}}/requestSell
+Authorization: Bearer {{token}}
+
+###
+# UPDATE REQUEST SELL (Admin)
+PUT {{baseUrl}}/updateRequestSell
+Content-Type: application/json
+
+{
+  "user_id": 5,
+  "status": "approved"
+}
+
+###
+# DELETE ACCOUNT
+DELETE {{baseUrl}}/12

@@ -72,6 +72,12 @@ export async function new_bid(data) {
             time: data.time || new Date(),
             price: data.price
         });
+
+        await db('PRODUCT').update({
+            current_price: data.price,
+            bid_counts: bid_counts + 1
+        }).where({id: data.product_id});
+
     } catch (err) {
         console.error('Cannot add new bid', err);
         throw err;
@@ -80,16 +86,10 @@ export async function new_bid(data) {
 
 export async function denyBidder(productId, bidderId) {
     try {
-        // 1. Mark bidder as denied
-        // await trx('DENIED_BIDDERS')
-        // .insert({ product_id: productId, user_id: bidderId })
-        // .onConflict(['product_id', 'user_id'])
-        // .ignore();
-
         // 2. Delete all bids by this bidder
         await db('BID_HISTORY')
-        .where({ product_id: productId, user_id: bidderId })
-        .del();
+            .where({ product_id: productId, user_id: bidderId })
+            .del();
 
         await db('DENIED_BIDDERS')
             .insert({ product_id: productId, user_id: bidderId });
@@ -104,15 +104,11 @@ export async function denyBidder(productId, bidderId) {
         // Update current_price in PRODUCT table
             await db('PRODUCT')
                 .where({ id: productId })
-                .update({ current_price: highestBid.price });
+                .update({ current_price: highestBid.price , best_bidder: highestBid.user_id});
         } else {
-        // No bids left, reset product price to start_price
-            // const product = await trx('PRODUCT').where({ id: productId }).first();
-            // if (product) {
-            //     await trx('PRODUCT')
-            //     .where({ id: productId })
-            //     .update({ current_price: product.start_price });
-            // }
+            await db('PRODUCT')
+                .where({ id: productId })
+                .update({ current_price: starting_price , best_bidder: null});
         }
 
         return highestBid || null;

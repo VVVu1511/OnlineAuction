@@ -2,6 +2,8 @@
 import express from 'express';
 import * as biddingService from '../services/bidding.service.js'
 import * as productService from '../services/product.service.js'
+import * as accountService from '../services/account.service.js'
+import * as contactService from '../services/contact.service.js'
 import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
@@ -78,6 +80,10 @@ router.post('/checkCanBid',authMiddleware, async (req, res) => {
 
 router.post('/bid',authMiddleware, async (req, res) => {
     try {
+        if(!req.user.id || req.user.role_description !== "bidder"){
+            res.status(500).json({ message: `Not a bidder` });
+        }
+
         const userId = req.user.id;
         const { product_id, price } = req.body;
 
@@ -94,6 +100,8 @@ router.post('/bid',authMiddleware, async (req, res) => {
             time: new Date(),
             price
         });
+
+        await contactService.emailAfterBid(product_id, product.seller, req.user.id, price);
 
         res.status(201).json({ message: 'Bid placed successfully', final_price: price });
 
@@ -117,14 +125,33 @@ router.get('/bid_history/:product_id', async function (req,res) {
 })
 
 router.post('/denyBidder/:product_id', authMiddleware, async (req, res) => {
+    
+    
+    if(!req.user.role_description || req.user.role_description !== "seller"){
+        res.status(500).json({ success: false, message: "Not seller" });
+    }
+    
+    
     const productId = req.params.product_id;
     const { bidderId } = req.body;
+    
+    const product = await productService.getProductInfor(productId);
+    const bidder = await accountService.findAllById(bidderId);
+    
+    if(req.user.id !== product.seller){
+        res.status(500).json({ success: false, message: `Not seller ${product.seller} of this product, yours is ${req.user.id}` });
+    }
 
     if (!bidderId) return res.status(400).json({ success: false, message: "Missing bidderId" });
 
     try {
+        
         const result = await biddingService.denyBidder(productId, bidderId);
+
+        await contactService.emailDeniedBidder(product, bidder);
+
         res.json({ success: true, data: result });
+
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: "Server error" });
@@ -135,12 +162,16 @@ router.get('/denyBidder/:product_id', authMiddleware, async (req, res) => {
     const productId = req.params.product_id;
 
     try {
-        const deniedBidders = await getDeniedBidders(productId);
+        const deniedBidders = await biddingService.getDeniedBidders(productId);
         res.json({ success: true, data: deniedBidders });
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: 'Lỗi khi lấy danh sách bị từ chối' });
     }
 });
+
+router.get('/fun', authMiddleware, async(req,res) => {
+    res.json({ success: true, data: req.user });
+})
 
 export default router;

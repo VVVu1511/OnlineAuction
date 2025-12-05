@@ -16,7 +16,7 @@ export async function getQ_A(id) {
 
 export async function getProductInfor(id) {
     try{
-        const product = await db('PRODUCT').select('*').where({id});
+        const product = await db('PRODUCT').select('*').where({id}).first();
 
         return product;
     }

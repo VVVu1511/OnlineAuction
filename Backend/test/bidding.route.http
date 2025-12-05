@@ -1,0 +1,71 @@
+@baseUrl = http://localhost:3000/bidding
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE0IiwiYWRkcmVzcyI6IjQ1NiDEkcaw4budbmcgQSwgcGjGsOG7nW5nIEIsIFRQSENNIiwicm9sZSI6IjMiLCJmdWxsX25hbWUiOiJWxakgVsSDbiBWxakiLCJlbWFpbCI6InZ2dnUyM0BjbGMuZml0dXMuZWR1LnZuIiwiaWF0IjoxNzY0OTA3MTc2LCJleHAiOjE3NjQ5MTA3NzZ9.3WrKmHxQ46ecanQEEF5MRGKXnQOt4wI5y8y9MEf8_30
+
+
+###
+### 1. Get bidding list (auth required)
+GET {{baseUrl}}
+Authorization: Bearer {{token}}
+
+###
+### 2. Refuse bidder (seller action)
+PUT {{baseUrl}}/refuse
+Content-Type: application/json
+
+{
+    "productId": 1,
+    "bidderId": 22
+}
+
+
+###
+### 3. Check if user can bid (auth required)
+POST {{baseUrl}}/checkCanBid
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "product_id": 1
+}
+
+
+###
+### 4. Place a new bid (auth required)
+POST {{baseUrl}}/bid
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "product_id": 20,
+    "price": 
+}
+
+
+###
+### 5. Get bid history for a product
+GET {{baseUrl}}/bid_history/1
+
+
+###
+### 6. Deny bidder from a product (auth)
+POST {{baseUrl}}/denyBidder/3
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "bidderId": 15
+}
+
+###
+### 7. Get list of denied bidders (auth)
+GET {{baseUrl}}/denyBidder/1
+Authorization: Bearer {{token}}
+
+
+###
+### 8. Get fun
+GET {{baseUrl}}/fun
+Authorization: Bearer {{token}}
+
+
+
