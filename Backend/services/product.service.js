@@ -36,6 +36,16 @@ export async function addProduct(product) {
     }
 }
 
+export async function getAllProducts() {
+    try{
+        return db('PRODUCT').select('*');
+    }
+    catch(err){
+        console.error('Error getting all products: ', err);
+        throw err;
+    }
+}
+
 export async function getTop5Price() {
     try{
         return db('PRODUCT')

@@ -212,6 +212,55 @@ export async function findAllById(id) {
     }
 }
 
+export async function getAllUsers() {
+    try {
+        const users = await db("USER")
+            .select('*')
+
+        return users; 
+    } catch (err) {
+        console.error("cannot get all users:", err);
+    }
+}
+
+export async function delById(id) {
+    try {
+        // DELETE returns the number of deleted rows
+        const deletedCount = await db("USER")
+            .where("id", id)
+            .del();
+
+        return deletedCount;  // 1 = deleted, 0 = not found
+    } catch (err) {
+        console.error("delById error:", err);
+        throw new Error("Error deleting user by ID");
+    }
+}
+
+export async function confirmRequestSell(id, approve) {
+    try {
+        if (approve) {
+            // nâng cấp lên seller
+            await db("USER")
+                .update({ 
+                    role: 2,
+                    request_sell: 0,
+                    request_expire: null
+                })
+                .where("id", id);
+        } else {
+            // từ chối
+            await db("USER")
+                .update({ request_sell: 0 ,request_expire: null})
+                .where("id", id);
+        }
+    } catch (err) {
+        console.error("confirmRequestSell error:", err);
+        throw new Error("Error confirming request");
+    }
+}
+
+
 
 
 

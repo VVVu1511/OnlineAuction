@@ -47,12 +47,12 @@ router.delete('', authMiddleware, async(req,res) => {
 
         await categoryService.deleteCategory(req.body.id);
     
-        res.status(201).json({message: 'Delete category successfully'});
+        res.status(201).json({message: 'Delete category successfully', success: true});
     }
     catch(err){
         console.error(err);
 
-        res.status(500).json({ message: "Error deleting category", error: err.message});
+        res.status(500).json({ message: "Error deleting category", error: err.message, success: false});
     }
 });
 

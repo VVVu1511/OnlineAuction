@@ -46,17 +46,17 @@ router.post('/login', async (req, res) => {
 
 router.post('/register', async (req,res) => {
     try{
-        const captcha = req.body.captcha;
+        // const captcha = req.body.captcha;
 
-        const googleVerifyURL = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`;
+        // const googleVerifyURL = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`;
 
-        const response = await fetch(googleVerifyURL, { method: "POST" });
+        // const response = await fetch(googleVerifyURL, { method: "POST" });
 
-        const data = await response.json();
+        // const data = await response.json();
         
-        if (!data.success) {
-            return res.status(400).json({ message: "CAPTCHA failed!" });
-        }
+        // if (!data.success) {
+        //     return res.status(400).json({ message: "CAPTCHA failed!" });
+        // }
 
         const hashPassword = bcrypt.hashSync(req.body.password, 10);
     
@@ -64,8 +64,8 @@ router.post('/register', async (req,res) => {
             password: hashPassword,
             address: req.body.address,
             email: req.body.email,
-            score: 10,
-            full_name: req.body.fullName
+            full_name: req.body.fullName,
+            role: req.body.role
         }
 
         const allEmail = await accountService.findAllEmail();
@@ -271,16 +271,88 @@ router.put('/requestSell', authMiddleware, async (req, res) => {
     }
 });
 
-router.put('/updateRequestSell', async (req,res) => {
-    
-    //update according to val of input
-    
-})
+router.put('/approve/:id', authMiddleware, async (req, res) => {
+    try {
+        if (req.user.role_description !== "admin")
+            return res.status(403).json({ message: "Not admin" });
 
-router.delete('/:id', async(req,res) => {
-    
+        await accountService.confirmRequestSell(parseInt(req.params.id), true);
 
-    //delete account
+        res.json({ success: true, message: "Approved user request!" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+router.put('/deny/:id', authMiddleware, async (req, res) => {
+    try {
+        if (req.user.role_description !== "admin")
+            return res.status(403).json({ message: "Not admin" });
+
+        await accountService.confirmRequestSell(parseInt(req.params.id), false);
+
+        res.json({ success: true, message: "Denied user request!" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+router.delete('/:id', authMiddleware, async (req, res) => {
+    try {
+        // Check admin
+        if (!req.user.role_description || req.user.role_description !== "admin") {
+            return res.status(403).json({ success: false, message: "Not admin" });
+        }
+
+        const user_id = parseInt(req.params.id);
+
+        if (isNaN(user_id)) {
+            return res.status(400).json({ success: false, message: "Invalid user ID" });
+        }
+
+        // DELETE user
+        const deleted = await accountService.delById(user_id);
+
+        if (deleted === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "User deleted successfully"
+        });
+
+    } catch (err) {
+        console.error("Delete user error:", err);
+        res.status(500).json({
+            success: false,
+            message: err.message || "Server error"
+        });
+    }
+});
+
+router.get('/all', authMiddleware, async(req,res) => {
+    try {
+        if(!req.user.role_description || req.user.role_description !== "admin"){
+            res.status(500).json({ success: false, message: "Not admin" });
+        }
+
+        const data = await accountService.getAllUsers();
+
+        res.status(200).json({
+            success: true,
+            message: 'Get all users successfully!',
+            data: data
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: err.message });
+    }
 })
 
 

@@ -1,5 +1,5 @@
 @baseUrl = http://localhost:3000/account
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE0IiwiYWRkcmVzcyI6IjQ1NiDEkcaw4budbmcgQSwgcGjGsOG7nW5nIEIsIFRQSENNIiwicm9sZSI6IjMiLCJmdWxsX25hbWUiOiJWxakgVsSDbiBWxakiLCJlbWFpbCI6InZ2dnUyM0BjbGMuZml0dXMuZWR1LnZuIiwiaWF0IjoxNzY0OTE5MDExLCJleHAiOjE3NjQ5MjI2MTF9.N04cOhPbGcm_8RVeQwFaXp1py70H1lkaABhEBdJ-aMI
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEzIiwiYWRkcmVzcyI6Ik5ndXllbiBWYW4gUXVhIiwicm9sZSI6IjIiLCJmdWxsX25hbWUiOiJWdSBWdSIsImVtYWlsIjoiVmFudnUxNTExMDVAZ21haWwuY29tIiwiaWF0IjoxNzY1MzU0NzMyLCJleHAiOjE3NjUzNTgzMzJ9.EPs_qzNYhRXMulTKPadSnExriuBc-OelB0hxa_3b8ak
 
 ###
 # LOGIN
@@ -18,10 +18,11 @@ Content-Type: application/json
 
 {
     "fullName": "Test User",
-    "email": "newuser@example.com",
+    "email": "luyentuvung+1@gmail.com",
     "password": "123456",
     "address": "HCM",
-    "captcha": "test"
+    "captcha": "test",
+    "role": 1
 }
 
 ###
@@ -97,21 +98,38 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/watchlist
 Authorization: Bearer {{token}}
 
-###
-# REQUEST SELL UPGRADE
+### -------------------------
+# USER REQUEST SELL UPGRADE
+### -------------------------
 PUT {{baseUrl}}/requestSell
 Authorization: Bearer {{token}}
 
-###
-# UPDATE REQUEST SELL (Admin)
-PUT {{baseUrl}}/updateRequestSell
-Content-Type: application/json
 
-{
-  "user_id": 5,
-  "status": "approved"
-}
+### -------------------------
+# ADMIN APPROVE REQUEST SELL (ADMIN)
+### -------------------------
+PUT {{baseUrl}}/approve/14
+Authorization: Bearer {{token}}
 
-###
-# DELETE ACCOUNT
-DELETE {{baseUrl}}/12
+
+### -------------------------
+# ADMIN DENY REQUEST SELL (ADMIN)
+### -------------------------
+PUT {{baseUrl}}/deny/14
+Authorization: Bearer {{token}}
+
+
+### -------------------------
+# DELETE ACCOUNT (ADMIN)
+### -------------------------
+DELETE {{baseUrl}}/18
+Authorization: Bearer {{token}}
+
+
+### -------------------------
+# GET ALL USERS (ADMIN)
+### -------------------------
+GET {{baseUrl}}/all
+Authorization: Bearer {{token}}
+
+

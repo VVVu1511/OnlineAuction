@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import BidderProfile from "./BidderProfile";
 import SellerProfile from "./SellerProfile";
-import AdminProfile from "./AdminProfile";
+import AdminProfile from "./Admin/AdminProfile";
 
 export default function ProfileRouter() {
     const [user, setUser] = useState(null);

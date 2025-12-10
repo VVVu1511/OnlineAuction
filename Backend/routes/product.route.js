@@ -4,6 +4,19 @@ import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
 
+router.get('/all', authMiddleware, async(req,res) => {
+    if(req.user.role_description !== "admin"){
+        res.status(500).json({success: false, message: 'Not admin'});
+    }
+
+    try {
+        const products = await productService.getAllProducts();
+        res.json({ success: true, data: products });
+    } catch (err) {
+        res.status(400).json({ success: false, message: err.message });
+    }
+})
+
 router.get('/myActiveProducts',authMiddleware, async (req, res) => {
     const userId = req.user.id;
 
@@ -155,11 +168,11 @@ router.delete('/:id', async(req,res) => {
 
         await productService.deleteProduct(id);
 
-        res.status(201).json({data: productInfor, message: 'Delete product successfully!'}); 
+        res.status(201).json({success: true, data: productInfor, message: 'Delete product successfully!'}); 
     }
 
     catch(error){
-        res.status(404).json({ error: error.message, message: 'Error deleting product'});
+        res.status(404).json({ success: false, error: error.message, message: 'Error deleting product'});
     }
 })
 
