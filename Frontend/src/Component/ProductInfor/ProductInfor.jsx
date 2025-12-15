@@ -10,6 +10,7 @@ import * as productService from "../../service/product.service.jsx"
 import * as accountService from "../../service/account.service.jsx"
 import * as biddingService from "../../service/bidding.service.jsx"
 import * as contactService from "../../service/contact.service.jsx"
+import OrderCompletion from "../OrderCompletion/OrderCompletion.jsx";
 
 dayjs.extend(relativeTime);
 
@@ -26,8 +27,41 @@ function ProductInfor() {
     const [question, setQuestion] = useState("");
     const [askStatus, setAskStatus] = useState(""); // để show message gửi thành công
     const [denyBidders, setDenyBidders] = useState([]);
-
     const [liked, toggleLike] = useWatchlist(isLiked); // use shared hook
+    const [auctionEnded, setAuctionEnded] = useState(false);
+    const isBuyer = currentUser?.id === product?.winnerId;
+    const isSeller = currentUser?.id === product?.sellerId;
+
+    // ✅ REALTIME CHECK
+    useEffect(() => {
+        if (!product?.auction_end_time) return;
+
+        const checkEnded = () => {
+        const now = new Date().getTime();
+        const endTime = new Date(product.auction_end_time).getTime();
+
+        if (now >= endTime) {
+            setAuctionEnded(true);
+        }
+        };
+
+        checkEnded(); // check ngay khi mount
+
+        const interval = setInterval(checkEnded, 1000); // mỗi 1s
+
+        return () => clearInterval(interval);
+    }, [product]);
+
+    if (auctionEnded) {
+        if (isBuyer || isSeller) {
+            return (
+                <OrderCompletion
+                product={product}
+                role={isBuyer ? "BUYER" : "SELLER"}
+                />
+            );
+        }
+    }
 
     const fetchProfile = async () => {
         try {
