@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
+import * as productService from "../../service/product.service.jsx"
 
 function ProductDescription({ product, userId }) {
     const isSeller = product.seller === userId;
@@ -20,29 +21,21 @@ function ProductDescription({ product, userId }) {
         const plainText = stripHtml(newText);
         if (!plainText.trim()) return alert("Nhập nội dung mới trước khi thêm.");
 
-        setSaving(true);
         try {
-            const res = await fetch(`http://localhost:3000/product/appendDescription/${product.id}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
-                },
-                body: JSON.stringify({ newDescription: plainText }),
-            });
+            setSaving(true);
 
-            const data = await res.json();
+            const data = await productService.appendProductDescription(product.id, plainText);
 
-            if (res.ok) {
-                setDescription(prev => prev + "\n" + plainText); // append plain text locally
+            if (data.success) {
+                setDescription(prev => prev + "\n" + plainText); // append local
                 setNewText("");
                 alert("Thêm mô tả thành công!");
             } else {
                 alert(data.message || "Thêm thất bại");
             }
         } catch (err) {
-            console.error(err);
-            alert("Lỗi khi thêm mô tả");
+            console.error("Append description error:", err);
+            alert(err.response?.data?.message || "Lỗi khi thêm mô tả");
         } finally {
             setSaving(false);
         }

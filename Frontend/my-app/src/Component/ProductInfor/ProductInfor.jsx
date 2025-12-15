@@ -6,6 +6,10 @@ import ProductCard from "../ProductCard/ProductCard";
 import { FaDollarSign, FaHeart, FaRegHeart } from "react-icons/fa";
 import useWatchlist from "../../hooks/useWatchList.js";
 import ProductDescription from "./ProductDescription.jsx";
+import * as productService from "../../service/product.service.jsx"
+import * as accountService from "../../service/account.service.jsx"
+import * as biddingService from "../../service/bidding.service.jsx"
+import * as contactService from "../../service/contact.service.jsx"
 
 dayjs.extend(relativeTime);
 
@@ -27,13 +31,8 @@ function ProductInfor() {
 
     const fetchProfile = async () => {
         try {
-            const res = await fetch("http://localhost:3000/account/profile", {
-                method: "GET",
-                headers: {
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`
-                }
-            });
-            const data = await res.json();
+            const data = await accountService.getProfile();
+            
             setRole(data.data.role_description); // hoặc data.data.role tuỳ backend
             setUserId(data.data.id);
 
@@ -45,38 +44,35 @@ function ProductInfor() {
     fetchProfile();
 
     useEffect(() => {
-        if (product) {
-            // fetch seller
-            fetch(`http://localhost:3000/product/sellerInfor/${product.id}`)
-                .then(res => res.json())
-                .then(data => setSeller(data.data[0]));
+        if (!product?.id) return;
 
-            // fetch best bidder
-            fetch(`http://localhost:3000/product/bestBidder/${product.id}`)
-                .then(res => res.json())
-                .then(data => setBestBidder(data.data));
+        const fetchData = async () => {
+            try {
+                const sellerRes = await productService.getSellerInfo(product.id);
+                setSeller(sellerRes.data?.[0] || null);
 
-            // fetch 5 related products
-            fetch(`http://localhost:3000/product/related/${product.id}`)
-                .then(res => res.json())
-                .then(data => setRelatedProducts(data.data));
+                const bestBidderRes = await productService.getBestBidder(product.id);
+                setBestBidder(bestBidderRes.data || null);
 
-            // fetch Q&A history
-            fetch(`http://localhost:3000/product/Q_A/${product.id}`)
-                .then(res => res.json())
-                .then(data => setQaHistory(data.data));
+                const relatedRes = await productService.getRelatedProducts(product.id);
+                setRelatedProducts(relatedRes.data || []);
 
-            // fetch bid history
-            fetch(`http://localhost:3000/bidding/bid_history/${product.id}`)
-                .then(res => res.json())
-                .then(data => setHistory(data.data));
-            
-            // fetch denied bidders
-            fetch(`http://localhost:3000/bidding/denyBidder/:${product_id}`)
-                .then(res => res.json())
-                .then(data => setDenyBidders(data.data));
-        }
-    }, [product]);
+                const qaRes = await productService.getQaHistory(product.id);
+                setQaHistory(qaRes.data || []);
+
+                const historyRes = await biddingService.getBidHistory(product.id);
+                setHistory(historyRes.data || []);
+
+                const deniedRes = await biddingService.getDeniedBidders(product.id);
+                setDenyBidders(deniedRes.data || []);
+            } catch (err) {
+                console.error("Fetch product detail error:", err.message);
+            }
+        };
+
+        fetchData();
+
+    }, [product?.id]);
 
     if (!product) return <p>Product not found.</p>;
 
@@ -89,50 +85,26 @@ function ProductInfor() {
     const handleBidClick = async () => {
         try {
             // Step 1: Check if user can bid
-            const checkRes = await fetch(`http://localhost:3000/product/checkCanBid`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({ product_id: product.id })
-            });
-
-            const checkData = await checkRes.json();
+            const checkData = await productService.checkCanBid(product.id);
 
             if (!checkData.canBid) {
                 alert(`Bạn không thể đặt giá: ${checkData.reason}`);
                 return;
             }
 
-            // Step 2: Ask user to confirm bid
-            const confirmBid = window.confirm(`Giá đề nghị tối thiểu: ${checkData.suggestedPrice}\nBạn có muốn đặt giá này không?`);
+            // Step 2: Confirm bid
+            const confirmBid = window.confirm(
+                `Giá đề nghị tối thiểu: ${checkData.suggestedPrice}\nBạn có muốn đặt giá này không?`
+            );
             if (!confirmBid) return;
 
             // Step 3: Place bid
-            const bidRes = await fetch(`http://localhost:3000/product/bid`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({
-                    product_id: product.id,
-                    price: checkData.suggestedPrice
-                })
-            });
+            const bidData = await productService.placeBid(product.id, checkData.suggestedPrice);
 
-            const bidData = await bidRes.json();
-
-            if (bidRes.ok) {
-                alert(`Đặt giá thành công! Giá: ${bidData.final_price}`);
-            } else {
-                alert(`Không thể đặt giá: ${bidData.message}`);
-            }
-
+            alert(`Đặt giá thành công! Giá: ${bidData.final_price}`);
         } catch (err) {
-            console.error(err);
-            alert("Lỗi khi đặt giá!");
+            console.error("Bid error:", err);
+            alert(err.response?.data?.message || "Lỗi khi đặt giá!");
         }
     };
 
@@ -143,32 +115,23 @@ function ProductInfor() {
         }
 
         try {
-            const res = await fetch("http://localhost:3000/contact/ask", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${localStorage.getItem("token")}`
-            },
-            body: JSON.stringify({
-                product_id: product.id,
-                question: question.trim()
-            })
-            });
-
-            const data = await res.json();
+            const data = await contactService.askSeller(product.id, question.trim());
 
             if (data.success) {
                 setAskStatus("Gửi câu hỏi thành công! Người bán sẽ nhận email.");
-                setQuestion(""); // reset input
-                // refresh Q&A nếu muốn show ngay
-                setQaHistory(prev => [...prev, { question: question.trim(), answer: null }]);
+                setQuestion("");
+
+                // optimistic update Q&A
+                setQaHistory(prev => [
+                    ...prev,
+                    { question: question.trim(), answer: null }
+                ]);
             } else {
                 alert(data.message || "Gửi câu hỏi thất bại.");
             }
-
         } catch (err) {
-            console.error(err);
-            alert("Lỗi khi gửi câu hỏi.");
+            console.error("Ask seller error:", err);
+            alert(err.response?.data?.message || "Lỗi khi gửi câu hỏi.");
         }
     };
 
@@ -182,19 +145,20 @@ function ProductInfor() {
 
     const handleAnswerSubmit = async (questionId, index) => {
         try {
-            const token = localStorage.getItem("token");
+            const answerText = qaHistory[index].answerInput;
 
-            const res = await fetch("http://localhost:3000/contact/answer", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({ questionId, answer: qaHistory[index].answerInput, productId: product.id })
-            });
+            if (!answerText?.trim()) {
+                alert("Vui lòng nhập câu trả lời");
+                return;
+            }
 
-            const data = await res.json();
-            if (!res.ok) {
+            const data = await contactService.answerQuestion(
+                questionId,
+                answerText.trim(),
+                product.id
+            );
+
+            if (!data.success) {
                 alert(data.message || "Lỗi hệ thống");
                 return;
             }
@@ -202,16 +166,18 @@ function ProductInfor() {
             // Update UI sau khi trả lời thành công
             setQaHistory(prev => {
                 const updated = [...prev];
-                updated[index].answer = updated[index].answerInput;
+                updated[index] = {
+                    ...updated[index],
+                    answer: answerText.trim(),
+                };
                 delete updated[index].answerInput;
                 return updated;
             });
 
             alert("Trả lời thành công!");
-
         } catch (err) {
-            console.error(err);
-            alert("Lỗi kết nối server");
+            console.error("Answer question error:", err);
+            alert(err.response?.data?.message || "Lỗi kết nối server");
         }
     };
 
@@ -219,33 +185,24 @@ function ProductInfor() {
         if (!window.confirm("Bạn có chắc muốn từ chối bidder này?")) return;
 
         try {
-            const res = await fetch(`http://localhost:3000/bidding/denyBidder/${product.id}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
-            },
-            body: JSON.stringify({ bidderId: userId }),
-            });
+            const data = await biddingService.denyBidder(product.id, userId);
 
-            const data = await res.json();
-
-            if (res.ok) {
-                // Xóa các lượt đấu giá liên quan đến bidder này trong local state
-                setHistory(prev => prev.filter(item => item.user_id !== userId));
-
-                alert("Bidder đã bị từ chối thành công!");
-
-                // Nếu muốn, có thể fetch lại thông tin current highest bidder
-                // fetchBestBidder();
-            } else {
+            if (!data.success) {
                 alert(data.message || "Từ chối thất bại");
+                return;
             }
+
+            // Remove bidder bids from local state
+            setHistory(prev => prev.filter(item => item.user_id !== userId));
+
+            alert("Bidder đã bị từ chối thành công!");
         } catch (err) {
-            console.error(err);
-            alert("Lỗi khi từ chối bidder");
+            console.error("Deny bidder error:", err);
+            alert(err.response?.data?.message || "Lỗi khi từ chối bidder");
         }
     };
+
+    //add var for automation (has join button -> set max) | not auto
 
     return (
         <div className="container py-5">

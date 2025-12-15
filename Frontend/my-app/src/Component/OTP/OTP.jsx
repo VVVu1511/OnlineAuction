@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import * as accountService from "../../service/account.service.jsx"
 
 export default function VerifyOtp() {
     const { state } = useLocation();
@@ -12,49 +13,36 @@ export default function VerifyOtp() {
     console.log("Received userData from Register:", userData); // DEBUG
 
     const handleSubmit = async (e) => {
-        e.preventDefault();
+    e.preventDefault();
 
-        console.log("Submitting OTP:", otp); // DEBUG
-        console.log(userData);
+    try {
+        console.log("Submitting OTP:", otp);
+        console.log("User data:", userData);
 
-        // Step 1: Verify OTP
-        const res = await fetch("http://localhost:3000/account/verify-otp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email: userData.email, otp }),
-        });
+        // 1️⃣ Verify OTP
+        const otpRes = await accountService.verifyOtp(userData.email, otp);
 
-        const data = await res.json();
-        console.log("Verify OTP response:", data); // DEBUG
-        setMessage(data.message);
+        console.log("Verify OTP response:", otpRes);
+        setMessage(otpRes.message);
 
-        if (!data.success) return;
+        if (!otpRes.success) return;
 
-        // Step 2: OTP correct → register user
-        try {
-            console.log("Registering user:", userData); // DEBUG
+        // 2️⃣ OTP đúng → Register
+        const regRes = await accountService.register(userData);
 
-            const regRes = await fetch("http://localhost:3000/account/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(userData),
-            });
+        console.log("Register response:", regRes);
 
-            const regData = await regRes.json();
-
-            console.log("Register API response:", regData); // DEBUG
-
-            if (regData.success) {
-                alert("Registration successful! You can now login.");
-                navigate("/login");
-            } else {
-                alert(regData.message || "Registration failed");
-            }
-        } catch (err) {
-            console.error("Registration error:", err);
-            alert("Server error during registration");
+        if (regRes.success) {
+            alert("Registration successful! You can now login.");
+            navigate("/login");
+        } else {
+            alert(regRes.message || "Registration failed");
         }
-    };
+    } catch (err) {
+        console.error("OTP/Register error:", err);
+        alert(err.response?.data?.message || "Server error");
+    }
+};
 
     return (
         <form className="p-5" onSubmit={handleSubmit}>

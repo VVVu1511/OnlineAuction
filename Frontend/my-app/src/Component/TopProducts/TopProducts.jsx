@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import ProductCard from "../ProductCard/ProductCard";
+import * as productService from "../../service/product.service.jsx"
+import * as accountService from "../../service/account.service.jsx"
 
 function TopProducts() {
     const [top5End, setTop5End] = useState([]);
@@ -8,33 +10,34 @@ function TopProducts() {
     const [favorites, setFavorites] = useState([]);
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
+        const loadData = async () => {
+            try {
+                const token = localStorage.getItem("token");
 
-        const fetchFavorites = token
-            ? fetch("http://localhost:3000/account/watchlist", {
-                headers: { "Authorization": `Bearer ${token}` }
-            }).then(res => res.json())
-            : Promise.resolve({ data: [] });
+                const [
+                    endRes,
+                    bidRes,
+                    priceRes,
+                    favRes
+                ] = await Promise.all([
+                    productService.getTop5NearEnd(),
+                    productService.getTop5BidCounts(),
+                    productService.getTop5Price(),
+                    token ? accountService.getWatchlist() : Promise.resolve({ data: [] })
+                ]);
 
-        const fetchTopProducts = (url) =>
-            fetch(url, {
-                headers: token
-                    ? { "Authorization": `Bearer ${token}` }
-                    : {}
-            }).then(res => res.json());
+                setTop5End(endRes.data || []);
+                setTop5Bid(bidRes.data || []);
+                setTop5Price(priceRes.data || []);
+                setFavorites(favRes.data || []);
+            } catch (err) {
+                console.error("Load homepage data error:", err);
+            }
+        };
 
-        Promise.all([
-            fetchTopProducts("http://localhost:3000/product/top5NearEnd"),
-            fetchTopProducts("http://localhost:3000/product/top5BidCounts"),
-            fetchTopProducts("http://localhost:3000/product/top5Price"),
-            fetchFavorites
-        ]).then(([end, bid, price, fav]) => {
-            setTop5End(end.data);
-            setTop5Bid(bid.data);
-            setTop5Price(price.data);
-            setFavorites(fav.data || []);
-        }).catch(console.error);
+        loadData();
     }, []);
+
 
 
     // Check if product is favorite

@@ -3,6 +3,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import ProductCard from '../ProductCard/ProductCard';
 import AddAuctionProduct from './AddProduct';
+import * as productService from "../../service/product.service.jsx"
 
 export default function SellerProfileUI({ user, token }) {
     const [myProducts, setMyProducts] = useState([]);
@@ -30,30 +31,28 @@ export default function SellerProfileUI({ user, token }) {
 
     // ---------- Fetch data ----------
     useEffect(() => {
-        async function loadData() {
-        setLoading(true);
-        try {
-            const [myRes, wonRes] = await Promise.all([
-            fetch('http://localhost:3000/product/myActiveProducts', { headers }),
-            fetch('http://localhost:3000/product/myWonProducts', { headers }),
-            ]);
+        const loadData = async () => {
+            setLoading(true);
+            try {
+                const [myRes, wonRes] = await Promise.all([
+                    productService.getMyActiveProducts(),
+                    productService.getMyWonProducts(),
+                ]);
 
-            const myJson = await myRes.json();
-            const wonJson = await wonRes.json();
-
-            setMyProducts(myJson.data || []);
-            setWonProducts(wonJson.data || []);
-            setError(null);
-        } catch (err) {
-            console.error(err);
-            setError('Lấy dữ liệu thất bại');
-        } finally {
-            setLoading(false);
-        }
-        }
+                setMyProducts(myRes.data || []);
+                setWonProducts(wonRes.data || []);
+                setError(null);
+            } catch (err) {
+                console.error("Load products error:", err);
+                setError(err.response?.data?.message || "Lấy dữ liệu thất bại");
+            } finally {
+                setLoading(false);
+            }
+        };
 
         loadData();
     }, [token]);
+
 
     // ---------- Handlers ----------
     const openAppendModal = (product) => { setCurrentProduct(product); setAppendHtml(''); setShowAppendModal(true); };

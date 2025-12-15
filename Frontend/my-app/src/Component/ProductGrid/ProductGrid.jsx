@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import ProductCard from '../ProductCard/ProductCard';
 import { useLocation } from 'react-router-dom';
+import * as productService from "../../service/product.service.jsx"
+import * as accountService from "../../service/account.service.jsx"
 
 function ProductGrid() {
     const location = useLocation();
@@ -17,40 +19,44 @@ function ProductGrid() {
 
     // Fetch products
     useEffect(() => {
-        let url = "";
+        const fetchProducts = async () => {
+            try {
+                let data;
 
-        if (current_category_id) {
-            url = `http://localhost:3000/product/getByCat/${current_category_id}`;
-        } else if (keyword) {
-            url = `http://localhost:3000/product/search?q=${encodeURIComponent(keyword)}`;
-        } else {
-            return;
-        }
+                if (current_category_id) {
+                    data = await productService.getProductsByCategory(current_category_id);
+                } else if (keyword) {
+                    data = await productService.searchProducts(keyword);
+                } else {
+                    return;
+                }
 
-        fetch(url)
-            .then(res => res.json())
-            .then(data => {
                 setProducts(data.data);
                 setCurrentPage(1);
-            });
+            } catch (err) {
+                console.error("Fetch products error:", err);
+            }
+        };
+
+        fetchProducts();
     }, [current_category_id, keyword]);
 
     // Fetch favorites if token exists
     useEffect(() => {
         if (!token) return;
 
-        fetch('http://localhost:3000/account/watchlist', {
-            headers: {
-                "Authorization": `Bearer ${token}`
+        const fetchWatchlist = async () => {
+            try {
+                const data = await accountService.getWatchlist();
+                if (data.success && data.data) {
+                    setFavorites(data.data);
+                }
+            } catch (err) {
+                console.error("Error fetching watchlist:", err);
             }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success && data.data) {
-                setFavorites(data.data);
-            }
-        })
-        .catch(err => console.error("Error fetching favorites:", err));
+        };
+
+        fetchWatchlist();
     }, [token]);
 
     const handleSort = (type) => {

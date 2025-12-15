@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css"; // quill css
+import * as productService from "../../service/product.service.jsx"
 
 function AddAuctionProduct() {
     const [name, setName] = useState("");
@@ -13,6 +14,7 @@ function AddAuctionProduct() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
         if (images.length < 3) {
             alert("Vui lòng tải lên ít nhất 3 ảnh.");
             return;
@@ -20,24 +22,26 @@ function AddAuctionProduct() {
 
         const formData = new FormData();
         formData.append("name", name);
-        images.forEach((img) => formData.append("images", img));
+        images.forEach(img => formData.append("images", img));
         formData.append("startPrice", startPrice);
         formData.append("bidStep", bidStep);
         formData.append("buyNowPrice", buyNowPrice);
         formData.append("description", description);
         formData.append("autoExtend", autoExtend);
 
-        const res = await fetch("http://localhost:3000/product/add", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${localStorage.getItem("token")}`
-            },
-            body: formData
-        });
-        
-        const data = await res.json();
-        if (res.ok) alert("Tạo sản phẩm thành công!");
-        else alert(data.message || "Lỗi hệ thống");
+        try {
+            const data = await productService.addProduct(formData);
+
+            if (data.success) {
+                alert("Tạo sản phẩm thành công!");
+                // navigate("/profile/my-products"); // nếu muốn
+            } else {
+                alert(data.message || "Lỗi hệ thống");
+            }
+        } catch (err) {
+            console.error("Add product error:", err);
+            alert(err.response?.data?.message || "Lỗi hệ thống");
+        }
     };
 
     return (

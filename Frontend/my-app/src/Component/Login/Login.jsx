@@ -1,6 +1,7 @@
 import { FaFacebook, FaGoogle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
+import * as accountService from "../../service/account.service.jsx"
 
 function Login() {
     const navigate = useNavigate();
@@ -16,35 +17,23 @@ function Login() {
         console.log("Login attempt:", { email, password, rememberMe });
 
         try {
-            const res = await fetch("http://localhost:3000/account/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password }),
-            });
-
-            const data = await res.json();
+            const data = await accountService.login(email, password);
 
             if (data.success && data.token) {
-                // Save token for future API requests
-                localStorage.setItem("token", data.token);
+            // 1️⃣ Lưu token
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("userEmail", email);
 
-                const profile = await fetch("http://localhost:3000/account/profile", {
-                    method: "GET",           
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${data.token}`   // thêm token vào đây
-                    }
-                });
+            // 2️⃣ Gọi profile (token đã tự gắn qua interceptor)
+            const profile = await accountService.getProfile();
 
-                localStorage.setItem("role", profile.role_description);
+            // 3️⃣ Lưu role
+            localStorage.setItem("role", profile.role_description);
 
-                // Optionally save user email or other info if needed
-                localStorage.setItem("userEmail", email);
+            console.log("Login success:", profile);
 
-                console.log("Token saved:", data.token);
-
-                // Navigate to home page
-                navigate("/");
+            // 4️⃣ Redirect
+            navigate("/");
 
             } else {
                 alert(data.message || "Login failed");

@@ -1,22 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import * as categoryService from "../../service/category.service.jsx"
 
 function Category() {
     const navigate = useNavigate();
     const [category, setCategory] = useState([]);
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
-
-        fetch("http://localhost:3000/category/allParent", {
-            headers: {
-                "Authorization": `Bearer ${token}`,
-                "Content-Type": "application/json"
+        const loadCategories = async () => {
+            try {
+                const res = await categoryService.fetchParentCategories();
+                setCategory(res.data);
+            } catch (err) {
+                console.error("Error fetching parent categories:", err);
             }
-        })
-        .then(res => res.json())
-        .then(data => setCategory(data.data))
-        .catch(err => console.error(err));
+        };
+
+        loadCategories();
     }, []);
 
 

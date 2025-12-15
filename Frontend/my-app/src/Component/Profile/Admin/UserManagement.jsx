@@ -5,16 +5,19 @@ export default function UserManagement({ token }) {
 
     // GET ALL USERS
     useEffect(() => {
-        fetch("http://localhost:3000/account/all", {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${token}`
+        const loadUsers = async () => {
+            try {
+                const res = await accountService.getAllUsers();
+                setUsers(res.data || []);
+            } catch (err) {
+                console.error("Fetch users error:", err);
+                alert(err.response?.data?.message || "Không tải được danh sách user");
             }
-        })
-            .then(res => res.json())
-            .then(data => setUsers(data.data))
-            .catch(err => console.error("Fetch users error:", err));
+        };
+
+        if (token) loadUsers();
     }, [token]);
+
 
 
     // DELETE USER
@@ -22,29 +25,20 @@ export default function UserManagement({ token }) {
         if (!window.confirm("Are you sure you want to delete this user?")) return;
 
         try {
-            const res = await fetch(`http://localhost:3000/account/${id}`, {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ id })
-            });
+            const res = await accountService.deleteUser(id);
 
-            const data = await res.json();
-
-            if (!data.success) {
+            if (!res.success) {
                 alert("Cannot delete user");
                 return;
             }
 
-            // update UI
             setUsers(prev => prev.filter(u => u.id !== id));
-
         } catch (err) {
             console.error("Delete user error:", err);
+            alert(err.response?.data?.message || "Xóa user thất bại");
         }
     };
+
 
 
     return (

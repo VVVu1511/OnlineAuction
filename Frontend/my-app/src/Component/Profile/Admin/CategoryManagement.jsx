@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import * as categoryService from "../../service/category.service.jsx"
 
 export default function CategoryManagement({ token }) {
     const [categories, setCategories] = useState([]);
@@ -9,29 +10,27 @@ export default function CategoryManagement({ token }) {
 
     // Load categories
     useEffect(() => {
-        fetch("http://localhost:3000/category/all", {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-            .then(res => res.json())
-            .then(data => setCategories(data.data));
+        const loadCategories = async () => {
+            try {
+                const res = await categoryService.getAllCategories();
+                setCategories(res.data || []);
+            } catch (err) {
+                console.error("Load categories error:", err);
+                alert(err.response?.data?.message || "Không tải được category");
+            }
+        };
+
+        if (token) loadCategories();
     }, [token]);
+
 
 
     // DELETE
     const handleDelete = async (id) => {
         try {
-            const res = await fetch("http://localhost:3000/category", {
-                method: "DELETE",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ id })
-            });
+            const res = await categoryService.deleteCategory(id);
 
-            const data = await res.json();
-
-            if (!data.success) {
+            if (!res.success) {
                 alert("Cannot delete category (it may have products)");
                 return;
             }
@@ -39,6 +38,7 @@ export default function CategoryManagement({ token }) {
             setCategories(prev => prev.filter(c => c.id !== id));
         } catch (err) {
             console.error("Delete error:", err);
+            alert(err.response?.data?.message || "Xóa category thất bại");
         }
     };
 
@@ -51,53 +51,33 @@ export default function CategoryManagement({ token }) {
         }
 
         try {
-            const res = await fetch("http://localhost:3000/category", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ description: newCat })
-            });
+            const res = await categoryService.addCategory(newCat);
 
-            const data = await res.json();
-
-            if (!data.success) {
-                alert(data.message || "Failed to add category");
+            if (!res.success) {
+                alert(res.message || "Failed to add category");
                 return;
             }
 
-            setCategories(prev => [...prev, data.category]);
+            setCategories(prev => [...prev, res.category]);
             setNewCat("");
         } catch (err) {
             console.error("Add error:", err);
+            alert(err.response?.data?.message || "Thêm category thất bại");
         }
     };
+
 
 
     // UPDATE CATEGORY
     const handleUpdate = async (id) => {
         try {
-            const res = await fetch("http://localhost:3000/category", {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    id,
-                    description: editingText
-                })
-            });
+            const res = await categoryService.updateCategory(id, editingText);
 
-            const data = await res.json();
-
-            if (!data.message.includes("successfully")) {
+            if (!res.message?.includes("successfully")) {
                 alert("Update failed");
                 return;
             }
 
-            // Update UI
             setCategories(prev =>
                 prev.map(c =>
                     c.id === id ? { ...c, description: editingText } : c
@@ -106,11 +86,12 @@ export default function CategoryManagement({ token }) {
 
             setEditingId(null);
             setEditingText("");
-
         } catch (err) {
             console.error("Update error:", err);
+            alert(err.response?.data?.message || "Cập nhật category thất bại");
         }
     };
+
 
 
     return (

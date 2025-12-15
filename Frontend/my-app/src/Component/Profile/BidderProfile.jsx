@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import ProductCard from "../ProductCard/ProductCard";
+import * as accountService from "../../service/account.service.jsx"
+import * as biddingService from "../../service/bidding.service.jsx"
 
 export default function BidderProfile({ user, token }) {
     const [reviews, setReviews] = useState([]);
@@ -28,17 +30,22 @@ export default function BidderProfile({ user, token }) {
     }, []);
 
     const loadBidderData = async () => {
-        const [reviewsRes, favRes, bidRes, wonRes] = await Promise.all([
-            fetch("http://localhost:3000/account/rating", { headers }),
-            fetch("http://localhost:3000/account/watchlist", { headers }),
-            fetch("http://localhost:3000/bidding", { headers }),
-            fetch("http://localhost:3000/account/win", { headers }),
-        ]);
+        try {
+            const [reviewsRes, favRes, bidRes, wonRes] = await Promise.all([
+                accountService.getRatings(),
+                accountService.getWatchlist(),
+                accountService.getMyBidding(),
+                accountService.getWonProducts(),
+            ]);
 
-        setReviews((await reviewsRes.json()).data);
-        setFavorites((await favRes.json()).data);
-        setBidding((await bidRes.json()).data);
-        setWon((await wonRes.json()).data);
+            setReviews(reviewsRes.data || []);
+            setFavorites(favRes.data || []);
+            setBidding(bidRes.data || []);
+            setWon(wonRes.data || []);
+        } catch (err) {
+            console.error("Load bidder data error:", err);
+            alert(err.response?.data?.message || "Lỗi khi tải dữ liệu bidder");
+        }
     };
 
     const handleChange = (e) => {
@@ -53,45 +60,46 @@ export default function BidderProfile({ user, token }) {
     const saveProfile = async () => {
         // Nếu người dùng đổi password → bắt buộc nhập password cũ
         if (changePassword && !formData.oldPassword) {
-            return alert("Bạn cần nhập mật khẩu cũ để đổi mật khẩu");
+            alert("Bạn cần nhập mật khẩu cũ để đổi mật khẩu");
+            return;
         }
 
-        const res = await fetch("http://localhost:3000/account/update", {
-            method: "PUT",
-            headers,
-            body: JSON.stringify(formData)
-        });
+        try {
+            const data = await accountService.updateProfile(formData);
 
-        const data = await res.json();
+            if (data.success) {
+                alert("Cập nhật thành công!");
 
-        if (data.success) {
-            alert("Cập nhật thành công!");
-
-            setEditMode(false);
-            setChangePassword(false);
-            setFormData({
-                ...formData,
-                oldPassword: "",
-                newPassword: ""
-            });
-        } else {
-            alert(data.message || "Lỗi cập nhật thông tin");
+                setEditMode(false);
+                setChangePassword(false);
+                setFormData(prev => ({
+                    ...prev,
+                    oldPassword: "",
+                    newPassword: ""
+                }));
+            } else {
+                alert(data.message || "Lỗi cập nhật thông tin");
+            }
+        } catch (err) {
+            console.error("Update profile error:", err);
+            alert(err.response?.data?.message || "Lỗi khi cập nhật profile");
         }
     };
 
-    const sendUpgradeRequest = async () => {
+    const sendUpgradeRequestHandler = async () => {
         if (!window.confirm("Gửi yêu cầu nâng cấp thành Seller?")) return;
 
-        const res = await fetch("/account/upgrade", {
-            method: "POST",
-            headers
-        });
+        try {
+            const data = await accountService.sendUpgradeRequest();
 
-        const data = await res.json();
-        if (data.success) {
-            alert("Yêu cầu đã được gửi. Admin sẽ duyệt trong 7 ngày.");
-        } else {
-            alert(data.message || "Không gửi được yêu cầu.");
+            if (data.success) {
+                alert("Yêu cầu đã được gửi. Admin sẽ duyệt trong 7 ngày.");
+            } else {
+                alert(data.message || "Không gửi được yêu cầu.");
+            }
+        } catch (err) {
+            console.error("Upgrade request error:", err);
+            alert(err.response?.data?.message || "Lỗi khi gửi yêu cầu nâng cấp");
         }
     };
 

@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
+import * as accountService from "../../service/account.service.jsx"
 
 export default function UpgradeRequests({ token }) {
     const [requests, setRequests] = useState([]);
 
-    // Load all users
-    const loadData = () => {
-        fetch("http://localhost:3000/account/all", {
-            headers: { Authorization: `Bearer ${token}` }
-        })
-            .then(res => res.json())
-            .then(data => setRequests(data.data))
-            .catch(err => console.error(err));
+    const loadData = async () => {
+        try {
+            const res = await accountService.getAllAccounts();
+            setRequests(res.data || []);
+        } catch (err) {
+            console.error("Load accounts error:", err);
+            alert(err.response?.data?.message || "Không tải được danh sách account");
+        }
     };
 
     useEffect(() => {
@@ -18,13 +19,15 @@ export default function UpgradeRequests({ token }) {
     }, []);
 
     const handleAction = async (id, action) => {
-        await fetch(`http://localhost:3000/account/${action}/${id}`, {
-            method: "PUT",
-            headers: { Authorization: `Bearer ${token}` }
-        });
-
-        loadData(); // reload UI
+        try {
+            await accountService.handleAccountAction(id, action);
+            loadData(); // reload UI
+        } catch (err) {
+            console.error("Account action error:", err);
+            alert(err.response?.data?.message || "Thao tác thất bại");
+        }
     };
+
 
     return (
         <div>

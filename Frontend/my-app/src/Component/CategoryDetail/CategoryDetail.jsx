@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import * as categoryService from "../../service/category.service.jsx"
 
 function CategoryDetail(){
     const [childCategory, setChildCategory] = useState([]);
@@ -10,11 +11,16 @@ function CategoryDetail(){
     useEffect(() => {
         if (!category_id) return;
 
-        fetch(`http://localhost:3000/category/child/${category_id}`)
-            .then(res => res.json())
-            .then(data => setChildCategory(data.data))
-            .catch(err => console.error(err));
+        const loadChildCategories = async () => {
+            try {
+                const res = await categoryService.fetchChildCategory(category_id);
+                setChildCategory(res.data);
+            } catch (err) {
+                console.error("Error fetching child categories:", err);
+            }
+        };
 
+        loadChildCategories();
     }, [category_id]);
 
     const handleClick = (id) => {

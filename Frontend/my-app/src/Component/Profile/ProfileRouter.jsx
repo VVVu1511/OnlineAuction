@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import BidderProfile from "./BidderProfile";
 import SellerProfile from "./SellerProfile";
 import AdminProfile from "./Admin/AdminProfile";
+import * as accountService from "../../service/account.service.jsx"
 
 export default function ProfileRouter() {
     const [user, setUser] = useState(null);
@@ -16,10 +16,7 @@ export default function ProfileRouter() {
     }, []);
 
     const loadProfile = async () => {
-        const res = await fetch("http://localhost:3000/account/profile", {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
+        const data = await accountService.getProfile();
         setUser(data.data);
     };
 

@@ -1,47 +1,45 @@
 import { useEffect, useState } from "react";
 import ProductCard from "../../ProductCard/ProductCard.jsx"; // import vào
 import { useNavigate } from "react-router-dom";
+import * as productService from "../../service/product.service.jsx"
 
 export default function ProductManagement({ token }) {
     const [products, setProducts] = useState([]);
 
     useEffect(() => {
-        fetch("http://localhost:3000/product/all", {
-            method: "GET",
-            headers: {
-                Authorization: `Bearer ${token}`
+        const loadProducts = async () => {
+            try {
+                const res = await productService.getAllProducts();
+                setProducts(res.data || []);
+            } catch (err) {
+                console.error("Load products error:", err);
+                alert(err.response?.data?.message || "Không tải được sản phẩm");
             }
-        })
-            .then(res => res.json())
-            .then(data => setProducts(data.data))
-            .catch(err => console.error(err));
+        };
+
+        if (token) loadProducts();
     }, [token]);
+
 
 
     // REMOVE PRODUCT
     const removeProduct = async (id) => {
         try {
-            const res = await fetch(`http://localhost:3000/product/${id}`, {
-                method: "DELETE",   // bạn dùng PUT để "remove"
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ id })
-            });
+            const res = await productService.removeProduct(id);
 
-            const result = await res.json();
-            if (!result.success) {
+            if (!res.success) {
                 alert("Cannot remove product");
                 return;
             }
 
             setProducts(prev => prev.filter(p => p.id !== id));
-
         } catch (err) {
             console.error("Remove error:", err);
+            alert(err.response?.data?.message || "Xóa sản phẩm thất bại");
         }
     };
+
+    
 
     return (
         <div>

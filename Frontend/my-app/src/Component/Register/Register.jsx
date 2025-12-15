@@ -1,9 +1,10 @@
-    import { useState, useEffect } from "react";
-    import { useNavigate } from "react-router-dom";
-    import ReCAPTCHA from "react-google-recaptcha";
-    import { FaFacebook, FaGoogle } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import ReCAPTCHA from "react-google-recaptcha";
+import { FaFacebook, FaGoogle } from "react-icons/fa";
+import * as accountService from "../../service/account.service.jsx"
 
-    function Register() {
+function Register() {
     const navigate = useNavigate();
 
     const [email, setEmail] = useState("");
@@ -17,32 +18,33 @@
         e.preventDefault();
 
         if (!captchaToken) {
-        alert("Please verify reCAPTCHA!");
-        return;
+            alert("Please verify reCAPTCHA!");
+            return;
         }
 
-        const userData = { email, fullName, address, password, captcha: captchaToken };
+        const userData = {
+            email,
+            fullName,
+            address,
+            password,
+            captcha: captchaToken
+        };
 
         try {
-        const res = await fetch("http://localhost:3000/account/send-otp", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email }),
-        });
+            const data = await accountService.sendOtp(email);
 
-        const data = await res.json();
-
-        if (data.success) {
-            alert("OTP has been sent to your email. Please check.");
-            navigate("/verify-otp", { state: { userData } });
-        } else {
-            alert(data.message || "Failed to send OTP");
-        }
+            if (data.success) {
+                alert("OTP has been sent to your email. Please check.");
+                navigate("/verify-otp", { state: { userData } });
+            } else {
+                alert(data.message || "Failed to send OTP");
+            }
         } catch (err) {
-        console.error(err);
-        alert("Server error!");
+            console.error("Send OTP error:", err);
+            alert(err.response?.data?.message || "Server error!");
         }
     };
+
 
     // --- OAuth Popup Handler ---
     const handleOAuthLogin = (url) => {
@@ -161,6 +163,6 @@
         </form>
         </div>
     );
-    }
+}
 
-    export default Register;
+export default Register;

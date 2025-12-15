@@ -16,3 +16,4 @@ export default function AdminProfile({ user, token }) {
         </div>
     );
 }
+
