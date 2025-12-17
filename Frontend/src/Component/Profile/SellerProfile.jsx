@@ -142,7 +142,7 @@ export default function SellerProfileUI({ user, token }) {
             <section className="mb-5">
                 <h4>Sản phẩm đang đăng</h4>
                 {chunkArray(myProducts, 5).map((row, i) => (
-                    <div className="row g-4 mb-3" key={i}>
+                    <div className="row g-4 mb-3 gap-4" key={i}>
                         {row.map(p => (
                             <div className="col-2" key={p.id}>
                                 <ProductCard data={p} />

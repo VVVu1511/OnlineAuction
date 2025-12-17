@@ -18,44 +18,83 @@ instance.interceptors.request.use(
 );
 
 // AUTH
-export const login = (email, password) =>
-    instance.post("/login", { email, password }).then(res => res.data);
+export async function login(email, password) {
+    const res = await instance.post("/login", { email, password });
+    if (res.status === 200 || res.status === 201) return res.data;
+    throw new Error("Login failed");
+}
 
-export const register = (userData) =>
-    instance.post("/register", userData).then(res => res.data);
+export async function register(userData) {
+    const res = await instance.post("/register", userData);
+    if (res.status === 200 || res.status === 201) return res.data;
+    throw new Error("Register failed");
+}
 
-export const sendOtp = (email) =>
-    instance.post("/send-otp", { email }).then(res => res.data);
+export async function sendOtp(email) {
+    const res = await instance.post("/send-otp", { email });
+    if (res.status === 200 || res.status === 201) return res.data;
+    throw new Error("Send OTP failed");
+}
 
-export const verifyOtp = (email, otp) =>
-    instance.post("/verify-otp", { email, otp }).then(res => res.data);
+export async function verifyOtp(email, otp) {
+    const res = await instance.post("/verify-otp", { email, otp });
+    if (res.status === 200 || res.status === 201) return res.data;
+    throw new Error("Verify OTP failed");
+}
 
 // PROFILE
-export const getProfile = () =>
-    instance.get("/profile").then(res => res.data);
+export async function getProfile() {
+    const res = await instance.get("/profile");
+    if (res.status === 200) return res.data;
+    throw new Error("Error fetching profile");
+}
 
-export const updateProfile = (payload) =>
-    instance.put("/update", payload).then(res => res.data);
+export async function updateProfile(payload) {
+    const res = await instance.put("/update", payload);
+    if (res.status === 200) return res.data;
+    throw new Error("Update profile failed");
+}
 
-export const sendUpgradeRequest = () =>
-    instance.post("/upgrade").then(res => res.data);
+export async function sendUpgradeRequest() {
+    const res = await instance.post("/upgrade");
+    if (res.status === 200 || res.status === 201) return res.data;
+    throw new Error("Upgrade request failed");
+}
 
 // DATA
-export const getWatchlist = () =>
-    instance.get("/watchlist").then(res => res.data);
+export async function getWatchlist() {
+    const res = await instance.get("/watchlist");
+    if (res.status === 201) return res.data;
+    throw new Error("Error fetching watchlist");
+}
 
-export const getRatings = () =>
-    instance.get("/rating").then(res => res.data);
+export async function getRatings() {
+    const res = await instance.get("/rating");
+    if (res.status === 200) return res.data;
+    throw new Error("Error fetching ratings");
+}
 
-export const getWonProducts = () =>
-    instance.get("/win").then(res => res.data);
+export async function getWonProducts() {
+    const res = await instance.get("/win");
+    if (res.status === 200) return res.data;
+    throw new Error("Error fetching won products");
+}
 
 // ADMIN
-export const getAllAccounts = () =>
-    instance.get("/all").then(res => res.data);
+export async function getAllAccounts() {
+    const res = await instance.get("/all");
+    if (res.status === 200) return res.data;
+    throw new Error("Error fetching accounts");
+}
 
-export const handleAccountAction = (id, action) =>
-    instance.put(`/${action}/${id}`).then(res => res.data);
+export async function handleAccountAction(id, action) {
+    const res = await instance.put(`/${action}/${id}`);
+    if (res.status === 200) return res.data;
+    throw new Error("Account action failed");
+}
 
-export const deleteUser = (id) =>
-    instance.delete(`/${id}`, { data: { id } }).then(res => res.data);
+export async function deleteUser(id) {
+    const res = await instance.delete(`/${id}`, { data: { id } });
+    if (res.status === 200) return res.data;
+    throw new Error("Delete user failed");
+}
