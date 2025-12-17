@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import * as accountService from "../../../service/account.service.jsx";
 
 export default function UserManagement({ token }) {
     const [users, setUsers] = useState([]);
@@ -17,8 +18,6 @@ export default function UserManagement({ token }) {
 
         if (token) loadUsers();
     }, [token]);
-
-
 
     // DELETE USER
     const handleDelete = async (id) => {
@@ -39,39 +38,54 @@ export default function UserManagement({ token }) {
         }
     };
 
-
-
     return (
-        <div>
-            <h3>User Management</h3>
+        <div className="bg-white rounded-xl shadow p-6">
+            <h3 className="text-xl font-semibold mb-4">User Management</h3>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Email</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
+            {users.length === 0 ? (
+                <p className="text-gray-500">Không có user nào</p>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full border border-gray-200 rounded-lg">
+                        <thead className="bg-gray-100">
+                            <tr>
+                                <th className="text-left px-4 py-2 border-b">Email</th>
+                                <th className="text-center px-4 py-2 border-b w-40">Actions</th>
+                            </tr>
+                        </thead>
 
-                <tbody>
-                    {users.map(u => (
-                        <tr key={u.id}>
-                            <td>{u.email}</td>
-
-                            <td>
-                                <button>Edit</button>
-
-                                <button
-                                    onClick={() => handleDelete(u.id)}
-                                    style={{ marginLeft: "10px" }}
+                        <tbody>
+                            {users.map(u => (
+                                <tr
+                                    key={u.id}
+                                    className="hover:bg-gray-50 transition"
                                 >
-                                    Delete
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+                                    <td className="px-4 py-2 border-b">
+                                        {u.email}
+                                    </td>
+
+                                    <td className="px-4 py-2 border-b">
+                                        <div className="flex justify-center gap-2">
+                                            <button
+                                                className="px-3 py-1 text-sm rounded border border-gray-300 hover:bg-gray-100"
+                                            >
+                                                Edit
+                                            </button>
+
+                                            <button
+                                                onClick={() => handleDelete(u.id)}
+                                                className="px-3 py-1 text-sm rounded bg-red-500 text-white hover:bg-red-600"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 }

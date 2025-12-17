@@ -1,48 +1,81 @@
-import { useNavigate } from "react-router-dom"; 
-import { FaHeart, FaRegHeart } from "react-icons/fa"; 
+import { useNavigate } from "react-router-dom";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
 import useWatchlist from "../../hooks/useWatchList.js";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
-export default function ProductCard({ data, liked=false }) {
+export default function ProductCard({ data, liked = false }) {
     const navigate = useNavigate();
     const [isLiked, toggleIsLiked] = useWatchlist(liked);
 
-    // 🔹 local state để đồng bộ với prop liked khi mở ProductInfor
+    // local state để đồng bộ khi mở ProductInfor
     const [currentLiked, setCurrentLiked] = useState(liked);
 
-    // 🔹 cập nhật currentLiked khi toggle
     const handleToggle = (productId) => {
-        toggleIsLiked(productId);   // đổi watchlist như bình thường
-        setCurrentLiked(prev => !prev);  // đồng bộ local state
+        toggleIsLiked(productId);
+        setCurrentLiked((prev) => !prev);
     };
 
-    const handleClick = () => 
-        navigate("/productInfor", { state: { product: data, isLiked: currentLiked } });
+    const handleClick = () =>
+        navigate(`/product/${data.id}`, {
+            state: { product: data, isLiked: currentLiked },
+        });
 
     return (
-        <div onClick={handleClick} className="position-relative">
-            <div className="card" style={{ width: "160px" }}>
-                <img
-                    className="card-img-top img-fluid mt-2"
-                    src={`http://localhost:3000/static/images/${data.id}/${data.image_path[0]}`}
-                    alt=""
-                    style={{ height: "120px", objectFit: "cover" }}
-                />
-                <div className="card-body p-2">
-                    <p className="card-title text-center truncate">{data.name}</p>
-                    <p className="card-text text-center truncate">💰 {data.current_price} đ</p>
-                    <p className="card-text text-center truncate">🧑 {data.best_bidder}</p>
-                    <p className="card-text text-center truncate">🚀 {data.time_left}</p>
-                    <p className="card-text text-center truncate">🔥 Bids: {data.bid_counts}</p>
-                </div>
+        <div
+            onClick={handleClick}
+            className="
+                relative
+                w-40
+                cursor-pointer
+                rounded-xl
+                bg-white
+                shadow-sm
+                hover:shadow-lg
+                transition
+            "
+        >
+            {/* Image */}
+            <img
+                src={`http://localhost:3000/static/images/${data.id}/${data.image_path[0]}`}
+                alt={data.name}
+                className="
+                    w-full
+                    h-32
+                    object-cover
+                    rounded-t-xl
+                "
+            />
+
+            {/* Content */}
+            <div className="p-2 text-center space-y-1 text-sm">
+                <p className="font-semibold truncate">{data.name}</p>
+                <p className="truncate">💰 {data.current_price} đ</p>
+                <p className="truncate">🧑 {data.best_bidder}</p>
+                <p className="truncate">🚀 {data.time_left}</p>
+                <p className="truncate">🔥 Bids: {data.bid_counts}</p>
             </div>
 
+            {/* Like Button */}
             <div
-                className="position-absolute"
-                style={{ top: "5px", right: "10px", cursor: "pointer", color: currentLiked ? "red" : "gray" }}
-                onClick={(e) => { e.stopPropagation(); handleToggle(data.id); }}
+                className="
+                    absolute
+                    top-2
+                    right-2
+                    text-lg
+                    cursor-pointer
+                    transition
+                    hover:scale-110
+                "
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggle(data.id);
+                }}
             >
-                {currentLiked ? <FaHeart /> : <FaRegHeart />}
+                {currentLiked ? (
+                    <FaHeart className="text-red-500" />
+                ) : (
+                    <FaRegHeart className="text-gray-400" />
+                )}
             </div>
         </div>
     );

@@ -20,7 +20,7 @@ instance.interceptors.request.use(
 
 export async function getProductsByCategory(categoryId){
     const res = await instance.get(`/getByCat/${categoryId}`);
-    if(res.status === 200){
+    if(res.status === 201){
         return res.data;
     } else {
         throw new Error("Error getting products by category");
@@ -32,7 +32,7 @@ export async function searchProducts(keyword){
         params: {q: keyword}
     });
 
-    if(res.status === 200){
+    if(res.status === 201){
         return res.data;
     } else {
         throw new Error("Error searching products");
@@ -53,25 +53,25 @@ export async function appendProductDescription(productId, newDescription){
 
 export async function getSellerInfo(productId) {
     const res = await instance.get(`/sellerInfor/${productId}`);
-    if (res.status === 200) return res.data;
+    if (res.status === 201) return res.data;
     throw new Error("Error fetching seller info");
 }
 
 export async function getBestBidder(productId) {
     const res = await instance.get(`/bestBidder/${productId}`);
-    if (res.status === 200) return res.data;
+    if (res.status === 201) return res.data;
     throw new Error("Error fetching best bidder");
 }
 
 export async function getRelatedProducts(productId) {
     const res = await instance.get(`/related/${productId}`);
-    if (res.status === 200) return res.data;
+    if (res.status === 201) return res.data;
     throw new Error("Error fetching related products");
 }
 
 export async function getQaHistory(productId) {
     const res = await instance.get(`/Q_A/${productId}`);
-    if (res.status === 200) return res.data;
+    if (res.status === 201) return res.data;
     throw new Error("Error fetching Q&A history");
 }
 
@@ -80,7 +80,7 @@ export async function checkCanBid(productId) {
         product_id: productId,
     });
 
-    if (res.status === 200) {
+    if (res.status === 201) {
         return res.data;
     } else {
         throw new Error("Error checking can bid");
@@ -93,7 +93,7 @@ export async function placeBid(productId, price) {
         price,
     });
 
-    if (res.status === 200) {
+    if (res.status === 201) {
         return res.data;
     } else {
         throw new Error("Error placing bid");
@@ -124,19 +124,21 @@ export async function getMyWonProducts() {
 
 export async function getTop5NearEnd() {
     const res = await instance.get("/top5NearEnd");
-    if (res.status === 200) return res.data;
+    if (res.status === 201) return res.data;
     throw new Error("Error fetching top5 near end");
 }
 
 export async function getTop5BidCounts() {
     const res = await instance.get("/top5BidCounts");
-    if (res.status === 200) return res.data;
+
+    console.log(res);
+    if (res.status === 201) return res.data;
     throw new Error("Error fetching top5 bid counts");
 }
 
 export async function getTop5Price() {
     const res = await instance.get("/top5Price");
-    if (res.status === 200) return res.data;
+    if (res.status === 201) return res.data;
     throw new Error("Error fetching top5 price");
 }
 

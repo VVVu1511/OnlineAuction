@@ -20,13 +20,13 @@ instance.interceptors.request.use(
 
 export async function getBidHistory(productId) {
     const res = await instance.get(`/bid_history/${productId}`);
-    if (res.status === 200) return res.data;
+    if (res.status === 201) return res.data;
     throw new Error("Error fetching bid history");
 }
 
 export async function getDeniedBidders(productId) {
     const res = await instance.get(`/denyBidder/${productId}`);
-    if (res.status === 200) return res.data;
+    if (res.status === 201) return res.data;
     throw new Error("Error fetching denied bidders");
 }
 

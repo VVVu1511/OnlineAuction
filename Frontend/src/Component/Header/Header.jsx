@@ -1,99 +1,116 @@
-import { useNavigate } from 'react-router-dom';
-import { FaSearch, FaShoppingCart, FaUser } from 'react-icons/fa';
-import { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
+import { FaSearch, FaShoppingCart, FaUser } from "react-icons/fa";
+import { useState, useEffect } from "react";
 
 function Header() {
     const navigate = useNavigate();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-    // Check token on mount
     useEffect(() => {
         const token = localStorage.getItem("token");
-        setIsLoggedIn(!!token); // true if token exists
+        setIsLoggedIn(!!token);
     }, []);
-
-    const handleSignUp = () => navigate('/register');
-    const handleSignIn = () => navigate('/login');
 
     const handleLogout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("userEmail");
         setIsLoggedIn(false);
-        navigate('/'); // redirect to home after logout
+        navigate("/");
     };
 
-    const [product, setProduct] = useState([]);
     const handleSearch = () => {
-        const searchKW = document.getElementById("search").value.trim();
-        if (!searchKW) return;
-        navigate("/productGridWithCat", { state: { keyword: searchKW } });
+        const keyword = document.getElementById("search").value.trim();
+        if (!keyword) return;
+        navigate("/productGridWithCat", { state: { keyword } });
     };
 
     return (
-        <div className="bg-danger text-white p-3 ">
-            {/* Top links */}
-            <div className="d-flex justify-content-end align-items-center mb-2">
-                {!isLoggedIn ? (
-                    <>
-                        <button 
-                            className="btn btn-outline-light btn-sm me-2"
-                            onClick={handleSignUp}
-                        >
-                            Đăng ký
-                        </button>
-                        <span className="me-2">|</span>
-                        <button 
-                            className="btn btn-outline-light btn-sm"
-                            onClick={handleSignIn}
-                        >
-                            Đăng nhập
-                        </button>
-                    </>
-                ) : (
-                    <div className="d-flex align-items-center gap-2">
-                        <FaUser 
-                            size={20} 
-                            style={{ cursor: "pointer" }}
-                            onClick={() => navigate("/profile")} 
-                        />
-                        <button 
-                            className="btn btn-outline-light btn-sm"
-                            onClick={handleLogout}
-                        >
-                            Logout
-                        </button>
-                    </div>
-                )}
-            </div>
+        <header className="bg-red-600 text-white text-sm">
+            <div className="max-w-7xl mx-auto px-4 py-2">
 
-            {/* Logo + Search + Cart */}
-            <div className="d-flex justify-content-between align-items-center mb-4 mt-3">
-                {/* Logo */}
-                <div className="d-flex align-items-center">
-                    <h2 className="mb-0">Online Auction</h2>
+                {/* Auth line */}
+                <div className="flex justify-end gap-2 mb-1">
+                    {!isLoggedIn ? (
+                        <>
+                            <span
+                                onClick={() => navigate("/register")}
+                                className="cursor-pointer hover:opacity-80"
+                            >
+                                Đăng ký
+                            </span>
+                            <span>|</span>
+                            <span
+                                onClick={() => navigate("/login")}
+                                className="cursor-pointer hover:opacity-80"
+                            >
+                                Đăng nhập
+                            </span>
+                        </>
+                    ) : (
+                        <div className="flex items-center gap-3">
+                            <FaUser
+                                size={14}
+                                className="cursor-pointer"
+                                onClick={() => navigate("/profile")}
+                            />
+                            <span
+                                onClick={handleLogout}
+                                className="cursor-pointer hover:underline"
+                            >
+                                Logout
+                            </span>
+                        </div>
+                    )}
                 </div>
 
-                {/* Search bar with icon */}
-                <div className="flex-grow-1 mx-3">
-                    <div className="input-group">
-                        <input 
+                {/* Main row */}
+                <div className="flex items-center gap-3">
+                    
+                    {/* Logo */}
+                    <h1
+                        onClick={() => navigate("/")}
+                        className="text-2xl font-semibold cursor-pointer whitespace-nowrap"
+                    >
+                        Online Auction
+                    </h1>
+
+                    {/* Search */}
+                    <div className="flex flex-1">
+                        <input
                             id="search"
-                            type="text" 
-                            className="form-control" 
-                            placeholder="Tra cứu sản phẩm..." 
+                            type="text"
+                            placeholder="Tìm sản phẩm..."
+                            className="
+                                w-full px-3 py-1.5
+                                rounded-l-md
+                                text-gray-800
+                                focus:outline-none
+                                bg-white
+                            "
                         />
-                        <span className="input-group-text bg-white">
-                            <FaSearch onClick={handleSearch} color="gray" />
-                        </span>
+                        <button
+                            onClick={handleSearch}
+                            className="
+                                bg-red-200 px-3
+                                rounded-r-md
+                                flex items-center justify-center
+                                hover:bg-red-400 hover:text-white
+                                transition-colors
+                            "
+                        >
+                            <FaSearch className="text-gray-500 text-sm " />
+                        </button>
                     </div>
-                </div>
 
-                {/* Cart */}
-                <div className="d-flex align-items-center">
-                    <FaShoppingCart size={30} />
+                    {/* Cart */}
+                    <FaShoppingCart
+                        size={18}
+                        className="cursor-pointer"
+                        onClick={() => navigate("/cart")}
+                    />
                 </div>
             </div>
-        </div>
+        </header>
     );
 }
 

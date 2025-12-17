@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import * as categoryService from "../../service/category.service.jsx"
+import * as categoryService from "../../service/category.service.jsx";
 
 function Category() {
     const navigate = useNavigate();
@@ -19,42 +19,56 @@ function Category() {
         loadCategories();
     }, []);
 
-
     const images = [
         "/Categories/phone.webp",
         "/Categories/shirt.jpg",
         "/Categories/book.jpg",
-        "/Categories/cart.webp"
+        "/Categories/cart.webp",
     ];
 
     const handleClick = (id) => {
-        navigate('/productGridWithCat', {
-            state: { category_id: id , current_category_id: id}
+        navigate(`/category/${id}`, {
+            state: { category_id: id, current_category_id: id },
         });
     };
 
     return (
-        <div className="mt-5">
-            <p className="h2">DANH MỤC</p>
+        <div className="mt-8 px-4">
+            {/* Title */}
+            <h2 className="text-2xl font-bold mb-6 text-center">
+                DANH MỤC
+            </h2>
 
-            <div className="row text-center">
+            {/* Category Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
                 {category.map((item, index) => (
                     <div
                         key={item.id}
-                        className="col-3 border d-flex flex-column align-items-center justify-content-center py-3"
-                        onClick={() => handleClick(item.id)}   
+                        onClick={() => handleClick(item.id)}
+                        className="
+                            cursor-pointer
+                            rounded-2xl
+                            border
+                            bg-white
+                            p-4
+                            flex
+                            flex-col
+                            items-center
+                            justify-center
+                            text-center
+                            transition
+                            hover:shadow-lg
+                            hover:-translate-y-1
+                        "
                     >
                         <img
                             src={images[index]}
                             alt={item.description}
-                            className="img-fluid mb-2"
-                            style={{
-                                width: "120px",
-                                height: "120px",
-                                objectFit: "cover"
-                            }}
+                            className="w-28 h-28 object-cover rounded-xl mb-3"
                         />
-                        <p className="mt-2">{item.description}</p>
+                        <p className="font-medium text-gray-700">
+                            {item.description}
+                        </p>
                     </div>
                 ))}
             </div>

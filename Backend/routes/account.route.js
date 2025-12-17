@@ -8,6 +8,7 @@ const router = express.Router();
 
 router.post('/login', async (req, res) => {
     try {
+        console.log('hi')
         const data = await accountService.getAllByEmail(req.body.email);
 
         if (!data || !data.password) {

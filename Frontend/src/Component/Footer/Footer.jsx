@@ -1,37 +1,54 @@
 function Footer() {
     return (
-        <footer className="bg-danger text-white pt-4 pb-3 w-100">
-            <div className="container">
-                <div className="row">
-
-                    {/* About / Project Info */}
-                    <div className="col-md-4 mb-3">
-                        <h5>Online Auction</h5>
-                        <p className="small">
-                            Nền tảng đấu giá trực tuyến giúp người dùng dễ dàng tham gia đấu giá sản phẩm yêu thích,
-                            theo dõi trạng thái đấu giá và quản lý lịch sử giao dịch.
+        <footer className="bg-red-600 text-white mt-12">
+            <div className="max-w-7xl mx-auto px-6 py-10">
+                {/* Top content */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    
+                    {/* About */}
+                    <div>
+                        <h5 className="text-lg font-semibold mb-3">
+                            Online Auction
+                        </h5>
+                        <p className="text-sm text-red-100 leading-relaxed">
+                            Nền tảng đấu giá trực tuyến giúp người dùng dễ dàng tham gia đấu giá
+                            sản phẩm yêu thích, theo dõi trạng thái đấu giá và quản lý lịch sử giao dịch.
                         </p>
                     </div>
 
-                    <div className="col-md-4 mb-3">
-                        
+                    {/* Spacer / Future links */}
+                    <div>
+                        {/* Có thể thêm:
+                            - Chính sách
+                            - Điều khoản
+                            - FAQ
+                        */}
                     </div>
 
-                    {/* Contact Info */}
-                    <div className="col-md-4 mb-3">
-                        <h5>Contact Us</h5>
-                        <p className="small mb-1">Email: support@onlineauction.com</p>
-                        <p className="small mb-1">Phone: +84 123 456 789</p>
-                        <p className="small mb-0">Address:  227 Nguyễn Văn Cừ, thành phố Hồ Chí Minh, Việt Nam</p>
+                    {/* Contact */}
+                    <div>
+                        <h5 className="text-lg font-semibold mb-3">
+                            Contact Us
+                        </h5>
+                        <p className="text-sm text-red-100 mb-1">
+                            Email: support@onlineauction.com
+                        </p>
+                        <p className="text-sm text-red-100 mb-1">
+                            Phone: +84 123 456 789
+                        </p>
+                        <p className="text-sm text-red-100">
+                            Address: 227 Nguyễn Văn Cừ, TP. Hồ Chí Minh, Việt Nam
+                        </p>
                     </div>
 
                 </div>
 
-                <hr className="bg-white" />
+                {/* Divider */}
+                <div className="border-t border-red-400 my-6"></div>
 
                 {/* Copyright */}
-                <div className="text-center small">
-                    &copy; 2025 Online Auction. All rights reserved.
+                <div className="text-center text-sm text-red-100">
+                    © 2025 Online Auction. All rights reserved.
                 </div>
             </div>
         </footer>

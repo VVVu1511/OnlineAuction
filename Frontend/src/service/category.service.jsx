@@ -20,7 +20,7 @@ instance.interceptors.request.use(
 
 export async function fetchParentCategories() {
     const res = await instance.get("/allParent");
-    if(res.status === 200){
+    if(res.status === 201){
         return res.data;
     } else {
         throw new Error("Error fetching parent categories");
@@ -29,7 +29,7 @@ export async function fetchParentCategories() {
 
 export async function fetchChildCategory(id) {
     const res = await instance.get(`/child/${id}`);
-    if(res.status === 200){
+    if(res.status === 201){
         return res.data;
     } else {
         throw new Error("Error fetching child category");

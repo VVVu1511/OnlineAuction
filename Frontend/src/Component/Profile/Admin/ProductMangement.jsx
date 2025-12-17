@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import ProductCard from "../../ProductCard/ProductCard.jsx"; // import vào
-import { useNavigate } from "react-router-dom";
-import * as productService from "../../service/product.service.jsx"
+import ProductCard from "../../ProductCard/ProductCard.jsx";
+import * as productService from "../../../service/product.service.jsx";
 
 export default function ProductManagement({ token }) {
     const [products, setProducts] = useState([]);
@@ -20,8 +19,6 @@ export default function ProductManagement({ token }) {
         if (token) loadProducts();
     }, [token]);
 
-
-
     // REMOVE PRODUCT
     const removeProduct = async (id) => {
         try {
@@ -39,28 +36,40 @@ export default function ProductManagement({ token }) {
         }
     };
 
-    
-
     return (
-        <div>
-            <h3>Product Management</h3>
+        <div className="p-4">
+            <h3 className="text-xl font-semibold mb-4">
+                Product Management
+            </h3>
 
-            <div className="d-flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-4">
                 {products.map(p => (
-                    <div key={p.id}>
-
+                    <div
+                        key={p.id}
+                        className="w-[220px] flex flex-col"
+                    >
                         <ProductCard
                             data={p}
-                            liked={false}   // admin không cần watchlist
+                            liked={false}
                         />
 
                         <button
-                            className="btn btn-danger mt-1 w-100"
                             onClick={() => removeProduct(p.id)}
+                            className="
+                                mt-2
+                                w-full
+                                rounded-lg
+                                bg-red-600
+                                px-3
+                                py-2
+                                text-white
+                                font-medium
+                                hover:bg-red-700
+                                transition
+                            "
                         >
                             Remove
                         </button>
-
                     </div>
                 ))}
             </div>

@@ -2,6 +2,7 @@
 import { createBrowserRouter } from "react-router-dom";
 import RootLayout from "../Component/Layout/RootLayout/RootLayout.jsx";
 import AuthLayout from "../Component/Layout/AuthLayout/AuthLayout.jsx";
+
 import Category from "../Component/Category/Category.jsx";
 import TopProducts from "../Component/TopProducts/TopProducts.jsx";
 import Register from "../Component/Register/Register.jsx";
@@ -13,56 +14,63 @@ import OTP from "../Component/OTP/OTP.jsx";
 import ProfileRouter from "../Component/Profile/ProfileRouter.jsx";
 
 const router = createBrowserRouter([
-    {
-        path: "/",
-        element: <RootLayout />,
-        children: [
-        {
-            index: true,
-            element: (
-            <>
-                <Category />
-                <TopProducts />
-            </>
-            ),
-        },
-        {
-            path: "productInfor",
-            element: <ProductInfor />,
-        },
-        {
-            path: "productGridWithCat",
-            element: (
-            <>
-                <CategoryDetail />
-                <ProductGrid />
-            </>
-            ),
-        },
-        {
-            path: "verify-otp",
-            element: <OTP />,
-        },
-        {
-            path: "profile",
-            element: <ProfileRouter />,
-        },
-        ],
-    },
+  // ===== PUBLIC LAYOUT =====
+  {
+    path: "/",
+    element: <RootLayout />,
+    children: [
+      {
+        index: true,
+        element: (
+          <>
+            <Category />
+            <TopProducts />
+          </>
+        ),
+      },
 
-    {
-        element: <AuthLayout />,
-        children: [
-        {
-            path: "/login",
-            element: <Login />,
-        },
-        {
-            path: "/register",
-            element: <Register />,
-        },
-        ],
-    },
+      {
+        path: "product/:id",
+        element: <ProductInfor />,
+      },
+
+      {
+        path: "category/:id",
+        element: (
+          <>
+            <CategoryDetail />
+            <ProductGrid />
+          </>
+        ),
+      },
+
+      {
+        path: "verify-otp",
+        element: <OTP />,
+      },
+
+      {
+        path: "profile/*",
+        element: <ProfileRouter />,
+      },
+    ],
+  },
+
+  // ===== AUTH LAYOUT =====
+  {
+    path: "/",
+    element: <AuthLayout />,
+    children: [
+      {
+        path: "login",
+        element: <Login />,
+      },
+      {
+        path: "register",
+        element: <Register />,
+      },
+    ],
+  },
 ]);
 
 export default router;

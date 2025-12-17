@@ -1,36 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css';
-import ProductCard from '../ProductCard/ProductCard';
-import AddAuctionProduct from './AddProduct';
-import * as productService from "../../service/product.service.jsx"
+import { useState, useEffect } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+import ProductCard from "../ProductCard/ProductCard";
+import AddAuctionProduct from "./AddProduct";
+import * as productService from "../../service/product.service";
 
 export default function SellerProfileUI({ user, token }) {
     const [myProducts, setMyProducts] = useState([]);
     const [wonProducts, setWonProducts] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const [error, setError] = useState("");
 
-    // modal state
+    // ===== Append modal =====
     const [showAppendModal, setShowAppendModal] = useState(false);
     const [currentProduct, setCurrentProduct] = useState(null);
-    const [appendHtml, setAppendHtml] = useState('');
+    const [appendHtml, setAppendHtml] = useState("");
+    const [savingAppend, setSavingAppend] = useState(false);
 
+    // ===== Rate modal =====
     const [showRateModal, setShowRateModal] = useState(false);
     const [rateTarget, setRateTarget] = useState(null);
     const [rateValue, setRateValue] = useState(1);
-    const [rateComment, setRateComment] = useState('');
+    const [rateComment, setRateComment] = useState("");
+    const [rating, setRating] = useState(false);
 
+    // ===== Cancel modal =====
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [cancelTarget, setCancelTarget] = useState(null);
-
-    const headers = {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-    };
+    const [canceling, setCanceling] = useState(false);
 
     // ---------- Fetch data ----------
     useEffect(() => {
+        let mounted = true;
+
         const loadData = async () => {
             setLoading(true);
             try {
@@ -39,143 +41,185 @@ export default function SellerProfileUI({ user, token }) {
                     productService.getMyWonProducts(),
                 ]);
 
-                setMyProducts(myRes.data || []);
-                setWonProducts(wonRes.data || []);
-                setError(null);
+                if (mounted) {
+                    setMyProducts(myRes.data || []);
+                    setWonProducts(wonRes.data || []);
+                }
             } catch (err) {
-                console.error("Load products error:", err);
-                setError(err.response?.data?.message || "Lấy dữ liệu thất bại");
+                if (mounted) {
+                    setError(err.response?.data?.message || "Lấy dữ liệu thất bại");
+                }
             } finally {
-                setLoading(false);
+                mounted && setLoading(false);
             }
         };
 
         loadData();
-    }, [token]);
+        return () => (mounted = false);
+    }, []);
 
+    // ---------- Helpers ----------
+    const chunkArray = (arr, size) =>
+        Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
+            arr.slice(i * size, i * size + size)
+        );
 
     // ---------- Handlers ----------
-    const openAppendModal = (product) => { setCurrentProduct(product); setAppendHtml(''); setShowAppendModal(true); };
-    const openRateModal = (product, winner) => { setRateTarget({ product, winner }); setRateValue(1); setRateComment(''); setShowRateModal(true); };
-    const openCancelModal = (product, winner) => { setCancelTarget({ product, winner }); setShowCancelModal(true); };
+    const handleAppendDescription = async () => {
+        if (!appendHtml.trim()) return alert("Nhập nội dung trước khi lưu");
 
-    // ---------- Render helpers ----------
-    function formatDate(d) {
         try {
-        return new Date(d).toLocaleString();
-        } catch {
-        return d;
-        }
-    }
+            setSavingAppend(true);
+            const res = await productService.appendProductDescription(
+                currentProduct.id,
+                appendHtml
+            );
 
-    function chunkArray(arr, size) {
-        const chunks = [];
-        for (let i = 0; i < arr.length; i += size) {
-            chunks.push(arr.slice(i, i + size));
+            if (res.success) {
+                alert("Bổ sung mô tả thành công");
+                setShowAppendModal(false);
+            } else {
+                alert(res.message || "Thất bại");
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || "Lỗi server");
+        } finally {
+            setSavingAppend(false);
         }
-        return chunks;
-    }
+    };
 
+    const handleRateBidder = async () => {
+        try {
+            setRating(true);
+            const res = await productService.rateBidder(
+                rateTarget.product.id,
+                rateTarget.winner.id,
+                rateValue,
+                rateComment
+            );
+
+            if (res.success) {
+                alert("Đánh giá thành công");
+                setShowRateModal(false);
+            } else {
+                alert(res.message || "Đánh giá thất bại");
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || "Lỗi server");
+        } finally {
+            setRating(false);
+        }
+    };
+
+    const handleCancelTransaction = async () => {
+        try {
+            setCanceling(true);
+            const res = await productService.cancelTransaction(
+                cancelTarget.product.id
+            );
+
+            if (res.success) {
+                alert("Đã huỷ giao dịch");
+                setShowCancelModal(false);
+            } else {
+                alert(res.message || "Huỷ thất bại");
+            }
+        } catch (err) {
+            alert(err.response?.data?.message || "Lỗi server");
+        } finally {
+            setCanceling(false);
+        }
+    };
 
     return (
         <div className="p-5">
-        
-        {loading && <div>Đang tải dữ liệu...</div>}
-        {error && <div className="text-red-600 mb-4">{error}</div>}
+            {loading && <p>Đang tải dữ liệu...</p>}
+            {error && <p className="text-danger">{error}</p>}
 
-        <AddAuctionProduct />
+            <AddAuctionProduct />
 
-        {/* Active products */}
-        <section className="mb-8">
-            <h3 className="text-xl font-medium mb-2">Sản phẩm đang đăng & còn hạn</h3>
-            {myProducts.length === 0 && !loading && <div>Không có sản phẩm nào.</div>}
+            {/* ACTIVE PRODUCTS */}
+            <section className="mb-5">
+                <h4>Sản phẩm đang đăng</h4>
+                {chunkArray(myProducts, 5).map((row, i) => (
+                    <div className="row g-4 mb-3" key={i}>
+                        {row.map(p => (
+                            <div className="col-2" key={p.id}>
+                                <ProductCard data={p} />
+                            </div>
+                        ))}
+                    </div>
+                ))}
+            </section>
 
-            {chunkArray(myProducts, 5).map((row, rowIndex) => (
-                <div className="row g-5 mb-2" key={rowIndex}>
-                    {row.map((p, index) => (
-                        <div className="col-2" key={index}>
-                            <ProductCard data={p} />
-                        </div>
-                    ))}
-                </div>
-            ))}
-        </section>
+            {/* WON PRODUCTS */}
+            <section>
+                <h4>Sản phẩm đã kết thúc</h4>
+                {chunkArray(wonProducts, 5).map((row, i) => (
+                    <div className="row g-4 mb-3" key={i}>
+                        {row.map(p => (
+                            <div className="col-2" key={p.id}>
+                                <ProductCard data={p} />
+                            </div>
+                        ))}
+                    </div>
+                ))}
+            </section>
 
-        {/* Won products */}
-        <section className="mb-8">
-            <h3 className="text-xl font-medium mb-2">Sản phẩm đã có người thắng</h3>
-            {wonProducts.length === 0 && !loading && <div>Chưa có sản phẩm nào được đấu xong.</div>}
+            {/* ===== APPEND MODAL ===== */}
+            {showAppendModal && (
+                <Modal title="Bổ sung mô tả" onClose={() => setShowAppendModal(false)}>
+                    <ReactQuill value={appendHtml} onChange={setAppendHtml} />
+                    <ModalActions
+                        onCancel={() => setShowAppendModal(false)}
+                        onConfirm={handleAppendDescription}
+                        loading={savingAppend}
+                        confirmText="Lưu"
+                    />
+                </Modal>
+            )}
 
-            {chunkArray(wonProducts, 5).map((row, rowIndex) => (
-                <div className="row g-5 mb-2" key={rowIndex}>
-                    {row.map((p, index) => (
-                        <div className="col-2" key={index}>
-                            <ProductCard data={p} />
-                        </div>
-                    ))}
-                </div>
-            ))}
-        </section>
+            {/* ===== RATE MODAL ===== */}
+            {showRateModal && (
+                <Modal title="Đánh giá người thắng" onClose={() => setShowRateModal(false)}>
+                    <select
+                        className="form-select mb-2"
+                        value={rateValue}
+                        onChange={e => setRateValue(+e.target.value)}
+                    >
+                        <option value={1}>+1</option>
+                        <option value={-1}>-1</option>
+                    </select>
 
+                    <textarea
+                        className="form-control"
+                        rows={3}
+                        value={rateComment}
+                        onChange={e => setRateComment(e.target.value)}
+                    />
 
-      {/* Modals (Append / Rate / Cancel) */}
-      {/* Append modal */}
-        {showAppendModal && currentProduct && (
-            <div className="fixed inset-0 bg-black/40 flex justify-center items-center p-4">
-            <div className="bg-white w-full max-w-3xl p-6 rounded shadow-lg">
-                <h4 className="text-lg font-semibold mb-2">Bổ sung mô tả: {currentProduct.name}</h4>
-                <ReactQuill value={appendHtml} onChange={setAppendHtml} />
-                <div className="mt-4 flex justify-end gap-2">
-                <button onClick={() => setShowAppendModal(false)} className="px-4 py-2 border rounded">Huỷ</button>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded">Ghi thêm</button>
-                </div>
-            </div>
-            </div>
-        )}
+                    <ModalActions
+                        onCancel={() => setShowRateModal(false)}
+                        onConfirm={handleRateBidder}
+                        loading={rating}
+                        confirmText="Gửi"
+                    />
+                </Modal>
+            )}
 
-        {/* Rate modal */}
-        {showRateModal && rateTarget && (
-            <div className="fixed inset-0 bg-black/40 flex justify-center items-center p-4">
-            <div className="bg-white w-full max-w-md p-6 rounded shadow-lg">
-                <h4 className="text-lg font-semibold mb-2">Đánh giá người thắng: {rateTarget.winner.name}</h4>
-                <div className="mb-2">
-                <label className="block mb-1">Điểm (+1 / -1)</label>
-                <select value={rateValue} onChange={e => setRateValue(Number(e.target.value))} className="border p-2 rounded w-full">
-                    <option value={1}>+1</option>
-                    <option value={-1}>-1</option>
-                </select>
-                </div>
-                <div className="mb-4">
-                <label className="block mb-1">Nhận xét</label>
-                <textarea value={rateComment} onChange={e => setRateComment(e.target.value)} className="w-full border rounded p-2" rows={4}/>
-                </div>
-                <div className="flex justify-end gap-2">
-                <button onClick={() => setShowRateModal(false)} className="px-3 py-1 border rounded">Huỷ</button>
-                <button className="px-3 py-1 bg-green-600 text-white rounded">Gửi đánh giá</button>
-                </div>
-            </div>
-            </div>
-        )}
-
-        {/* Cancel modal */}
-        {showCancelModal && cancelTarget && (
-            <div className="fixed inset-0 bg-black/40 flex justify-center items-center p-4">
-            <div className="bg-white w-full max-w-md p-6 rounded shadow-lg">
-                <h4 className="text-lg font-semibold mb-2">Huỷ giao dịch: {cancelTarget.product.name}</h4>
-                <div className="mb-4">
-                <label>Lý do</label>
-                <textarea value={'Người thắng không thanh toán'} disabled className="w-full border rounded p-2" rows={3}/>
-                </div>
-                <div className="flex justify-end gap-2">
-                <button onClick={() => setShowCancelModal(false)} className="px-3 py-1 border rounded">Huỷ</button>
-                <button className="px-3 py-1 bg-red-500 text-white rounded">Xác nhận huỷ</button>
-                </div>
-            </div>
-            </div>
-        )}
-
-    </div>
-
-    )
+            {/* ===== CANCEL MODAL ===== */}
+            {showCancelModal && (
+                <Modal title="Huỷ giao dịch" onClose={() => setShowCancelModal(false)}>
+                    <p>Người thắng không thanh toán</p>
+                    <ModalActions
+                        onCancel={() => setShowCancelModal(false)}
+                        onConfirm={handleCancelTransaction}
+                        loading={canceling}
+                        confirmText="Xác nhận huỷ"
+                        danger
+                    />
+                </Modal>
+            )}
+        </div>
+    );
 }
-

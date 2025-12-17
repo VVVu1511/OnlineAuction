@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import * as categoryService from "../../service/category.service.jsx"
+import * as categoryService from "../../../service/category.service.jsx";
 
 export default function CategoryManagement({ token }) {
     const [categories, setCategories] = useState([]);
@@ -8,146 +8,136 @@ export default function CategoryManagement({ token }) {
     const [editingId, setEditingId] = useState(null);
     const [editingText, setEditingText] = useState("");
 
-    // Load categories
+    const [loading, setLoading] = useState(false);
+
+    // LOAD
     useEffect(() => {
+        if (!token) return;
+
         const loadCategories = async () => {
             try {
+                setLoading(true);
                 const res = await categoryService.getAllCategories();
                 setCategories(res.data || []);
             } catch (err) {
-                console.error("Load categories error:", err);
                 alert(err.response?.data?.message || "Không tải được category");
+            } finally {
+                setLoading(false);
             }
         };
 
-        if (token) loadCategories();
+        loadCategories();
     }, [token]);
 
-
-
-    // DELETE
-    const handleDelete = async (id) => {
-        try {
-            const res = await categoryService.deleteCategory(id);
-
-            if (!res.success) {
-                alert("Cannot delete category (it may have products)");
-                return;
-            }
-
-            setCategories(prev => prev.filter(c => c.id !== id));
-        } catch (err) {
-            console.error("Delete error:", err);
-            alert(err.response?.data?.message || "Xóa category thất bại");
-        }
-    };
-
-
-    // ADD CATEGORY
+    // ADD
     const handleAdd = async () => {
         if (!newCat.trim()) {
-            alert("Category name cannot be empty");
+            alert("Tên category không được để trống");
             return;
         }
 
         try {
-            const res = await categoryService.addCategory(newCat);
-
-            if (!res.success) {
-                alert(res.message || "Failed to add category");
-                return;
-            }
+            const res = await categoryService.addCategory(newCat.trim());
+            if (!res.success) throw new Error(res.message);
 
             setCategories(prev => [...prev, res.category]);
             setNewCat("");
         } catch (err) {
-            console.error("Add error:", err);
-            alert(err.response?.data?.message || "Thêm category thất bại");
+            alert(err.message || "Thêm category thất bại");
         }
     };
 
-
-
-    // UPDATE CATEGORY
+    // UPDATE
     const handleUpdate = async (id) => {
-        try {
-            const res = await categoryService.updateCategory(id, editingText);
+        if (!editingText.trim()) {
+            alert("Tên category không hợp lệ");
+            return;
+        }
 
-            if (!res.message?.includes("successfully")) {
-                alert("Update failed");
-                return;
-            }
+        try {
+            const res = await categoryService.updateCategory(id, editingText.trim());
+            if (!res.success) throw new Error(res.message);
 
             setCategories(prev =>
                 prev.map(c =>
-                    c.id === id ? { ...c, description: editingText } : c
+                    c.id === id ? { ...c, description: editingText.trim() } : c
                 )
             );
 
             setEditingId(null);
             setEditingText("");
         } catch (err) {
-            console.error("Update error:", err);
-            alert(err.response?.data?.message || "Cập nhật category thất bại");
+            alert(err.message || "Cập nhật thất bại");
         }
     };
 
+    // DELETE
+    const handleDelete = async (id) => {
+        if (!window.confirm("Xóa category này?")) return;
 
+        try {
+            const res = await categoryService.deleteCategory(id);
+            if (!res.success) throw new Error(res.message);
+
+            setCategories(prev => prev.filter(c => c.id !== id));
+        } catch (err) {
+            alert(err.message || "Không thể xóa category");
+        }
+    };
 
     return (
-        <div>
-            <h3>Category Management</h3>
+        <div className="border p-4 rounded">
+            <h3 className="mb-3">Category Management</h3>
 
-            <table>
+            {loading && <p>Đang tải...</p>}
+
+            <table className="table table-bordered">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Actions</th>
+                        <th>Tên</th>
+                        <th width="200">Hành động</th>
                     </tr>
                 </thead>
-
                 <tbody>
                     {categories.map(c => (
                         <tr key={c.id}>
                             <td>
                                 {editingId === c.id ? (
                                     <input
-                                        type="text"
+                                        className="form-control"
                                         value={editingText}
-                                        onChange={(e) => setEditingText(e.target.value)}
+                                        onChange={e => setEditingText(e.target.value)}
                                     />
                                 ) : (
                                     c.description
                                 )}
                             </td>
-
                             <td>
                                 {editingId === c.id ? (
                                     <>
-                                        <button onClick={() => handleUpdate(c.id)}>
+                                        <button className="btn btn-success btn-sm me-2"
+                                            onClick={() => handleUpdate(c.id)}>
                                             Save
                                         </button>
-                                        <button onClick={() => {
-                                            setEditingId(null);
-                                            setEditingText("");
-                                        }}>
+                                        <button className="btn btn-secondary btn-sm"
+                                            onClick={() => {
+                                                setEditingId(null);
+                                                setEditingText("");
+                                            }}>
                                             Cancel
                                         </button>
                                     </>
                                 ) : (
                                     <>
-                                        <button
+                                        <button className="btn btn-warning btn-sm me-2"
                                             onClick={() => {
                                                 setEditingId(c.id);
                                                 setEditingText(c.description);
-                                            }}
-                                        >
+                                            }}>
                                             Edit
                                         </button>
-
-                                        <button
-                                            onClick={() => handleDelete(c.id)}
-                                        >
+                                        <button className="btn btn-danger btn-sm"
+                                            onClick={() => handleDelete(c.id)}>
                                             Delete
                                         </button>
                                     </>
@@ -160,14 +150,18 @@ export default function CategoryManagement({ token }) {
 
             <hr />
 
-            <h4>Add New Category</h4>
-            <input
-                type="text"
-                value={newCat}
-                placeholder="Category name"
-                onChange={(e) => setNewCat(e.target.value)}
-            />
-            <button onClick={handleAdd}>Add</button>
+            <h5>Thêm Category mới</h5>
+            <div className="d-flex gap-2">
+                <input
+                    className="form-control"
+                    value={newCat}
+                    placeholder="Tên category"
+                    onChange={e => setNewCat(e.target.value)}
+                />
+                <button className="btn btn-primary" onClick={handleAdd}>
+                    Add
+                </button>
+            </div>
         </div>
     );
 }

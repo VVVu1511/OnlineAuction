@@ -24,7 +24,7 @@ export async function askSeller(productId, question) {
         question,
     });
 
-    if (res.status === 200) {
+    if (res.status === 201) {
         return res.data;
     } else {
         throw new Error("Error asking seller");

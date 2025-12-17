@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import ProductCard from "../ProductCard/ProductCard";
-import * as productService from "../../service/product.service.jsx"
-import * as accountService from "../../service/account.service.jsx"
+import * as productService from "../../service/product.service";
+import * as accountService from "../../service/account.service";
 
-function TopProducts() {
+export default function TopProducts() {
     const [top5End, setTop5End] = useState([]);
     const [top5Bid, setTop5Bid] = useState([]);
     const [top5Price, setTop5Price] = useState([]);
@@ -14,17 +14,15 @@ function TopProducts() {
             try {
                 const token = localStorage.getItem("token");
 
-                const [
-                    endRes,
-                    bidRes,
-                    priceRes,
-                    favRes
-                ] = await Promise.all([
-                    productService.getTop5NearEnd(),
-                    productService.getTop5BidCounts(),
-                    productService.getTop5Price(),
-                    token ? accountService.getWatchlist() : Promise.resolve({ data: [] })
-                ]);
+                const [endRes, bidRes, priceRes, favRes] =
+                    await Promise.all([
+                        productService.getTop5NearEnd(),
+                        productService.getTop5BidCounts(),
+                        productService.getTop5Price(),
+                        token
+                            ? accountService.getWatchlist()
+                            : Promise.resolve({ data: [] }),
+                    ]);
 
                 setTop5End(endRes.data || []);
                 setTop5Bid(bidRes.data || []);
@@ -38,44 +36,50 @@ function TopProducts() {
         loadData();
     }, []);
 
+    const isFavorite = (product) =>
+        favorites.some((f) => f.id === product.id);
 
-
-    // Check if product is favorite
-    const isFavorite = (product) => favorites.some(f => f.id === product.id);
-
+    /* ================= UI ================= */
     return (
-        <div>
-            {/* Top 5 sản phẩm gần kết thúc */}
-            <p className="mt-5 fw-bold text-center">Top 5 sản phẩm gần kết thúc</p>
-            <div className="d-flex justify-content-center flex-wrap gap-3">
-                {top5End.map((item, index) => (
-                    <div key={index}>
-                        <ProductCard data={item} liked={isFavorite(item)} />
-                    </div>
-                ))}
-            </div>
+        <div className="space-y-12 mt-5">
+            <Section
+                title="🔥 Top 5 sản phẩm gần kết thúc"
+                data={top5End}
+                isFavorite={isFavorite}
+            />
 
-            {/* Top 5 sản phẩm có nhiều lượt ra giá nhất */}
-            <p className="mt-5 fw-bold text-center">Top 5 sản phẩm có nhiều lượt ra giá nhất</p>
-            <div className="d-flex justify-content-center flex-wrap gap-3">
-                {top5Bid.map((item, index) => (
-                    <div key={index}>
-                        <ProductCard data={item} liked={isFavorite(item)} />
-                    </div>
-                ))}
-            </div>
+            <Section
+                title="🔥 Top 5 sản phẩm có nhiều lượt ra giá nhất"
+                data={top5Bid}
+                isFavorite={isFavorite}
+            />
 
-            {/* Top 5 sản phẩm có giá cao nhất */}
-            <p className="mt-5 fw-bold text-center">Top 5 sản phẩm có giá cao nhất</p>
-            <div className="d-flex justify-content-center flex-wrap gap-3">
-                {top5Price.map((item, index) => (
-                    <div key={index}>
-                        <ProductCard data={item} liked={isFavorite(item)} />
-                    </div>
-                ))}
-            </div>
+            <Section
+                title="🔥 Top 5 sản phẩm có giá cao nhất"
+                data={top5Price}
+                isFavorite={isFavorite}
+            />
         </div>
     );
 }
 
-export default TopProducts;
+/* ================= SUB COMPONENT ================= */
+function Section({ title, data, isFavorite }) {
+    return (
+        <section>
+            <h2 className="text-xl font-bold text-center mb-6 text-gray-800">
+                {title}
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 justify-items-center">
+                {data.map((item) => (
+                    <ProductCard
+                        key={item.id}
+                        data={item}
+                        // liked={isFavorite(item)}
+                    />
+                ))}
+            </div>
+        </section>
+    );
+}

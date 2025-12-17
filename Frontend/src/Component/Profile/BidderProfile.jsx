@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import ProductCard from "../ProductCard/ProductCard";
-import * as accountService from "../../service/account.service.jsx"
-import * as biddingService from "../../service/bidding.service.jsx"
+import * as accountService from "../../service/account.service";
 
 export default function BidderProfile({ user, token }) {
     const [reviews, setReviews] = useState([]);
@@ -9,8 +8,6 @@ export default function BidderProfile({ user, token }) {
     const [bidding, setBidding] = useState([]);
     const [won, setWon] = useState([]);
     const [editMode, setEditMode] = useState(false);
-
-    // NEW: toggle riêng cho phần đổi password
     const [changePassword, setChangePassword] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -19,11 +16,6 @@ export default function BidderProfile({ user, token }) {
         oldPassword: "",
         newPassword: ""
     });
-
-    const headers = {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-    };
 
     useEffect(() => {
         loadBidderData();
@@ -43,254 +35,199 @@ export default function BidderProfile({ user, token }) {
             setBidding(bidRes.data || []);
             setWon(wonRes.data || []);
         } catch (err) {
-            console.error("Load bidder data error:", err);
-            alert(err.response?.data?.message || "Lỗi khi tải dữ liệu bidder");
+            alert("Lỗi khi tải dữ liệu bidder");
         }
     };
 
-    const handleChange = (e) => {
+    const handleChange = (e) =>
         setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-    };
 
-    const isFavorite = (product) => {
-        return favorites.some(f => f.id === product.id);
-    };
-
+    const isFavorite = (product) =>
+        favorites.some(f => f.id === product.id);
 
     const saveProfile = async () => {
-        // Nếu người dùng đổi password → bắt buộc nhập password cũ
         if (changePassword && !formData.oldPassword) {
-            alert("Bạn cần nhập mật khẩu cũ để đổi mật khẩu");
+            alert("Bạn cần nhập mật khẩu cũ");
             return;
         }
 
         try {
             const data = await accountService.updateProfile(formData);
-
             if (data.success) {
                 alert("Cập nhật thành công!");
-
                 setEditMode(false);
                 setChangePassword(false);
-                setFormData(prev => ({
-                    ...prev,
-                    oldPassword: "",
-                    newPassword: ""
-                }));
-            } else {
-                alert(data.message || "Lỗi cập nhật thông tin");
+                setFormData(prev => ({ ...prev, oldPassword: "", newPassword: "" }));
             }
-        } catch (err) {
-            console.error("Update profile error:", err);
-            alert(err.response?.data?.message || "Lỗi khi cập nhật profile");
+        } catch {
+            alert("Lỗi cập nhật profile");
         }
     };
 
     const sendUpgradeRequestHandler = async () => {
         if (!window.confirm("Gửi yêu cầu nâng cấp thành Seller?")) return;
-
         try {
             const data = await accountService.sendUpgradeRequest();
-
-            if (data.success) {
-                alert("Yêu cầu đã được gửi. Admin sẽ duyệt trong 7 ngày.");
-            } else {
-                alert(data.message || "Không gửi được yêu cầu.");
-            }
-        } catch (err) {
-            console.error("Upgrade request error:", err);
-            alert(err.response?.data?.message || "Lỗi khi gửi yêu cầu nâng cấp");
+            alert(data.success ? "Yêu cầu đã được gửi" : data.message);
+        } catch {
+            alert("Lỗi gửi yêu cầu");
         }
     };
 
+    const Card = ({ title, children }) => (
+        <div className="bg-white rounded-xl shadow p-5 mb-6">
+            <h3 className="text-lg font-semibold mb-4">{title}</h3>
+            {children}
+        </div>
+    );
+
     return (
-        <div className="container mt-3">
+        <div className="max-w-7xl mx-auto px-4 py-6">
 
-            {/* ==== PERSONAL INFO ==== */}
-            <div className="border p-3 rounded mt-3">
-                <h4>Thông tin cá nhân</h4>
-
+            {/* PERSONAL INFO */}
+            <Card title="Thông tin cá nhân">
                 {!editMode ? (
                     <>
-                        <p><strong>Email:</strong> {user.email}</p>
-                        <p><strong>Họ tên:</strong> {user.full_name}</p>
-                        <p><strong>Địa chỉ:</strong> {user.address}</p>
+                        <p><b>Email:</b> {user.email}</p>
+                        <p><b>Họ tên:</b> {user.full_name}</p>
+                        <p><b>Địa chỉ:</b> {user.address}</p>
 
-                        <button className="btn btn-primary" onClick={() => setEditMode(true)}>
+                        <button
+                            onClick={() => setEditMode(true)}
+                            className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg"
+                        >
                             Chỉnh sửa hồ sơ
                         </button>
                     </>
                 ) : (
-                    <>
-                        <div className="mb-2">
-                            <label>Email</label>
-                            <input
-                                className="form-control"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleChange}
-                            />
-                        </div>
+                    <div className="space-y-3">
+                        <input
+                            name="email"
+                            value={formData.email}
+                            onChange={handleChange}
+                            className="w-full border rounded-lg px-3 py-2"
+                            placeholder="Email"
+                        />
+                        <input
+                            name="full_name"
+                            value={formData.full_name}
+                            onChange={handleChange}
+                            className="w-full border rounded-lg px-3 py-2"
+                            placeholder="Họ tên"
+                        />
 
-                        <div className="mb-2">
-                            <label>Họ tên</label>
-                            <input
-                                className="form-control"
-                                name="full_name"
-                                value={formData.full_name}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        {/* Nút đổi mật khẩu */}
                         <button
-                            className="mt-2 btn btn-warning mb-2 me-2"
                             onClick={() => setChangePassword(!changePassword)}
+                            className="text-yellow-600 text-sm"
                         >
                             {changePassword ? "Hủy đổi mật khẩu" : "Đổi mật khẩu"}
                         </button>
 
                         {changePassword && (
                             <>
-                                <div className="mb-2">
-                                    <label>Mật khẩu cũ</label>
-                                    <input
-                                        type="password"
-                                        className="form-control"
-                                        name="oldPassword"
-                                        onChange={handleChange}
-                                    />
-                                </div>
-
-                                <div className="mb-2">
-                                    <label>Mật khẩu mới</label>
-                                    <input
-                                        type="password"
-                                        className="form-control"
-                                        name="newPassword"
-                                        onChange={handleChange}
-                                    />
-                                </div>
+                                <input
+                                    type="password"
+                                    name="oldPassword"
+                                    onChange={handleChange}
+                                    placeholder="Mật khẩu cũ"
+                                    className="w-full border rounded-lg px-3 py-2"
+                                />
+                                <input
+                                    type="password"
+                                    name="newPassword"
+                                    onChange={handleChange}
+                                    placeholder="Mật khẩu mới"
+                                    className="w-full border rounded-lg px-3 py-2"
+                                />
                             </>
                         )}
 
-                        <button className="btn btn-success me-2" onClick={saveProfile}>
-                            Lưu
-                        </button>
-
-                        <button
-                            className="btn btn-secondary"
-                            onClick={() => {
-                                setEditMode(false);
-                                setChangePassword(false);
-                            }}
-                        >
-                            Hủy
-                        </button>
-                    </>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={saveProfile}
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg"
+                            >
+                                Lưu
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setEditMode(false);
+                                    setChangePassword(false);
+                                }}
+                                className="px-4 py-2 bg-gray-300 rounded-lg"
+                            >
+                                Hủy
+                            </button>
+                        </div>
+                    </div>
                 )}
-            </div>
+            </Card>
 
-            {/* ==== REVIEWS ==== */}
-            <div className="border p-3 rounded mt-3">
-                <h4>Đánh giá</h4>
-
+            {/* REVIEWS */}
+            <Card title="Đánh giá">
                 {reviews.length === 0 ? (
                     <p>Chưa có đánh giá</p>
                 ) : (
                     <>
-                        {/* Tính toán */}
                         {(() => {
-                            const total = reviews.length;
                             const positive = reviews.filter(r => r.rating > 0).length;
-                            const score = ((positive / total) * 100).toFixed(0);
-
+                            const score = ((positive / reviews.length) * 100).toFixed(0);
                             return (
-                                <div className="mb-3">
-                                    <p><strong>Số lượng đánh giá:</strong> {total}</p>
-                                    <p>
-                                        <strong>Điểm:</strong>{" "}
-                                        <span className={score >= 80 ? "text-success" : "text-danger"}>
-                                            {score}%
-                                        </span>
-                                    </p>
-                                </div>
+                                <p>
+                                    Điểm uy tín:{" "}
+                                    <span className={score >= 80 ? "text-green-600" : "text-red-600"}>
+                                        {score}%
+                                    </span>
+                                </p>
                             );
                         })()}
 
-                        {/* Danh sách đánh giá */}
-                        <h5 className="mb-2">Chi tiết các lần đánh giá:</h5>
-
-                        {/* Danh sách đánh giá, bỏ bullet */}
-                        <ul className="list-unstyled">
+                        <ul className="mt-3 space-y-1">
                             {reviews.map((r, i) => (
-                                <li key={i} className="mb-1">
-                                    <strong className={r.rating > 0 ? "text-success" : "text-danger"}>
+                                <li key={i}>
+                                    <span className={r.rating > 0 ? "text-green-600" : "text-red-600"}>
                                         {r.rating > 0 ? "+1" : "-1"}
-                                    </strong>{" "}— {r.comment}
+                                    </span>{" "}
+                                    — {r.comment}
                                 </li>
                             ))}
                         </ul>
-                                </>
-                        )}
-            </div>
-
-
-            {/* ==== FAVORITES ==== */}
-            <div className="border p-3 rounded mt-3">
-                <h4>Sản phẩm yêu thích ({favorites.length})</h4>
-
-                {favorites.length === 0 ? <p>Không có sản phẩm nào</p> : (
-                    <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 
-                        row-cols-lg-4 row-cols-xl-5 g-3 mt-3">
-                        {favorites.map((f, i) => (
-                            <div className="col" key={i}>
-                                <ProductCard data={f} liked={true} />
-                            </div>
-                        ))}
-                    </div>
+                    </>
                 )}
-            </div>
+            </Card>
 
-            {/* ==== BIDDING ==== */}
-            <div className="border p-3 rounded mt-3">
-                <h4>Sản phẩm đang đấu giá ({bidding.length})</h4>
+            {/* PRODUCT SECTIONS */}
+            {[
+                ["Sản phẩm yêu thích", favorites, true],
+                ["Đang đấu giá", bidding, false],
+                ["Đã thắng", won, false],
+            ].map(([title, list, liked], idx) => (
+                <Card key={idx} title={`${title} (${list.length})`}>
+                    {list.length === 0 ? (
+                        <p>Không có sản phẩm</p>
+                    ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                            {list.map((item, i) => (
+                                <ProductCard
+                                    key={i}
+                                    data={item}
+                                    liked={liked ? true : isFavorite(item)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </Card>
+            ))}
 
-                {bidding.length === 0 ? <p>Chưa đấu giá sản phẩm nào</p> : (
-                    <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 
-                        row-cols-lg-4 row-cols-xl-5 g-3 mt-3">
-                        {bidding.map((b, i) => (
-                            <div className="col" key={i}>
-                                <ProductCard data={b} liked={isFavorite(b)} />
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* ==== WON ==== */}
-            <div className="border p-3 rounded mt-3">
-                <h4>Sản phẩm đã thắng ({won.length})</h4>
-
-                {won.length === 0 ? <p>Chưa thắng sản phẩm nào</p> : (
-                    <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 
-                        row-cols-lg-4 row-cols-xl-5 g-3 mt-3">
-                        {won.map((w, i) => (
-                            <div className="col" key={i}>
-                                <ProductCard data={w} />
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* ==== UPGRADE ==== */}
-            <div className="border p-3 rounded mt-3 mb-5">
-                <h4>Nâng cấp thành Seller</h4>
-                <button className="btn btn-warning" onClick={sendUpgradeRequest}>
+            {/* UPGRADE */}
+            <Card title="Nâng cấp thành Seller">
+                <button
+                    onClick={sendUpgradeRequestHandler}
+                    className="px-4 py-2 bg-yellow-500 text-white rounded-lg"
+                >
                     Gửi yêu cầu nâng cấp (7 ngày)
                 </button>
-            </div>
+            </Card>
         </div>
     );
 }

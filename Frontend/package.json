@@ -21,6 +21,7 @@
     "vite": "^7.2.2"
   },
   "dependencies": {
+    "@tailwindcss/vite": "^4.1.18",
     "axios": "^1.13.2",
     "dayjs": "^1.11.19",
     "quill": "^2.0.3",
@@ -29,6 +30,7 @@
     "react-google-recaptcha": "^3.1.0",
     "react-icons": "^5.5.0",
     "react-quill": "^2.0.0",
-    "react-router-dom": "^6.30.2"
+    "react-router-dom": "^6.30.2",
+    "tailwindcss": "^4.1.18"
   }
 }

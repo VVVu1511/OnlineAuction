@@ -1,10 +1,10 @@
 // order/OrderCompletion.jsx
 import OrderStepper from "./OrderStepper.jsx";
-import Step1Payment from "./steps/Step1Payment.jsx";
-import Step2Shipping from "./steps/Step2Shipping.jsx";
-import Step3ConfirmReceived from "./steps/Step3ConfirmReceived.jsx";
-import Step4Rating from "./steps/Step4Rating.jsx";
-import OrderChat from "./OrderChat.jsx";
+import Step1Payment from "./Step1Payment.jsx"
+import Step2Shipping from "./Step2Shipping.jsx";
+import Step3ConfirmReceived from "./Step3ConfirmReceived.jsx";
+import Step4Rating from "./Step4Rating.jsx";
+// import OrderChat from "./OrderChat.jsx";
 import OrderActions from "./OrderActions.jsx";
 import { useState } from "react";
 
@@ -40,7 +40,7 @@ export default function OrderCompletion({ product, role }) {
             onCancel={() => setOrderStatus(-1)}
         />
 
-        <OrderChat />
+        {/* <OrderChat /> */}
         </div>
     );
 }

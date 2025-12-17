@@ -1,118 +1,203 @@
-import { FaFacebook, FaGoogle } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
-import * as accountService from "../../service/account.service.jsx"
+import { FaFacebook, FaGoogle } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import * as accountService from "../../service/account.service.jsx";
 
 function Login() {
     const navigate = useNavigate();
 
-    // State for inputs
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [rememberMe, setRememberMe] = useState(false);
 
     const handleLogin = async (e) => {
-        e.preventDefault(); // prevent form reload
-
-        console.log("Login attempt:", { email, password, rememberMe });
+        e.preventDefault();
 
         try {
             const data = await accountService.login(email, password);
 
             if (data.success && data.token) {
-            // 1️⃣ Lưu token
-            localStorage.setItem("token", data.token);
-            localStorage.setItem("userEmail", email);
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("userEmail", email);
 
-            // 2️⃣ Gọi profile (token đã tự gắn qua interceptor)
-            const profile = await accountService.getProfile();
+                const profile = await accountService.getProfile();
+                localStorage.setItem("role", profile.role_description);
 
-            // 3️⃣ Lưu role
-            localStorage.setItem("role", profile.role_description);
-
-            console.log("Login success:", profile);
-
-            // 4️⃣ Redirect
-            navigate("/");
-
+                navigate("/");
             } else {
                 alert(data.message || "Login failed");
             }
-
         } catch (err) {
             console.error("Login error:", err);
             alert("Server error during login");
         }
     };
 
-
     return (
-        <div className="d-flex justify-content-center align-items-center" style={{ minHeight: "100vh"}}>
-            <form 
-                className="w-100 border p-4 rounded shadow" 
-                style={{ maxWidth: '1000px' , minWidth: '600px'}}
+        <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
+            <form
                 onSubmit={handleLogin}
+                className="
+                    w-full
+                    max-w-lg
+                    bg-white
+                    p-8
+                    rounded-2xl
+                    shadow-lg
+                "
             >
-                <h2 className="text-center mb-4">Đăng Nhập</h2>
+                <h2 className="text-2xl font-bold text-center mb-6">
+                    Đăng Nhập
+                </h2>
 
                 {/* Email */}
-                <div className="mb-3">
-                    <label htmlFor="email" className="form-label">Email address</label>
-                    <input 
-                        type="email" 
-                        required 
-                        className="form-control" 
-                        id="email" 
-                        placeholder="you@example.com" 
+                <div className="mb-4">
+                    <label
+                        htmlFor="email"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                        Email address
+                    </label>
+                    <input
+                        id="email"
+                        type="email"
+                        required
+                        placeholder="you@example.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
+                        className="
+                            w-full
+                            px-4
+                            py-2
+                            rounded-xl
+                            border
+                            border-gray-300
+                            focus:outline-none
+                            focus:ring-2
+                            focus:ring-red-200
+                            focus:border-red-500
+                        "
                     />
                 </div>
 
                 {/* Password */}
-                <div className="mb-3">
-                    <label htmlFor="password" className="form-label">Password</label>
-                    <input 
-                        type="password" 
-                        required 
-                        className="form-control" 
-                        id="password" 
-                        placeholder="********" 
+                <div className="mb-4">
+                    <label
+                        htmlFor="password"
+                        className="block text-sm font-medium text-gray-700 mb-1"
+                    >
+                        Password
+                    </label>
+                    <input
+                        id="password"
+                        type="password"
+                        required
+                        placeholder="********"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
+                        className="
+                            w-full
+                            px-4
+                            py-2
+                            rounded-xl
+                            border
+                            border-gray-300
+                            focus:outline-none
+                            focus:ring-2
+                            focus:ring-red-200
+                            focus:border-red-500
+                        "
                     />
                 </div>
 
                 {/* Remember Me */}
-                <div className="mb-3 form-check">
-                    <input 
-                        type="checkbox" 
-                        className="form-check-input" 
-                        id="rememberMe" 
+                <div className="flex items-center gap-2 mb-6">
+                    <input
+                        id="rememberMe"
+                        type="checkbox"
                         checked={rememberMe}
                         onChange={(e) => setRememberMe(e.target.checked)}
+                        className="h-4 w-4 text-red-600 rounded border-gray-300 focus:ring-red-500"
                     />
-                    <label className="form-check-label" htmlFor="rememberMe">Remember me</label>
+                    <label
+                        htmlFor="rememberMe"
+                        className="text-sm text-gray-700"
+                    >
+                        Remember me
+                    </label>
                 </div>
 
-                {/* Social login */}
-                <div className="d-flex justify-content-center align-items-center mb-3 gap-3">
-                    <button type="button" className="btn btn-primary d-flex align-items-center gap-2">
-                        <FaFacebook /> Facebook
+                {/* Social Login */}
+                <div className="flex gap-3 mb-6">
+                    <button
+                        type="button"
+                        className="
+                            flex-1
+                            flex
+                            items-center
+                            justify-center
+                            gap-2
+                            py-2
+                            rounded-xl
+                            bg-blue-600
+                            text-white
+                            font-medium
+                            hover:bg-blue-700
+                            transition
+                        "
+                    >
+                        <FaFacebook />
+                        Facebook
                     </button>
-                    <button type="button" className="btn btn-danger d-flex align-items-center gap-2">
-                        <FaGoogle /> Google
+
+                    <button
+                        type="button"
+                        className="
+                            flex-1
+                            flex
+                            items-center
+                            justify-center
+                            gap-2
+                            py-2
+                            rounded-xl
+                            bg-red-500
+                            text-white
+                            font-medium
+                            hover:bg-red-600
+                            transition
+                        "
+                    >
+                        <FaGoogle />
+                        Google
                     </button>
                 </div>
 
-                {/* Submit button */}
-                <button type="submit" className="btn btn-success w-100">
+                {/* Submit */}
+                <button
+                    type="submit"
+                    className="
+                        w-full
+                        py-3
+                        rounded-xl
+                        bg-green-600
+                        text-white
+                        font-semibold
+                        hover:bg-green-700
+                        transition
+                    "
+                >
                     Đăng Nhập
                 </button>
 
-                {/* Register link */}
-                <p className="text-center mt-3">
-                    Chưa có tài khoản? <a href="/register">Đăng ký</a>
+                {/* Register */}
+                <p className="text-center text-sm text-gray-600 mt-4">
+                    Chưa có tài khoản?{" "}
+                    <span
+                        onClick={() => navigate("/register")}
+                        className="text-red-600 font-medium cursor-pointer hover:underline"
+                    >
+                        Đăng ký
+                    </span>
                 </p>
             </form>
         </div>
