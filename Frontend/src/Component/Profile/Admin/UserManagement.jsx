@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import * as accountService from "../../../service/account.service.jsx";
 
-export default function UserManagement({ token }) {
+export default function UserManagement({ user }) {
     const [users, setUsers] = useState([]);
 
     // GET ALL USERS
@@ -16,8 +16,8 @@ export default function UserManagement({ token }) {
             }
         };
 
-        if (token) loadUsers();
-    }, [token]);
+        if (user) loadUsers();
+    }, [user]);
 
     // DELETE USER
     const handleDelete = async (id) => {

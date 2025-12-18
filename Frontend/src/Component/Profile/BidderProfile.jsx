@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import ProductCard from "../ProductCard/ProductCard";
 import * as accountService from "../../service/account.service";
+import PersonalInformation from "./Information/PersonalInformation.jsx";
+import ChangePassword from "./Information/ChangePassword.jsx";
 
 export default function BidderProfile({ user, token }) {
     const [reviews, setReviews] = useState([]);
@@ -85,83 +87,9 @@ export default function BidderProfile({ user, token }) {
         <div className="max-w-7xl mx-auto px-4 py-6">
 
             {/* PERSONAL INFO */}
-            <Card title="Thông tin cá nhân">
-                {!editMode ? (
-                    <>
-                        <p><b>Email:</b> {user.email}</p>
-                        <p><b>Họ tên:</b> {user.full_name}</p>
-                        <p><b>Địa chỉ:</b> {user.address}</p>
-
-                        <button
-                            onClick={() => setEditMode(true)}
-                            className="mt-3 px-4 py-2 bg-blue-600 text-white rounded-lg"
-                        >
-                            Chỉnh sửa hồ sơ
-                        </button>
-                    </>
-                ) : (
-                    <div className="space-y-3">
-                        <input
-                            name="email"
-                            value={formData.email}
-                            onChange={handleChange}
-                            className="w-full border rounded-lg px-3 py-2"
-                            placeholder="Email"
-                        />
-                        <input
-                            name="full_name"
-                            value={formData.full_name}
-                            onChange={handleChange}
-                            className="w-full border rounded-lg px-3 py-2"
-                            placeholder="Họ tên"
-                        />
-
-                        <button
-                            onClick={() => setChangePassword(!changePassword)}
-                            className="text-yellow-600 text-sm"
-                        >
-                            {changePassword ? "Hủy đổi mật khẩu" : "Đổi mật khẩu"}
-                        </button>
-
-                        {changePassword && (
-                            <>
-                                <input
-                                    type="password"
-                                    name="oldPassword"
-                                    onChange={handleChange}
-                                    placeholder="Mật khẩu cũ"
-                                    className="w-full border rounded-lg px-3 py-2"
-                                />
-                                <input
-                                    type="password"
-                                    name="newPassword"
-                                    onChange={handleChange}
-                                    placeholder="Mật khẩu mới"
-                                    className="w-full border rounded-lg px-3 py-2"
-                                />
-                            </>
-                        )}
-
-                        <div className="flex gap-2">
-                            <button
-                                onClick={saveProfile}
-                                className="px-4 py-2 bg-green-600 text-white rounded-lg"
-                            >
-                                Lưu
-                            </button>
-                            <button
-                                onClick={() => {
-                                    setEditMode(false);
-                                    setChangePassword(false);
-                                }}
-                                className="px-4 py-2 bg-gray-300 rounded-lg"
-                            >
-                                Hủy
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </Card>
+            <PersonalInformation />
+            {/* CHANGE PASSWORD */}
+            <ChangePassword />
 
             {/* REVIEWS */}
             <Card title="Đánh giá">

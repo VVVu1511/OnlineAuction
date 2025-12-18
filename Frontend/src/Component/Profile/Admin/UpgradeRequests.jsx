@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import * as accountService from "../../../service/account.service.jsx";
 
-export default function UpgradeRequests({ token }) {
+export default function UpgradeRequests({ user }) {
     const [requests, setRequests] = useState([]);
 
     const loadData = async () => {
@@ -15,8 +15,9 @@ export default function UpgradeRequests({ token }) {
     };
 
     useEffect(() => {
-        if (token) loadData();
-    }, [token]);
+        if (user) loadData();
+    
+    }, [user]);
 
     const handleAction = async (id, action) => {
         try {

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import * as categoryService from "../../../service/category.service.jsx";
 
-export default function CategoryManagement({ token }) {
+export default function CategoryManagement({ user }) {
     const [categories, setCategories] = useState([]);
     const [newCat, setNewCat] = useState("");
 
@@ -12,7 +12,7 @@ export default function CategoryManagement({ token }) {
 
     // LOAD
     useEffect(() => {
-        if (!token) return;
+        if (!user) return;
 
         const loadCategories = async () => {
             try {
@@ -27,7 +27,7 @@ export default function CategoryManagement({ token }) {
         };
 
         loadCategories();
-    }, [token]);
+    }, [user]);
 
     // ADD
     const handleAdd = async () => {

@@ -144,6 +144,7 @@ export default function SellerProfileUI({ user}) {
             {error && <p className="text-danger">{error}</p>}
 
             <PersonalInformation />
+            
             <ChangePassword />
 
             <AddAuctionProduct />

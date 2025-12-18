@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import ProductCard from "../../ProductCard/ProductCard.jsx";
 import * as productService from "../../../service/product.service.jsx";
 
-export default function ProductManagement({ token }) {
+export default function ProductManagement({ user }) {
     const [products, setProducts] = useState([]);
 
     useEffect(() => {
@@ -16,8 +16,8 @@ export default function ProductManagement({ token }) {
             }
         };
 
-        if (token) loadProducts();
-    }, [token]);
+        if (user) loadProducts();
+    }, [user]);
 
     // REMOVE PRODUCT
     const removeProduct = async (id) => {
