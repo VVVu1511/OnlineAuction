@@ -5,12 +5,8 @@ import authMiddleware from "../middleware/auth.js"; // adjust path
 const router = express.Router();
 
 
-router.post('',authMiddleware ,async(req,res) => {
+router.post('' ,async(req,res) => {
     try{
-        if(!req.user.role_description || req.user.role_description !== "admin"){
-            res.status(500).json({ success: false, message: "Not admin" });
-        }
-
         await categoryService.addNewCategory(req.body.description);
     
         res.status(201).json({message: 'Add category successfully'});
@@ -22,12 +18,9 @@ router.post('',authMiddleware ,async(req,res) => {
     }
 });
 
-router.put('', authMiddleware, async(req,res) => {
+router.put('', async(req,res) => {
     try{
-        if(!req.user.role_description || req.user.role_description !== "admin"){
-            res.status(500).json({ success: false, message: "Not admin" });
-        }
-
+        
         await categoryService.updateCategory(req.body);
     
         res.status(201).json({message: 'Update category successfully'});
@@ -39,12 +32,8 @@ router.put('', authMiddleware, async(req,res) => {
     }
 });
 
-router.delete('', authMiddleware, async(req,res) => {
+router.delete('',  async(req,res) => {
     try{
-        if(!req.user.role_description || req.user.role_description !== "admin"){
-            res.status(500).json({ success: false, message: "Not admin" });
-        }
-
         await categoryService.deleteCategory(req.body.id);
     
         res.status(201).json({message: 'Delete category successfully', success: true});
@@ -95,5 +84,20 @@ router.get('/allParent', async(req,res) => {
         res.status(500).json({ message: "Error getting all parent categories", error: err.message});
     }
 })
+
+router.get('/:id', async(req,res) => {
+    try{
+        const id = parseInt(req.params.id);
+        const data = await categoryService.getCategoryById(id);
+
+        res.status(201).json({data: data, message: 'Get category by id successfully'});
+    }
+    catch(err){
+
+        console.error(err);
+
+        res.status(500).json({ message: "Error getting category by id", error: err.message});
+    }
+});
 
 export default router;

@@ -3,7 +3,6 @@
 
 ### Ask question
 POST {{baseUrl}}/ask
-Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -13,7 +12,6 @@ Content-Type: application/json
 
 ### Answer question
 PUT {{baseUrl}}/answer
-Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {

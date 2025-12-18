@@ -2,7 +2,6 @@ import express from 'express'
 import bcrypt from 'bcryptjs'
 import * as accountService from '../services/account.service.js'
 import jwt from "jsonwebtoken";
-import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
 
@@ -33,8 +32,12 @@ router.post('/login', async (req, res) => {
 
         const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-        res.status(200).json({ 
+        payload.role = await accountService.getRoleDescription(payload.role);
+        payload.role = payload.role.description;
+
+        res.status(201).json({ 
             success: true,
+            data: payload,
             message: "Login successfully",
             token 
         });
@@ -91,14 +94,34 @@ router.post('/register', async (req,res) => {
     
 })
 
-router.put('/update',authMiddleware, async (req, res) => {
+//update password
+router.put('/change-password/:id', async (req, res) => {
     try {
-        const {email, full_name, old_password, new_password } = req.body;
-        const user_id = req.user.id;
+        const user_id = req.params.id;
+        const { old_password, new_password } = req.body;
+        const storedPassword = await accountService.getPasswordById(user_id);
+
+        const valid = bcrypt.compareSync(old_password, storedPassword);
+        if (!valid) {
+            return res.status(400).json({ message: "Old password is incorrect!" });
+        }
+
+        await accountService.updatePassword({ user_id, new_password });
+        res.json({ message: "Password changed successfully!" });
+    } catch (error) {
+        res.status(500).json({ message: "Error changing password!", error: error.message });
+    }   
+});
+
+//update profile
+router.put('/profile/:id', async (req, res) => {
+    try {
+        const {full_name, address} = req.body;
+        const user_id = req.params.id;
 
         // Update email
-        if (email) {
-            await accountService.updateEmail({ user_id, email });
+        if (address) {
+            await accountService.updateAddress({ user_id, address});
         }
 
         // Update full name
@@ -106,20 +129,8 @@ router.put('/update',authMiddleware, async (req, res) => {
             await accountService.updateFullName({ user_id, full_name });
         }
 
-        // Update password
-        if (old_password && new_password) {
-            const storedPassword = await accountService.getPasswordByUsername(user_id);
-
-            const valid = bcrypt.compareSync(old_password, storedPassword);
-
-            if (!valid) {
-                return res.status(400).json({ message: "Old password is incorrect!" });
-            }
-
-            await accountService.updatePassword({ user_id, new_password });
-        }
-
         res.json({ message: "Update profile successfully!" });
+        
     } catch (error) {
         res.status(500).json({ message: "Error updating profile!", error: error.message });
     }
@@ -158,9 +169,9 @@ router.post("/verify-otp", async (req, res) => {
     }
 });
 
-router.get('/rating',authMiddleware, async(req,res) => {
+router.get('/rating/:id', async(req,res) => {
     try {
-        const userId = req.user.id;
+        const userId = parseInt(req.params.id);
         
         const rating = await accountService.getRating(userId);
 
@@ -172,13 +183,16 @@ router.get('/rating',authMiddleware, async(req,res) => {
     }
 })
 
-router.get('/profile',authMiddleware, async (req,res) => {
-    res.status(201).json({ message: 'Get profile', data: req.user});
+router.get('/profile/:id', async (req,res) => {
+    const id = parseInt(req.params.id);
+    const data =  await accountService.getProfileById(id);
+
+    res.status(201).json({ message: 'Get profile', data: data});
 })
 
-router.get('/win',authMiddleware, async(req,res) => {
+router.get('/win/:id', async(req,res) => {
     try {
-        const userId = req.user.id;
+        const userId = parseInt(req.params.id);
         
         const winProducts = await accountService.getWinProducts(userId);
 
@@ -190,9 +204,9 @@ router.get('/win',authMiddleware, async(req,res) => {
     }
 })
 
-router.delete('/watchlist',authMiddleware, async function (req,res) {
+router.delete('/watchlist/:id', async function (req,res) {
     try {
-        const userID = req.user.id;
+        const userID = parseInt(req.params.id);
          // decoded token set by middleware
         const productId = req.body.productId;
 
@@ -216,9 +230,9 @@ router.delete('/watchlist',authMiddleware, async function (req,res) {
     }
 })
 
-router.post('/watchlist',authMiddleware, async function (req, res) {
+router.post('/watchlist/:id', async function (req, res) {
     try {
-        const userID = req.user.id;
+        const userID = parseInt(req.params.id);
          // decoded token set by middleware
         const productId = req.body.productId;
 
@@ -242,9 +256,9 @@ router.post('/watchlist',authMiddleware, async function (req, res) {
     }
 });
 
-router.get('/watchlist',authMiddleware, async function (req,res)  {
+router.get('/watchlist/:id', async function (req,res)  {
     try{
-        const id = req.user.id;
+        const id = parseInt(req.params.id);
 
         const data = await accountService.getWatchList(id);
         
@@ -255,9 +269,9 @@ router.get('/watchlist',authMiddleware, async function (req,res)  {
     }
 })
 
-router.put('/requestSell', authMiddleware, async (req, res) => {
+router.put('/requestSell/:id', async (req, res) => {
     try {
-        const user_id = req.user.id;
+        const user_id = parseInt(req.params.id);
 
         // Gọi service để request sell
         await accountService.requestSell(user_id);
@@ -272,10 +286,8 @@ router.put('/requestSell', authMiddleware, async (req, res) => {
     }
 });
 
-router.put('/approve/:id', authMiddleware, async (req, res) => {
+router.put('/approve/:id', async (req, res) => {
     try {
-        if (req.user.role_description !== "admin")
-            return res.status(403).json({ message: "Not admin" });
 
         await accountService.confirmRequestSell(parseInt(req.params.id), true);
 
@@ -286,11 +298,8 @@ router.put('/approve/:id', authMiddleware, async (req, res) => {
     }
 });
 
-router.put('/deny/:id', authMiddleware, async (req, res) => {
+router.put('/deny/:id', async (req, res) => {
     try {
-        if (req.user.role_description !== "admin")
-            return res.status(403).json({ message: "Not admin" });
-
         await accountService.confirmRequestSell(parseInt(req.params.id), false);
 
         res.json({ success: true, message: "Denied user request!" });
@@ -300,13 +309,8 @@ router.put('/deny/:id', authMiddleware, async (req, res) => {
     }
 });
 
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', async (req, res) => {
     try {
-        // Check admin
-        if (!req.user.role_description || req.user.role_description !== "admin") {
-            return res.status(403).json({ success: false, message: "Not admin" });
-        }
-
         const user_id = parseInt(req.params.id);
 
         if (isNaN(user_id)) {
@@ -337,12 +341,8 @@ router.delete('/:id', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/all', authMiddleware, async(req,res) => {
+router.get('/all', async(req,res) => {
     try {
-        if(!req.user.role_description || req.user.role_description !== "admin"){
-            res.status(500).json({ success: false, message: "Not admin" });
-        }
-
         const data = await accountService.getAllUsers();
 
         res.status(200).json({

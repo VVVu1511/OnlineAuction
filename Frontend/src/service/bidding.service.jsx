@@ -2,7 +2,8 @@ import axios from "axios";
 
 const instance = axios.create({
     baseURL: "http://localhost:3000/bidding",
-    timeout: 20000
+    timeout: 20000, 
+    validateStatus: () => true,
 });
 
 // Interceptor gắn token
@@ -21,12 +22,15 @@ instance.interceptors.request.use(
 export async function getBidHistory(productId) {
     const res = await instance.get(`/bid_history/${productId}`);
     if (res.status === 201) return res.data;
+    
     throw new Error("Error fetching bid history");
 }
 
 export async function getDeniedBidders(productId) {
     const res = await instance.get(`/denyBidder/${productId}`);
-    if (res.status === 201) return res.data;
+    
+    if (res.status === 201 || res.status === 200) return res.data;
+
     throw new Error("Error fetching denied bidders");
 }
 
@@ -35,7 +39,7 @@ export async function denyBidder(productId, bidderId) {
         bidderId,
     });
 
-    if (res.status === 200) {
+    if (res.status === 201) {
         return res.data;
     } else {
         throw new Error("Error denying bidder");

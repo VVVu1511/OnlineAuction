@@ -31,21 +31,21 @@ export default function ProductInfor() {
     const [question, setQuestion] = useState("");
     const [askStatus, setAskStatus] = useState("");
     const [auctionEnded, setAuctionEnded] = useState(false);
-
     const [liked, toggleLike] = useWatchlist(isLiked);
 
-    /* ================= PROFILE ================= */
+    /* ================= USER (localStorage only) ================= */
     useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                const res = await accountService.getProfile();
-                setUserId(res.data.id);
-                setRole(res.data.role_description);
-            } catch (err) {
-                console.error(err);
-            }
-        };
-        fetchProfile();
+        const storedUser = localStorage.getItem("user");
+        if (!storedUser) return;
+
+        try {
+            const user = JSON.parse(storedUser);
+            setUserId(user.id);
+            setRole(user.role || user.role_description || "");
+        } catch (err) {
+            console.error("Invalid user data", err);
+            localStorage.removeItem("user");
+        }
     }, []);
 
     /* ================= AUCTION END CHECK ================= */
@@ -61,8 +61,8 @@ export default function ProductInfor() {
         return () => clearInterval(timer);
     }, [product]);
 
-    const isBuyer = userId === product?.winnerId;
-    const isSeller = userId === product?.seller;
+    const isBuyer = userId && userId === product?.winnerId;
+    const isSeller = userId && userId === product?.seller;
 
     if (auctionEnded && (isBuyer || isSeller)) {
         return (
@@ -85,7 +85,7 @@ export default function ProductInfor() {
                     relatedRes,
                     qaRes,
                     historyRes,
-                    deniedRes
+                    deniedRes,
                 ] = await Promise.all([
                     productService.getSellerInfo(product.id),
                     productService.getBestBidder(product.id),
@@ -119,6 +119,11 @@ export default function ProductInfor() {
 
     /* ================= BID ================= */
     const handleBid = async () => {
+        if (!userId) {
+            alert("Please login to bid");
+            return;
+        }
+
         try {
             const check = await productService.checkCanBid(product.id);
             if (!check.canBid) return alert(check.reason);
@@ -134,6 +139,11 @@ export default function ProductInfor() {
 
     /* ================= ASK SELLER ================= */
     const handleAskSeller = async () => {
+        if (!userId) {
+            alert("Please login to ask seller");
+            return;
+        }
+
         if (!question.trim()) return;
 
         const res = await contactService.askSeller(product.id, question);
@@ -143,6 +153,7 @@ export default function ProductInfor() {
             setAskStatus("Đã gửi câu hỏi!");
         }
     };
+
 
     /* ================= UI ================= */
     return (
@@ -182,24 +193,123 @@ export default function ProductInfor() {
                 </div>
             </div>
 
-            {/* RELATED */}
+            {/* HISTORY */}
             <div>
-                <h3 className="font-semibold mb-3">Related Products</h3>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    {relatedProducts.map((p, i) => (
-                        <ProductCard key={i} data={p} />
-                    ))}
-                </div>
+                <h3 className="font-semibold mb-3">Bid History</h3>
+                {history.length === 0 ? (
+                    <p>No bids yet.</p>
+                ) : (
+                    <table className="w-full table-auto border-collapse">
+                        <thead>
+                            <tr>
+                                <th className="border px-4 py-2">Time</th>
+                                <th className="border px-4 py-2">Bidder</th>
+                                <th className="border px-4 py-2">Amount</th>
+                                {/* deny */}
+                                {
+                                    role === "seller" && <th className="border px-4 py-2">Deny</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {history.map((bid, i) => (
+                                <tr
+                                    key={i}
+                                    className={bid.user_id === bestBidder.id ? "bg-yellow-100" : ""}
+                                >
+                                    <td className="border px-4 py-2">
+                                        {dayjs(bid.time).format("YYYY-MM-DD HH:mm:ss")}
+                                    </td>
+
+                                    <td className="border px-4 py-2">{bid.full_name}</td>
+
+                                    <td className="border px-4 py-2">{bid.price}</td>
+
+                                    {/* Action column – ALWAYS render <td> */}
+                                        {role === "seller" &&
+                                            (
+                                                <td className="border px-4 py-2 text-center hover:opacity-50">
+                                                    <button
+                                                        onClick={async () => {
+                                                            await biddingService.denyBidder(
+                                                                product.id,
+                                                                bid.user_id
+                                                            );
+
+                                                            setDenyBidders(p => [
+                                                                ...p,
+                                                                { user_id: bid.user_id }
+                                                            ]);
+                                                        }}
+                                                        className="text-red-500 px-2 py-1 rounded-lg"
+                                                    >
+                                                        X
+                                                    </button>
+                                            </td>
+                                            )}
+                                    
+                                </tr>
+                            ))}
+                    </tbody>
+
+                    </table>
+                )}
             </div>
+                
+            {
+                role === "bidder" && (
+                    <>
+                        {/* RELATED */}
+                        <div>
+                            <h3 className="font-semibold mb-3">Related Products</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                {relatedProducts.map((p, i) => (
+                                    <ProductCard key={i} data={p} />
+                                ))}
+                            </div>
+                        </div>
+                    </>
+                )
+            }
 
             {/* Q&A */}
             <div>
                 <h3 className="font-semibold mb-3">Q&A</h3>
 
                 {qaHistory.map((qa, i) => (
-                    <div key={i} className="border rounded-lg p-3 mb-2">
+                <div key={i} className="mb-3">
+
+                    {/* Question & Answer display */}
+                    <div className="border rounded-lg p-3 mb-2">
                         <p><b>Q:</b> {qa.question}</p>
                         <p><b>A:</b> {qa.answer || "Chưa trả lời"}</p>
+                    </div>
+
+                        {/* ANSWER – Seller only */}
+                        {role === "seller" && !qa.answer && (
+                            <div className="border rounded-lg p-3">
+                                <input
+                                    className="border rounded-lg px-3 py-2 w-full"
+                                    placeholder="Nhập câu trả lời..."
+                                    onBlur={async (e) => {
+                                        const answer = e.target.value.trim();
+                                        if (!answer) return;
+
+                                        await contactService.answerQuestion(
+                                            product.id,
+                                            qa.question,
+                                            answer
+                                        );
+
+                                        setQaHistory((prev) => {
+                                            const copy = [...prev];
+                                            copy[i] = { ...copy[i], answer };
+                                            return copy;
+                                        });
+                                    }}
+                                />
+                            </div>
+                        )}
                     </div>
                 ))}
 
@@ -219,6 +329,9 @@ export default function ProductInfor() {
                         </button>
                     </div>
                 )}
+
+
+
             </div>
         </div>
     );

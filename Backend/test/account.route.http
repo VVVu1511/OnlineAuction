@@ -46,38 +46,43 @@ Content-Type: application/json
 }
 
 ###
-# UPDATE PROFILE (email, full name, password)
-PUT {{baseUrl}}/update
+# UPDATE PROFILE (address, full name)
+PUT {{baseUrl}}/profile/19
 Content-Type: application/json
-Authorization: Bearer {{token}}
 
 {
-  "email": "changed@example.com",
-  "full_name": "New Name",
+  "address": "New Address",
+  "full_name": "New Name"
+}
+
+### UPDATE PASSWORD
+PUT {{baseUrl}}/change-password/19
+Content-Type: application/json
+
+{
   "old_password": "123456",
-  "new_password": "654321"
+  "new_password": "1234567"
 }
 
 ###
 # GET RATING
 GET {{baseUrl}}/rating
-Authorization: Bearer {{token}}
 
 ###
 # GET PROFILE
 GET {{baseUrl}}/profile
-Authorization: Bearer {{token}}
+
 
 ###
 # GET WIN PRODUCTS
 GET {{baseUrl}}/win
-Authorization: Bearer {{token}}
+
 
 ###
 # ADD WATCHLIST
 POST {{baseUrl}}/watchlist
 Content-Type: application/json
-Authorization: Bearer {{token}}
+
 
 {
   "productId": 1
@@ -87,7 +92,7 @@ Authorization: Bearer {{token}}
 # DELETE WATCHLIST
 DELETE {{baseUrl}}/watchlist
 Content-Type: application/json
-Authorization: Bearer {{token}}
+
 
 {
   "productId": 1
@@ -96,40 +101,40 @@ Authorization: Bearer {{token}}
 ###
 # GET WATCHLIST
 GET {{baseUrl}}/watchlist
-Authorization: Bearer {{token}}
+
 
 ### -------------------------
 # USER REQUEST SELL UPGRADE
 ### -------------------------
 PUT {{baseUrl}}/requestSell
-Authorization: Bearer {{token}}
+
 
 
 ### -------------------------
 # ADMIN APPROVE REQUEST SELL (ADMIN)
 ### -------------------------
 PUT {{baseUrl}}/approve/14
-Authorization: Bearer {{token}}
+
 
 
 ### -------------------------
 # ADMIN DENY REQUEST SELL (ADMIN)
 ### -------------------------
 PUT {{baseUrl}}/deny/14
-Authorization: Bearer {{token}}
+
 
 
 ### -------------------------
 # DELETE ACCOUNT (ADMIN)
 ### -------------------------
 DELETE {{baseUrl}}/18
-Authorization: Bearer {{token}}
+
 
 
 ### -------------------------
 # GET ALL USERS (ADMIN)
 ### -------------------------
 GET {{baseUrl}}/all
-Authorization: Bearer {{token}}
+
 
 

@@ -1,65 +1,48 @@
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import * as categoryService from "../../service/category.service.jsx";
 
 function CategoryDetail() {
     const [childCategory, setChildCategory] = useState([]);
-    const location = useLocation();
-    const { category_id } = location.state || {};
     const navigate = useNavigate();
+    const { categoryId } = useParams();
+    const [category, setCategory] = useState(null);
 
     useEffect(() => {
-        if (!category_id) return;
+        if (!categoryId) return;
 
         const loadChildCategories = async () => {
             try {
-                const res = await categoryService.fetchChildCategory(category_id);
+                const categoryRes = await categoryService.getCategoryById(categoryId);
+                setCategory(categoryRes.data);
+
+                const res = await categoryService.fetchChildCategory(categoryId);
                 const children = res.data || [];
 
-                // ✅ thêm "Tất cả"
-                const withAll = [
-                    {
-                        id: "all",
-                        description: "Tất cả",
-                    },
-                    ...children,
-                ];
+                setChildCategory(children);
 
-                setChildCategory(withAll);
             } catch (err) {
                 console.error("Error fetching child categories:", err);
             }
         };
 
         loadChildCategories();
-    }, [category_id]);
+    }, [categoryId]);
 
     const handleClick = (id) => {
-        if (id === "all") {
-            // 👉 xem tất cả sản phẩm của parent
-            navigate(`/category/${category_id}`, {
-                state: {
-                    category_id,
-                    current_category_id: "all",
-                },
-            });
-            return;
-        }
-
         // 👉 xem sản phẩm theo child category
-        navigate(`/category/${id}`, {
-            state: {
-                category_id,
-                current_category_id: id,
-            },
-        });
+        navigate(`/category/${id}`);
     };
 
     return (
         <div className="px-4 py-6 max-w-6xl mx-auto">
-            <h2 className="text-2xl font-bold mb-6 text-gray-800">
-                Tất Cả Danh Mục
-            </h2>
+            <h1 className="text-3xl font-bold mb-4 text-gray-800">{category?.description}</h1>
+            
+            {childCategory.length > 0 && (
+                <h2 className="text-2xl font-bold mb-6 text-gray-800">
+                    Tất Cả Danh Mục Con
+                </h2>
+            )}
 
             <div className="flex flex-wrap gap-4">
                 {childCategory.map((item) => (

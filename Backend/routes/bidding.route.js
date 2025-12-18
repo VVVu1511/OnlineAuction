@@ -8,7 +8,7 @@ import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
 
-router.get('',authMiddleware, async function (req,res)  {
+router.get('', async function (req,res)  {
     try{
         const id = req.user.id;
 
@@ -40,7 +40,7 @@ router.put('/refuse', async (req, res) => {
     }
 });
 
-router.post('/checkCanBid',authMiddleware, async (req, res) => {
+router.post('/checkCanBid', async (req, res) => {
     try {
         const userId = req.user.id;
         const { product_id } = req.body;
@@ -78,7 +78,7 @@ router.post('/checkCanBid',authMiddleware, async (req, res) => {
     }
 });
 
-router.post('/bid',authMiddleware, async (req, res) => {
+router.post('/bid', async (req, res) => {
     try {
         if(!req.user.id || req.user.role_description !== "bidder"){
             res.status(500).json({ message: `Not a bidder` });
@@ -130,7 +130,7 @@ router.get('/bid_history/:product_id', async function (req,res) {
     }
 })
 
-router.post('/denyBidder/:product_id', authMiddleware, async (req, res) => {
+router.post('/denyBidder/:product_id', async (req, res) => {
     
     
     if(!req.user.role_description || req.user.role_description !== "seller"){
@@ -164,7 +164,7 @@ router.post('/denyBidder/:product_id', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/denyBidder/:product_id', authMiddleware, async (req, res) => {
+router.get('/denyBidder/:product_id', async (req, res) => {
     const productId = req.params.product_id;
 
     try {
@@ -176,7 +176,7 @@ router.get('/denyBidder/:product_id', authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/fun', authMiddleware, async(req,res) => {
+router.get('/fun', async(req,res) => {
     res.json({ success: true, data: req.user });
 })
 

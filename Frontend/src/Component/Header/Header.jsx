@@ -1,20 +1,30 @@
 import { useNavigate } from "react-router-dom";
-import { FaSearch, FaShoppingCart, FaUser } from "react-icons/fa";
+import { FaSearch, FaUser } from "react-icons/fa";
 import { useState, useEffect } from "react";
 
 function Header() {
     const navigate = useNavigate();
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const [isLoggedIn, setIsLoggedIn] = useState(
+        !!localStorage.getItem("user")
+    );
 
     useEffect(() => {
-        const token = localStorage.getItem("token");
-        setIsLoggedIn(!!token);
+        const syncAuth = () => {
+            setIsLoggedIn(!!localStorage.getItem("user"));
+        };
+
+        // 🔥 custom auth event
+        window.addEventListener("auth-change", syncAuth);
+
+        return () => window.removeEventListener("auth-change", syncAuth);
     }, []);
 
     const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("userEmail");
-        setIsLoggedIn(false);
+        localStorage.removeItem("user");
+
+        // 🔔 notify Header
+        window.dispatchEvent(new Event("auth-change"));
+
         navigate("/");
     };
 
@@ -32,17 +42,11 @@ function Header() {
                 <div className="flex justify-end gap-2 mb-1">
                     {!isLoggedIn ? (
                         <>
-                            <span
-                                onClick={() => navigate("/register")}
-                                className="cursor-pointer hover:opacity-80"
-                            >
+                            <span onClick={() => navigate("/register")} className="cursor-pointer">
                                 Đăng ký
                             </span>
                             <span>|</span>
-                            <span
-                                onClick={() => navigate("/login")}
-                                className="cursor-pointer hover:opacity-80"
-                            >
+                            <span onClick={() => navigate("/login")} className="cursor-pointer">
                                 Đăng nhập
                             </span>
                         </>
@@ -53,61 +57,35 @@ function Header() {
                                 className="cursor-pointer"
                                 onClick={() => navigate("/profile")}
                             />
-                            <span
-                                onClick={handleLogout}
-                                className="cursor-pointer hover:underline"
-                            >
+                            <span onClick={handleLogout} className="cursor-pointer hover:underline">
                                 Logout
                             </span>
                         </div>
                     )}
                 </div>
 
-                {/* Main row */}
+                {/* Main */}
                 <div className="flex items-center gap-3">
-                    
-                    {/* Logo */}
                     <h1
                         onClick={() => navigate("/")}
-                        className="text-2xl font-semibold cursor-pointer whitespace-nowrap"
+                        className="text-2xl font-semibold cursor-pointer"
                     >
                         Online Auction
                     </h1>
 
-                    {/* Search */}
                     <div className="flex flex-1">
                         <input
                             id="search"
-                            type="text"
                             placeholder="Tìm sản phẩm..."
-                            className="
-                                w-full px-3 py-1.5
-                                rounded-l-md
-                                text-gray-800
-                                focus:outline-none
-                                bg-white
-                            "
+                            className="w-full px-3 py-1.5 rounded-l-md text-gray-800"
                         />
                         <button
                             onClick={handleSearch}
-                            className="
-                                bg-red-200 px-3
-                                rounded-r-md
-                                flex items-center justify-center
-                                hover:bg-red-400 hover:text-white
-                                transition-colors
-                            "
+                            className="bg-red-200 px-3 rounded-r-md"
                         >
-                            <FaSearch className="text-gray-500 text-sm " />
+                            <FaSearch className="text-gray-500 text-sm" />
                         </button>
                     </div>
-
-                    {/* Cart */}
-                    <FaShoppingCart
-                        size={18}
-                        className="cursor-pointer"
-                        onClick={() => navigate("/cart")}
-                    />
                 </div>
             </div>
         </header>

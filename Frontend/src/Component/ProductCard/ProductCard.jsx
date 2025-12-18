@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
 import useWatchlist from "../../hooks/useWatchList.js";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function ProductCard({ data, liked = false }) {
     const navigate = useNavigate();
     const [isLiked, toggleIsLiked] = useWatchlist(liked);
+    const [user, setUser] = useState(null);
 
     // local state để đồng bộ khi mở ProductInfor
     const [currentLiked, setCurrentLiked] = useState(liked);
@@ -19,6 +20,12 @@ export default function ProductCard({ data, liked = false }) {
         navigate(`/product/${data.id}`, {
             state: { product: data, isLiked: currentLiked },
         });
+    
+    useEffect(() => {
+        const cur_user = JSON.parse(localStorage.getItem("user"));
+        setUser(cur_user);
+        
+    }, []);
 
     return (
         <div
@@ -71,11 +78,12 @@ export default function ProductCard({ data, liked = false }) {
                     handleToggle(data.id);
                 }}
             >
-                {currentLiked ? (
-                    <FaHeart className="text-red-500" />
-                ) : (
-                    <FaRegHeart className="text-gray-400" />
+                {user?.role === "bidder" && (
+                    currentLiked
+                        ? <FaHeart className="text-red-500" />
+                        : <FaRegHeart className="text-gray-400" />
                 )}
+                
             </div>
         </div>
     );

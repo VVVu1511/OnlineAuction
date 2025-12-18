@@ -3,7 +3,6 @@
 
 ### Add new category
 POST {{baseUrl}}
-Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -12,7 +11,6 @@ Content-Type: application/json
 
 ### Update category
 PUT {{baseUrl}}
-Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -22,7 +20,6 @@ Content-Type: application/json
 
 ### Delete category
 DELETE {{baseUrl}}
-Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -37,3 +34,8 @@ GET {{baseUrl}}/child/2
 
 ### Get all parent categories
 GET {{baseUrl}}/allParent
+
+### Get category by id
+GET {{baseUrl}}/2
+
+

@@ -5,7 +5,6 @@
 ###
 ### 1. Get bidding list (auth required)
 GET {{baseUrl}}
-Authorization: Bearer {{token}}
 
 ###
 ### 2. Refuse bidder (seller action)
@@ -21,7 +20,6 @@ Content-Type: application/json
 ###
 ### 3. Check if user can bid (auth required)
 POST {{baseUrl}}/checkCanBid
-Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -32,7 +30,6 @@ Content-Type: application/json
 ###
 ### 4. Place a new bid (auth required)
 POST {{baseUrl}}/bid
-Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -49,7 +46,6 @@ GET {{baseUrl}}/bid_history/1
 ###
 ### 6. Deny bidder from a product (auth)
 POST {{baseUrl}}/denyBidder/3
-Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -59,13 +55,12 @@ Content-Type: application/json
 ###
 ### 7. Get list of denied bidders (auth)
 GET {{baseUrl}}/denyBidder/1
-Authorization: Bearer {{token}}
 
 
 ###
 ### 8. Get fun
 GET {{baseUrl}}/fun
-Authorization: Bearer {{token}}
+
 
 
 

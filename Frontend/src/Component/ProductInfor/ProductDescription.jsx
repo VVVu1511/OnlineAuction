@@ -51,7 +51,7 @@ export default function ProductDescription({ product, userId }) {
         <div className="space-y-4">
             {/* ===== Current description ===== */}
             <div>
-                <h3 className="text-lg font-semibold mb-2">📄 Description</h3>
+                <h3 className="text-lg font-semibold mb-2">Description</h3>
 
                 <div className="space-y-2 text-gray-700">
                     {description

@@ -65,13 +65,13 @@ export async function getBestBidder(productId) {
 
 export async function getRelatedProducts(productId) {
     const res = await instance.get(`/related/${productId}`);
-    if (res.status === 201) return res.data;
+    if (res.status === 201 || res.status === 200) return res.data;
     throw new Error("Error fetching related products");
 }
 
 export async function getQaHistory(productId) {
     const res = await instance.get(`/Q_A/${productId}`);
-    if (res.status === 201) return res.data;
+    if (res.status === 201 || res.status === 200) return res.data;
     throw new Error("Error fetching Q&A history");
 }
 
@@ -110,15 +110,19 @@ export async function addProduct(formData) {
     }
 }
 
-export async function getMyActiveProducts() {
-    const res = await instance.get("/myActiveProducts");
-    if (res.status === 200) return res.data;
+export async function getMyActiveProducts(id) {
+    const res = await instance.get(`/myActiveProducts/${id}`);
+    console.log(res);
+    
+    if (res.status === 200 || res.status === 201) return res.data;
     throw new Error("Error fetching my active products");
 }
 
-export async function getMyWonProducts() {
-    const res = await instance.get("/myWonProducts");
-    if (res.status === 200) return res.data;
+export async function getMyWonProducts(id) {
+    const res = await instance.get(`/myWonProducts/${id}`);
+    console.log(res);
+
+    if (res.status === 200 || res.status === 201) return res.data;
     throw new Error("Error fetching my won products");
 }
 

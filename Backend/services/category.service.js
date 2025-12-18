@@ -71,3 +71,15 @@ export async function getParent() {
         throw err;
     }
 }
+
+export async function getCategoryById(id){
+    try{
+        return await db('CATEGORY')
+            .where({id: id})
+            .first();
+    }
+    catch(err){
+        console.error('Cannot get category by id', err);
+        throw err;
+    }
+}

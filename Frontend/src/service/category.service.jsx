@@ -29,6 +29,9 @@ export async function fetchParentCategories() {
 
 export async function fetchChildCategory(id) {
     const res = await instance.get(`/child/${id}`);
+
+    console.log("fetchChildCategory response:", res);
+
     if(res.status === 201){
         return res.data;
     } else {
@@ -60,4 +63,13 @@ export async function deleteCategory(id) {
     });
     if (res.status === 200) return res.data;
     throw new Error("Delete category failed");
+}
+
+export async function getCategoryById(id) {
+    const res = await instance.get(`/${id}`);
+
+    console.log("getCategoryById response:", res);
+
+    if (res.status === 200 || res.status === 201) return res.data;
+    throw new Error("Error fetching category by ID");
 }

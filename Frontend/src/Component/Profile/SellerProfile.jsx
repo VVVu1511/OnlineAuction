@@ -4,8 +4,10 @@ import "react-quill/dist/quill.snow.css";
 import ProductCard from "../ProductCard/ProductCard";
 import AddAuctionProduct from "./AddProduct";
 import * as productService from "../../service/product.service";
+import PersonalInformation from "./Information/PersonalInformation.jsx";
+import ChangePassword from "./Information/ChangePassword.jsx";
 
-export default function SellerProfileUI({ user, token }) {
+export default function SellerProfileUI({ user}) {
     const [myProducts, setMyProducts] = useState([]);
     const [wonProducts, setWonProducts] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -33,12 +35,15 @@ export default function SellerProfileUI({ user, token }) {
     useEffect(() => {
         let mounted = true;
 
+        const user = JSON.parse(localStorage.getItem("user"));
+        console.log("User in SellerProfile:", user);
+
         const loadData = async () => {
             setLoading(true);
             try {
                 const [myRes, wonRes] = await Promise.all([
-                    productService.getMyActiveProducts(),
-                    productService.getMyWonProducts(),
+                    productService.getMyActiveProducts(user.id),
+                    productService.getMyWonProducts(user.id),
                 ]);
 
                 if (mounted) {
@@ -131,10 +136,15 @@ export default function SellerProfileUI({ user, token }) {
         }
     };
 
+
     return (
-        <div className="p-5">
+
+    <div className="p-5">
             {loading && <p>Đang tải dữ liệu...</p>}
             {error && <p className="text-danger">{error}</p>}
+
+            <PersonalInformation />
+            <ChangePassword />
 
             <AddAuctionProduct />
 
@@ -165,19 +175,6 @@ export default function SellerProfileUI({ user, token }) {
                     </div>
                 ))}
             </section>
-
-            {/* ===== APPEND MODAL ===== */}
-            {showAppendModal && (
-                <Modal title="Bổ sung mô tả" onClose={() => setShowAppendModal(false)}>
-                    <ReactQuill value={appendHtml} onChange={setAppendHtml} />
-                    <ModalActions
-                        onCancel={() => setShowAppendModal(false)}
-                        onConfirm={handleAppendDescription}
-                        loading={savingAppend}
-                        confirmText="Lưu"
-                    />
-                </Modal>
-            )}
 
             {/* ===== RATE MODAL ===== */}
             {showRateModal && (

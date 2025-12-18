@@ -1,5 +1,4 @@
-// router/index.jsx
-import { createBrowserRouter, Navigate, Outlet } from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 
 import RootLayout from "../Component/Layout/RootLayout/RootLayout.jsx";
 import AuthLayout from "../Component/Layout/AuthLayout/AuthLayout.jsx";
@@ -14,42 +13,29 @@ import OTP from "../Component/OTP/OTP.jsx";
 import Register from "../Component/Register/Register.jsx";
 import Login from "../Component/Login/Login.jsx";
 
-// ROLE BASE
-import RoleBasedHome from "../Component/Common/RoleBasedHome.jsx";
-
-// BIDDER
+// PROFILE
 import ProfileRouter from "../Component/Profile/ProfileRouter.jsx";
-
-// SELLER
 import SellerProfileUI from "../Component/Profile/SellerProfile.jsx";
-
-// ADMIN
 import AdminProfile from "../Component/Profile/Admin/AdminProfile.jsx";
 
-// ================= Protected Route =================
-const ProtectedRoute = ({ allowRoles }) => {
-  const user = JSON.parse(localStorage.getItem("user"));
+import Category from "../Component/Category/Category.jsx";
+import TopProducts from "../Component/TopProducts/TopProducts.jsx";
 
-  if (!user) return <Navigate to="/login" replace />;
-
-  if (allowRoles && !allowRoles.includes(user.role)) {
-    return <Navigate to="/403" replace />;
-  }
-
-  return <Outlet />;
-};
-
-// ================= Router =================
 const router = createBrowserRouter([
-  // ========= ROOT (ALL ROLES) =========
+  // ========= ROOT =========
   {
     path: "/",
     element: <RootLayout />,
     children: [
-      // HOME → render theo ROLE
+      // HOME (NO ROLE BASE)
       {
         index: true,
-        element: <RoleBasedHome />,
+        element: 
+        <>
+          <Category />,
+          <TopProducts />
+        </>
+
       },
 
       // ===== PUBLIC =====
@@ -58,7 +44,7 @@ const router = createBrowserRouter([
         element: <ProductInfor />,
       },
       {
-        path: "category/:id",
+        path: "category/:categoryId",
         element: (
           <>
             <CategoryDetail />
@@ -71,27 +57,10 @@ const router = createBrowserRouter([
         element: <OTP />,
       },
 
-      // ===== BIDDER / SELLER =====
+      // ===== PROFILE (self-protected inside component) =====
       {
         path: "profile",
-        element: <ProtectedRoute allowRoles={["BIDDER", "SELLER"]} />,
-        children: [
-          { path: "*", element: <ProfileRouter /> },
-        ],
-      },
-
-      // ===== SELLER =====
-      {
-        path: "seller/profile",
-        element: <ProtectedRoute allowRoles={["SELLER"]} />,
-        children: [{ index: true, element: <SellerProfileUI /> }],
-      },
-
-      // ===== ADMIN =====
-      {
-        path: "admin/profile",
-        element: <ProtectedRoute allowRoles={["ADMIN"]} />,
-        children: [{ index: true, element: <AdminProfile /> }],
+        element: <ProfileRouter />,
       },
     ],
   },

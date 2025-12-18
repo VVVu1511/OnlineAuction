@@ -31,6 +31,19 @@ export async function updateEmail(data) {
     }
 }
 
+//update address
+export async function updateAddress(data) {
+    try {
+        await db('USER')
+            .where({ id: data.user_id })
+            .update({ address: data.address });   // <── sửa
+    } catch (err) {
+        console.error('Cannot update address', err);
+        throw err;
+    }   
+}
+
+//update full name
 export async function updateFullName(data) {
     try {
         await db('USER')
@@ -260,7 +273,47 @@ export async function confirmRequestSell(id, approve) {
     }
 }
 
+// getProfileById
+export async function getProfileById(id) {
+    try {
+        const user = await db("USER")
+            .select("id", "email", "full_name", "role", "created_at")
+            .where("id", id)
+            .first();
+        return user;
+    } catch (err) {
+        console.error("getProfileById error:", err);
+        throw new Error("Error getting profile by id");
+    }
+}
 
+//get role description
+export async function getRoleDescription(role) {
+    try {
+        const role_d = await db("ROLE")
+            .select("description")
+            .where("id", role)
+            .first();
 
+        return role_d;
 
+    } catch (err) {
+        console.error("role error:", err);
+        throw new Error("Error role by id");
+    }
+}
 
+//get password by user id
+export async function getPasswordById(user_id) {
+    try {
+        const user = await db("USER")
+            .select("password")
+            .where("id", user_id)
+            .first();
+
+        return user ? user.password : null;
+    } catch (err) {
+        console.error("getPasswordById error:", err);
+        throw new Error("Error getting password by user id");
+    }
+}

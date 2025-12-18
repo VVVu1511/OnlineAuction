@@ -2,12 +2,10 @@
 @token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEzIiwiYWRkcmVzcyI6Ik5ndXllbiBWYW4gUXVhIiwicm9sZSI6IjIiLCJmdWxsX25hbWUiOiJWdSBWdSIsImVtYWlsIjoiVmFudnUxNTExMDVAZ21haWwuY29tIiwiaWF0IjoxNzY1OTYxODkxLCJleHAiOjE3NjU5NjU0OTF9.r26TY9HGJY4mEjNcf4umNWbiy5g46pEniWyhwshKd0A
 
 ### Get my active products
-GET {{baseUrl}}/myActiveProducts
-Authorization: Bearer {{token}}
+GET {{baseUrl}}/myActiveProducts/13
 
 ### Get my won products
-GET {{baseUrl}}/myWonProducts
-Authorization: Bearer {{token}}
+GET {{baseUrl}}/myWonProducts/13
 
 ### Search products
 GET {{baseUrl}}/search?q=iphone
@@ -72,7 +70,6 @@ Content-Type: application/json
 
 ### End bidding
 PUT {{baseUrl}}/endAuction/1
-Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {

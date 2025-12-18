@@ -4,11 +4,7 @@ import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
 
-router.get('/all', authMiddleware, async(req,res) => {
-    if(req.user.role_description !== "admin"){
-        res.status(500).json({success: false, message: 'Not admin'});
-    }
-
+router.get('/all', async(req,res) => {
     try {
         const products = await productService.getAllProducts();
         res.json({ success: true, data: products });
@@ -17,8 +13,8 @@ router.get('/all', authMiddleware, async(req,res) => {
     }
 })
 
-router.get('/myActiveProducts',authMiddleware, async (req, res) => {
-    const userId = req.user.id;
+router.get('/myActiveProducts/:id', async (req, res) => {
+    const userId = parseInt(req.params.id);
 
     try {
         const products = await productService.getActiveProducts(userId);
@@ -28,8 +24,8 @@ router.get('/myActiveProducts',authMiddleware, async (req, res) => {
     }
 });
 
-router.get('/myWonProducts',authMiddleware, async (req, res) => {
-    const userId = req.user.id;
+router.get('/myWonProducts/:id', async (req, res) => {
+    const userId = parseInt(req.params.id);
 
     try {
         const products = await productService.getWonProducts(userId);
@@ -238,15 +234,7 @@ router.put('/appendDescription/:id', async (req, res) => {
     }
 });
 
-router.put('/endAuction/:id', authMiddleware, async (req, res) => {
-    // Check admin
-    if (req.user.role_description !== "admin") {
-        return res.status(403).json({
-            success: false,
-            message: 'Not admin'
-        });
-    }
-
+router.put('/endAuction/:id', async (req, res) => {
     try {
         const productId = parseInt(req.params.id);
 

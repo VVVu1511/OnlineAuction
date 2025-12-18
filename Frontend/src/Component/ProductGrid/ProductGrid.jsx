@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 import ProductCard from "../ProductCard/ProductCard";
 import * as productService from "../../service/product.service.jsx";
 import * as accountService from "../../service/account.service.jsx";
 
 export default function ProductGrid() {
     const location = useLocation();
-    const { current_category_id, keyword } = location.state || {};
+
+    const { categoryId } = useParams();
 
     const [sortType, setSortType] = useState(null);
     const [products, setProducts] = useState([]);
@@ -23,8 +24,8 @@ export default function ProductGrid() {
             try {
                 let res;
 
-                if (current_category_id) {
-                    res = await productService.getProductsByCategory(current_category_id);
+                if (categoryId) {
+                    res = await productService.getProductsByCategory(categoryId);
                 } else if (keyword) {
                     res = await productService.searchProducts(keyword);
                 } else return;
@@ -37,7 +38,7 @@ export default function ProductGrid() {
         };
 
         fetchProducts();
-    }, [current_category_id, keyword]);
+    }, [categoryId]);
 
     /* ================= FETCH WATCHLIST ================= */
     useEffect(() => {

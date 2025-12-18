@@ -45,14 +45,9 @@ export async function verifyOtp(email, otp) {
 // PROFILE
 export async function getProfile() {
     const res = await instance.get("/profile");
-    if (res.status === 200) return res.data;
-    throw new Error("Error fetching profile");
-}
 
-export async function updateProfile(payload) {
-    const res = await instance.put("/update", payload);
-    if (res.status === 200) return res.data;
-    throw new Error("Update profile failed");
+    if (res.status === 201) return res.data;
+    throw new Error("Error fetching profile");
 }
 
 export async function sendUpgradeRequest() {
@@ -70,31 +65,46 @@ export async function getWatchlist() {
 
 export async function getRatings() {
     const res = await instance.get("/rating");
-    if (res.status === 200) return res.data;
+    if (res.status === 201) return res.data;
     throw new Error("Error fetching ratings");
 }
 
 export async function getWonProducts() {
     const res = await instance.get("/win");
-    if (res.status === 200) return res.data;
+    if (res.status === 201) return res.data;
     throw new Error("Error fetching won products");
 }
 
 // ADMIN
 export async function getAllAccounts() {
     const res = await instance.get("/all");
-    if (res.status === 200) return res.data;
+    if (res.status === 201) return res.data;
     throw new Error("Error fetching accounts");
 }
 
 export async function handleAccountAction(id, action) {
     const res = await instance.put(`/${action}/${id}`);
-    if (res.status === 200) return res.data;
+    if (res.status === 201) return res.data;
     throw new Error("Account action failed");
 }
 
 export async function deleteUser(id) {
     const res = await instance.delete(`/${id}`, { data: { id } });
-    if (res.status === 200) return res.data;
+    if (res.status === 201) return res.data;
     throw new Error("Delete user failed");
 }
+
+//change password
+export async function changePassword(payload, id) {
+    const res = await instance.put(`/change-password/${id}`, payload);
+    if (res.status === 201) return res.data;
+    throw new Error("Change password failed");
+}
+
+//update profile
+export async function updateProfile(payload,id) {
+    const res = await instance.put(`/profile/${id}`, payload);
+    if (res.status === 201) return res.data;
+    throw new Error("Update profile failed");
+}
+

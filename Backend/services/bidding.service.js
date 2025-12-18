@@ -53,8 +53,9 @@ export async function refuseBidder(productId, bidderId) {
 
 export async function getBidHistory(product_id) {
     try {
-        return await db('BID_HISTORY')
-            .select('*')    
+        return await db('BID_HISTORY as b')
+            .join('USER as u', 'b.user_id', 'u.id')
+            .select('b.*', 'u.full_name as full_name')    
             .where({product_id: product_id});
             
 
