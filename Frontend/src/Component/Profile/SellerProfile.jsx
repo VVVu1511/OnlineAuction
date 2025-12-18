@@ -166,57 +166,51 @@ export default function SellerProfileUI({ user}) {
             <section>
                 <h4>Sản phẩm đã kết thúc</h4>
                 {chunkArray(wonProducts, 5).map((row, i) => (
-                    <div className="row g-4 mb-3" key={i}>
-                        {row.map(p => (
-                            <div className="col-2" key={p.id}>
-                                <ProductCard data={p} />
+                    <>
+                        <div className="row g-4 mb-3" key={i}>
+                            {row.map(p => (
+                                <div className="col-2" key={p.id}>
+                                    <ProductCard data={p} />
+                                </div>
+                            ))}
+                            
+                            {/* WINNER */}
+                            {p.winner && (
+                                <div className="mt-2">
+                                    <strong>Người thắng:</strong> {p.winner.full_name} ({p.winner.email})
+                                </div>
+                            )}
+
+                            {/* ===== RATE WINNER ===== */}
+                            <div className="mt-2">
+                                <button
+                                    className="btn btn-primary btn-sm"
+                                    onClick={() => {
+                                        setRateTarget(p);   
+                                    }}
+                                >
+                                    Đánh giá người thắng
+                                </button>
                             </div>
-                        ))}
-                    </div>
+
+                            {/* ===== CANCEL WINNER ===== */}
+                            <div className="mt-2">
+                                <button
+                                    className="btn btn-danger btn-sm"
+                                    onClick={() => {
+                                        setCancelTarget(p);
+                                    }}
+                                >
+                                    Huỷ giao dịch
+                                </button>
+                            </div>
+                            
+                        
+                        </div>
+                    </>
+                    
                 ))}
             </section>
-
-            {/* ===== RATE MODAL ===== */}
-            {showRateModal && (
-                <Modal title="Đánh giá người thắng" onClose={() => setShowRateModal(false)}>
-                    <select
-                        className="form-select mb-2"
-                        value={rateValue}
-                        onChange={e => setRateValue(+e.target.value)}
-                    >
-                        <option value={1}>+1</option>
-                        <option value={-1}>-1</option>
-                    </select>
-
-                    <textarea
-                        className="form-control"
-                        rows={3}
-                        value={rateComment}
-                        onChange={e => setRateComment(e.target.value)}
-                    />
-
-                    <ModalActions
-                        onCancel={() => setShowRateModal(false)}
-                        onConfirm={handleRateBidder}
-                        loading={rating}
-                        confirmText="Gửi"
-                    />
-                </Modal>
-            )}
-
-            {/* ===== CANCEL MODAL ===== */}
-            {showCancelModal && (
-                <Modal title="Huỷ giao dịch" onClose={() => setShowCancelModal(false)}>
-                    <p>Người thắng không thanh toán</p>
-                    <ModalActions
-                        onCancel={() => setShowCancelModal(false)}
-                        onConfirm={handleCancelTransaction}
-                        loading={canceling}
-                        confirmText="Xác nhận huỷ"
-                        danger
-                    />
-                </Modal>
-            )}
         </div>
     );
 }
