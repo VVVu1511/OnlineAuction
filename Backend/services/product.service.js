@@ -27,13 +27,15 @@ export async function getProductInfor(id) {
 }
 
 export async function addProduct(product) {
-    try{
-        return db('PRODUCT').insert(product);
-    }
-    catch(err){
-        console.error('Error adding product: ', err);
-        throw err;
-    }
+    return db("PRODUCT").insert(product).returning("id");
+}
+
+export async function updateImagePath(productId, imagePathsJson) {
+    return db("PRODUCT")
+        .where({ id: productId })
+        .update({
+            image_path: imagePathsJson
+        });
 }
 
 export async function getAllProducts() {
@@ -254,10 +256,12 @@ export async function getActiveProducts(userId) {
 
 export async function getWonProducts(userId) {
     return await db('PRODUCT')
+        .join('USER as Winner', 'PRODUCT.winner', 'Winner.id')
+        .leftJoin('RATING as R', 'PRODUCT.id', 'R.product_id')
         .where({ seller: userId })
         .whereNotNull('winner')   // đã có người thắng
         .orderBy('upload_date', 'desc')
-        .select('*');
+        .select('PRODUCT.*','Winner.full_name as winner_name', 'Winner.email as winner_email', 'R.rating as winner_rating', 'R.comment as winner_comment', 'R.created_at as created_at');
 }
 
 export async function productEndBid(productId) {

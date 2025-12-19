@@ -61,6 +61,17 @@ GET {{baseUrl}}/denyBidder/1
 ### 8. Get fun
 GET {{baseUrl}}/fun
 
+### 9. Rate bidder (auth)
+POST {{baseUrl}}/rateBidder
+Content-Type: application/json
+
+{
+    "bidder_id": 14,
+    "product_id": 11,
+    "rating": 1,
+    "comment": "Great bidder!"
+}
+
 
 
 

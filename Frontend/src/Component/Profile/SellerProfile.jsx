@@ -6,6 +6,7 @@ import AddAuctionProduct from "./AddProduct";
 import * as productService from "../../service/product.service";
 import PersonalInformation from "./Information/PersonalInformation.jsx";
 import ChangePassword from "./Information/ChangePassword.jsx";
+import { FaThumbsUp, FaThumbsDown } from "react-icons/fa";
 
 export default function SellerProfileUI({ user}) {
     const [myProducts, setMyProducts] = useState([]);
@@ -170,41 +171,93 @@ export default function SellerProfileUI({ user}) {
                     <>
                         <div className="row g-4 mb-3" key={i}>
                             {row.map(p => (
-                                <div className="col-2" key={p.id}>
-                                    <ProductCard data={p} />
-                                </div>
+
+                                <>
+                                    <div className="col-2" key={p.id}>
+                                        <ProductCard data={p} />
+                                    </div>
+                                    {/* WINNER */}
+                                    {p.winner && (
+                                        <>
+                                            <div className="mt-2">
+                                                <strong>Người thắng:</strong> {p.winner_name} 
+                                            </div>
+
+                                            <div className="mt-2">
+                                                <strong>Email:</strong> {p.winner_email}
+                                            </div>
+                                        </>
+                                        
+                                    )}
+
+                                    {/* RATING RESULT*/}
+                                    {p.winner_rating && (
+                                        <div className="mt-2">
+                                            <strong>Đánh giá của bạn:</strong> {p.winner_rating === 1 ? "Tốt" : "Xấu"}  
+                                            <br />
+                                            <strong>Nhận xét:</strong> {p.winner_comment}
+                                        </div>
+                                    )}
+
+                                    {
+                                        p.winner && !p.winner_rating && (
+                                            <>
+                                                {/* ===== RATE WINNER ===== */}
+                                                <div className="mt-2 border rounded p-2">
+                                                    <div className="d-flex align-items-center gap-3">
+                                                        {/* Like Icon */}
+                                                        <FaThumbsUp
+                                                            size={20}
+                                                            style={{ cursor: "pointer" }}
+                                                            className={rateValue === 1 ? "text-success" : "text-secondary"}
+                                                            onClick={() => {
+                                                                setRateTarget(p);
+                                                                setRateValue(1);
+                                                            }}
+                                                            title="Đánh giá tốt"
+                                                        />
+
+                                                        {/* Dislike Icon */}
+                                                        <FaThumbsDown
+                                                            size={20}
+                                                            style={{ cursor: "pointer" }}
+                                                            className={rateValue === -1 ? "text-danger" : "text-secondary"}
+                                                            onClick={() => {
+                                                                setRateTarget(p);
+                                                                setRateValue(-1);
+                                                            }}
+                                                            title="Đánh giá xấu"
+                                                        />
+                                                    </div>
+
+                                                    {/* Comment */}
+                                                    <textarea
+                                                        className="form-control mt-2"
+                                                        rows={1}
+                                                        placeholder="Nhập nhận xét..."
+                                                        value={rateTarget?.id === p.id ? rateComment : ""}
+                                                        onChange={(e) => {
+                                                            setRateTarget(p);
+                                                            setRateComment(e.target.value);
+                                                        }}
+                                                    />
+
+                                                    {/* Save */}
+                                                    <button
+                                                        className="btn btn-primary btn-sm mt-2 hover:cursor-pointer"
+                                                        disabled={!rateComment.trim() || rating}
+                                                        onClick={handleRateBidder}
+                                                    >
+                                                        Lưu đánh giá
+                                                    </button>
+                                                </div>
+
+                                            </>
+                                        )
+                                    }
+                                </>
                             ))}
                             
-                            {/* WINNER */}
-                            {p.winner && (
-                                <div className="mt-2">
-                                    <strong>Người thắng:</strong> {p.winner.full_name} ({p.winner.email})
-                                </div>
-                            )}
-
-                            {/* ===== RATE WINNER ===== */}
-                            <div className="mt-2">
-                                <button
-                                    className="btn btn-primary btn-sm"
-                                    onClick={() => {
-                                        setRateTarget(p);   
-                                    }}
-                                >
-                                    Đánh giá người thắng
-                                </button>
-                            </div>
-
-                            {/* ===== CANCEL WINNER ===== */}
-                            <div className="mt-2">
-                                <button
-                                    className="btn btn-danger btn-sm"
-                                    onClick={() => {
-                                        setCancelTarget(p);
-                                    }}
-                                >
-                                    Huỷ giao dịch
-                                </button>
-                            </div>
                             
                         
                         </div>

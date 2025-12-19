@@ -2,14 +2,15 @@
 import { Outlet, useNavigation } from "react-router-dom";
 import Header from "../../Header/Header.jsx";
 import Footer from "../../Footer/Footer.jsx";
+import { useContext } from "react";
+import { LoadingContext } from "../../../context/LoadingContext.jsx";
 
 export default function RootLayout() {
-    const navigation = useNavigation();
-    const isNavigating = Boolean(navigation.location);
+    const { loading } = useContext(LoadingContext);
 
     return (
         <>
-            {isNavigating && <GlobalSpinner />}
+            {loading && <GlobalSpinner />}
 
             {/* Fixed Header */}
             <div className="fixed top-0 left-0 w-full z-40">
@@ -17,7 +18,7 @@ export default function RootLayout() {
             </div>
 
             {/* Main Content */}
-            <div className="pt-[100px] min-h-screen bg-gray-50">
+            <div className="pt-12 min-h-screen bg-gray-50">
                 <div className="max-w-7xl mx-auto grid grid-cols-12 gap-4">
                     
                     {/* Left spacer */}

@@ -31,7 +31,11 @@ function Header() {
     const handleSearch = () => {
         const keyword = document.getElementById("search").value.trim();
         if (!keyword) return;
-        navigate("/productGridWithCat", { state: { keyword } });
+        
+        // reset getElementById("search")
+        document.getElementById("search").value = "";
+
+        navigate(`/category/all?keyword=${keyword}`);
     };
 
     return (
@@ -77,7 +81,7 @@ function Header() {
                         <input
                             id="search"
                             placeholder="Tìm sản phẩm..."
-                            className="w-full px-3 py-1.5 rounded-l-md text-gray-800"
+                            className="w-full px-3 py-1.5 rounded-l-md text-gray-800 bg-white"
                         />
                         <button
                             onClick={handleSearch}

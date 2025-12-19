@@ -1,5 +1,4 @@
 @baseUrl = http://localhost:3000/account
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEzIiwiYWRkcmVzcyI6Ik5ndXllbiBWYW4gUXVhIiwicm9sZSI6IjIiLCJmdWxsX25hbWUiOiJWdSBWdSIsImVtYWlsIjoiVmFudnUxNTExMDVAZ21haWwuY29tIiwiaWF0IjoxNzY1OTYxODkxLCJleHAiOjE3NjU5NjU0OTF9.r26TY9HGJY4mEjNcf4umNWbiy5g46pEniWyhwshKd0A
 
 ###
 # LOGIN
@@ -56,11 +55,11 @@ Content-Type: application/json
 }
 
 ### UPDATE PASSWORD
-PUT {{baseUrl}}/change-password/19
+PUT {{baseUrl}}/change-password/13
 Content-Type: application/json
 
 {
-  "old_password": "123456",
+  "old_password": "123",
   "new_password": "1234567"
 }
 

@@ -51,3 +51,17 @@ export async function getMyBidding() {
     if (res.status === 200) return res.data;
     throw new Error("Error fetching bidding list");
 }
+
+//rate bidder
+export async function rateBidder(bidderId, productId, comment, rating) {
+    const res = await instance.post("/rateBidder", {
+        bidder_id: bidderId,
+        product_id: productId,
+        comment: comment,
+        rating: rating
+    });
+    
+    if (res.status === 201 || res.data === 200) return res.data;
+    
+    throw new Error("Error rating bidder");
+}

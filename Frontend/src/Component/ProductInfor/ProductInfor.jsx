@@ -1,18 +1,17 @@
 import { useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import { FaDollarSign, FaHeart, FaRegHeart } from "react-icons/fa";
-
 import ProductCard from "../ProductCard/ProductCard";
 import ProductDescription from "./ProductDescription";
 import OrderCompletion from "../OrderCompletion/OrderCompletion";
-
 import useWatchlist from "../../hooks/useWatchList";
 import * as productService from "../../service/product.service";
 import * as accountService from "../../service/account.service";
 import * as biddingService from "../../service/bidding.service";
 import * as contactService from "../../service/contact.service";
+import {LoadingContext} from "../../context/LoadingContext.jsx";
 
 dayjs.extend(relativeTime);
 
@@ -32,6 +31,7 @@ export default function ProductInfor() {
     const [askStatus, setAskStatus] = useState("");
     const [auctionEnded, setAuctionEnded] = useState(false);
     const [liked, toggleLike] = useWatchlist(isLiked);
+    const { setLoading } = useContext(LoadingContext);
 
     /* ================= USER (localStorage only) ================= */
     useEffect(() => {
@@ -77,6 +77,8 @@ export default function ProductInfor() {
     useEffect(() => {
         if (!product?.id) return;
 
+        setLoading(true);
+
         const fetchData = async () => {
             try {
                 const [
@@ -107,6 +109,9 @@ export default function ProductInfor() {
         };
 
         fetchData();
+
+        setLoading(false);
+        
     }, [product?.id]);
 
     if (!product) return <p>Product not found</p>;
@@ -125,6 +130,8 @@ export default function ProductInfor() {
         }
 
         try {
+            setLoading(true);
+
             const check = await productService.checkCanBid(product.id);
             if (!check.canBid) return alert(check.reason);
 
@@ -134,6 +141,8 @@ export default function ProductInfor() {
             alert("Đặt giá thành công!");
         } catch (err) {
             alert("Bid error");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -146,18 +155,22 @@ export default function ProductInfor() {
 
         if (!question.trim()) return;
 
+        setLoading(true);
+
         const res = await contactService.askSeller(product.id, question);
         if (res.success) {
             setQaHistory((p) => [...p, { question, answer: null }]);
             setQuestion("");
             setAskStatus("Đã gửi câu hỏi!");
         }
+
+        setLoading(false);
     };
 
 
     /* ================= UI ================= */
     return (
-        <div className="max-w-7xl mx-auto px-6 py-8 space-y-10">
+        <div className="mt-5 max-w-7xl mx-auto px-6 py-8 space-y-10">
 
             {/* IMAGE + INFO */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -165,6 +178,17 @@ export default function ProductInfor() {
                     src={`http://localhost:3000/static/images/${product.id}/${product.image_path[0]}`}
                     className="rounded-xl"
                 />
+                {/* Other image here... */}
+                {
+                    //run from 1 to image_path.length
+                    product.image_path.slice(1).map((img, i) => (
+                        <img
+                            key={i}
+                            src={`http://localhost:3000/static/images/${product.id}/${img}`}
+                            className="rounded-xl"
+                        />
+                    ))
+                }
 
                 <div className="md:col-span-2 space-y-3">
                     <h1 className="text-2xl font-bold">{product.name}</h1>

@@ -97,14 +97,16 @@ export async function deleteUser(id) {
 //change password
 export async function changePassword(payload, id) {
     const res = await instance.put(`/change-password/${id}`, payload);
-    if (res.status === 201) return res.data;
-    throw new Error("Change password failed");
+
+    return res.data;
 }
 
 //update profile
 export async function updateProfile(payload,id) {
     const res = await instance.put(`/profile/${id}`, payload);
-    if (res.status === 201) return res.data;
+
+    if (res.status === 201 || res.status === 200) return res.data;
+    
     throw new Error("Update profile failed");
 }
 

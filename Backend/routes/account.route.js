@@ -103,13 +103,13 @@ router.put('/change-password/:id', async (req, res) => {
 
         const valid = bcrypt.compareSync(old_password, storedPassword);
         if (!valid) {
-            return res.status(400).json({ message: "Old password is incorrect!" });
+            return res.status(400).json({ message: "Old password is incorrect!" , success: false });
         }
 
         await accountService.updatePassword({ user_id, new_password });
-        res.json({ message: "Password changed successfully!" });
+        res.json({ message: "Password changed successfully!" , success: true });
     } catch (error) {
-        res.status(500).json({ message: "Error changing password!", error: error.message });
+        res.status(500).json({ message: "Error changing password!", error: error.message , success: false});
     }   
 });
 
@@ -129,10 +129,10 @@ router.put('/profile/:id', async (req, res) => {
             await accountService.updateFullName({ user_id, full_name });
         }
 
-        res.json({ message: "Update profile successfully!" });
+        res.json({ message: "Update profile successfully!" , success: true });
         
     } catch (error) {
-        res.status(500).json({ message: "Error updating profile!", error: error.message });
+        res.status(500).json({ message: "Error updating profile!", error: error.message , success: false});
     }
 });
 

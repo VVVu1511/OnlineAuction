@@ -180,4 +180,18 @@ router.get('/fun', async(req,res) => {
     res.json({ success: true, data: req.user });
 })
 
+//rate bidder
+router.post('/rateBidder', async (req, res) => {
+    try {
+        const { bidder_id, product_id, comment, rating } = req.body;
+        
+        const result = await biddingService.rateBidder(bidder_id, product_id, comment, rating);
+        res.status(201).json({ message: 'Bidder rated successfully', data: result });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error rating bidder' });
+    }
+});
+
 export default router;

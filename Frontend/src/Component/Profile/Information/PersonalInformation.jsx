@@ -1,12 +1,13 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import * as accountService from "../../../service/account.service";
+import {LoadingContext} from "../../../context/LoadingContext.jsx";
 
 export default function PersonalInformation() {
     const [user, setUser] = useState(null);
     const [editing, setEditing] = useState(false);
-
     const [fullName, setFullName] = useState("");
     const [address, setAddress] = useState("");
+    const {setLoading} = useContext(LoadingContext);
 
     /* ===== LOAD USER FROM LOCALSTORAGE ===== */
     useEffect(() => {
@@ -22,6 +23,8 @@ export default function PersonalInformation() {
     /* ===== UPDATE PROFILE ===== */
     const handleUpdate = async () => {
         try {
+            setLoading(true);
+
             const res = await accountService.updateProfile({
                 full_name: fullName,
                 address,
@@ -34,15 +37,23 @@ export default function PersonalInformation() {
                     address,
                 };
 
+                //update user
+                console.log("Updated User:", updatedUser);
+
                 localStorage.setItem("user", JSON.stringify(updatedUser));
                 setUser(updatedUser);
+                setFullName(fullName);
+                setAddress(address);
                 setEditing(false);
+
                 alert("Cập nhật thành công");
             }
         } catch (err) {
             alert("Cập nhật thất bại");
+        } finally {
+            setLoading(false);
         }
-    };
+    }; 
 
     if (!user) return null;
 

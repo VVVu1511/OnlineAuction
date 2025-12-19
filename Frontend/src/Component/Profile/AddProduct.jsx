@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 import * as productService from "../../service/product.service";
+//set Loading
+import {LoadingContext} from "../../context/LoadingContext.jsx";
+
 
 export default function AddAuctionProduct() {
     const [name, setName] = useState("");
@@ -11,8 +14,21 @@ export default function AddAuctionProduct() {
     const [buyNowPrice, setBuyNowPrice] = useState("");
     const [description, setDescription] = useState("");
     const [autoExtend, setAutoExtend] = useState(true);
+    const {setLoading} = useContext(LoadingContext);
+    const [addError, setAddError] = useState(false);
+    const [user,setUser] = useState(null);
+
+    useEffect(() => {
+        return () => {
+            images.forEach((file) =>
+                URL.revokeObjectURL(file)
+            );
+        };
+    }, [images]);
 
     const handleSubmit = async (e) => {
+        const res = JSON.parse(localStorage.getItem("user"));
+        setUser(res);
         e.preventDefault();
 
         if (images.length < 3) {
@@ -21,6 +37,7 @@ export default function AddAuctionProduct() {
         }
 
         const formData = new FormData();
+        
         formData.append("name", name);
         images.forEach((img) => formData.append("images", img));
         formData.append("startPrice", startPrice);
@@ -30,17 +47,50 @@ export default function AddAuctionProduct() {
         formData.append("autoExtend", autoExtend);
 
         try {
-            const data = await productService.addProduct(formData);
+            setLoading(true);
+
+            const data = await productService.addProduct(formData, user.id);
+
             if (data.success) {
                 alert("Tạo sản phẩm thành công!");
+                
+                // Reset form
+                setName("");
+                setImages([]);
+                setStartPrice("");
+                setBidStep("");
+                setBuyNowPrice("");
+                setDescription("");
+                setAutoExtend(true);
+                setAddError(false);
+                
             } else {
                 alert(data.message || "Lỗi hệ thống");
             }
         } catch (err) {
-            console.error("Add product error:", err);
-            alert(err.response?.data?.message || "Lỗi hệ thống");
+            alert(err);
+
+            setAddError(true);
+
+            // alert(err.response?.data?.message || "Lỗi hệ thống");
+        } finally {
+            setLoading(false);
         }
     };
+
+    const handleImageChange = (e) => {
+        const files = Array.from(e.target.files);
+
+        if (files.length < 3) {
+            alert("Vui lòng chọn ít nhất 3 ảnh");
+            setImages([]);
+            e.target.value = ""; // reset input
+            return;
+        }
+
+        setImages(files);
+    };
+
 
     return (
         <div className="flex justify-center py-10">
@@ -69,16 +119,43 @@ export default function AddAuctionProduct() {
                         <label className="block font-medium mb-1">
                             Ảnh sản phẩm (tối thiểu 3)
                         </label>
+
                         <input
                             type="file"
                             multiple
                             accept="image/*"
-                            required
-                            onChange={(e) =>
-                                setImages(Array.from(e.target.files))
-                            }
+                            onChange={handleImageChange}
                             className="w-full rounded-lg border px-3 py-2 bg-white"
                         />
+
+                        {images.length > 0 && (
+                            <p className="text-sm text-gray-600 mt-1">
+                                Đã chọn {images.length} ảnh
+                            </p>
+                        )}
+
+                        {/* PREVIEW 3 IMAGES */}
+                        {images.length > 0 && (
+                            <div className="flex gap-3 mt-3">
+                                {images.slice(0, 3).map((file, index) => (
+                                    <div
+                                        key={index}
+                                        className="w-20 h-20 border rounded-lg overflow-hidden bg-gray-100"
+                                    >
+                                        <img
+                                            src={URL.createObjectURL(file)}
+                                            alt={`preview-${index}`}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {images.length > 3 && (
+                            <div className="w-20 h-20 flex items-center justify-center border rounded-lg bg-gray-200 text-sm text-gray-600">
+                                +{images.length - 3}
+                            </div>
+                        )}
                     </div>
 
                     {/* Prices */}
@@ -153,6 +230,14 @@ export default function AddAuctionProduct() {
                         />
                         Tự động gia hạn khi còn 5 phút
                     </label>
+
+                    {/* Add Error */}
+                    {addError && (
+                        <p className="text-red-600">
+                            Đã có lỗi xảy ra khi thêm sản phẩm. Vui lòng thử
+                            lại.
+                        </p>
+                    )}
 
                     {/* Submit */}
                     <button

@@ -5,18 +5,23 @@ const instance = axios.create({
     timeout: 20000
 });
 
-// Interceptor gắn token
 instance.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem("token");
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+        // const token = localStorage.getItem("token");
+        // if (token) {
+        //     config.headers.Authorization = `Bearer ${token}`;
+        // }
+
+        // ✅ CHỈ set JSON khi payload KHÔNG phải FormData
+        if (!(config.data instanceof FormData)) {
+            config.headers["Content-Type"] = "application/json";
         }
-        config.headers["Content-Type"] = "application/json";
+
         return config;
     },
     (error) => Promise.reject(error)
 );
+
 
 export async function getProductsByCategory(categoryId){
     const res = await instance.get(`/getByCat/${categoryId}`);
@@ -100,10 +105,10 @@ export async function placeBid(productId, price) {
     }
 }
 
-export async function addProduct(formData) {
-    const res = await instance.post("/add", formData);
+export async function addProduct(formData, id) {
+    const res = await instance.post(`/add/${id}`, formData);
 
-    if (res.status === 200) {
+    if (res.status === 200 || res.status === 201) {
         return res.data;
     } else {
         throw new Error("Error creating product");

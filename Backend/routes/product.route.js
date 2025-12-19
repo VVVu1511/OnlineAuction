@@ -1,6 +1,9 @@
 import express from 'express'
 import * as productService from '../services/product.service.js'
 import authMiddleware from "../middleware/auth.js"; // adjust path
+import {upload} from '../config/multer.js';
+import path from "path";
+import fs from "fs";
 
 const router = express.Router();
 
@@ -107,29 +110,64 @@ router.get('/top5Price', async(req,res) => {
     }
 })
 
-router.post('/add', async(req,res) => {
-    try{
-        const data = {
-            name: req.body.name,
-            image_path: JSON.stringify(req.body.image_path),
-            current_price: req.body.current_price,
-            best_bidder: req.body.best_bidder,
-            sell_price: req.body.sell_price,
-            upload_date: req.body.upload_date,
-            time_left: req.body.time_left,
-            bid_counts: req.body.bid_counts,        
-            seller: req.body.seller ,
-            description: req.body.description    
-        };
-        
-        await productService.addProduct(data);
+router.post("/add/:id", (req, res) => {
+    upload.array("images", 4)(req, res, async (err) => {
 
-        res.status(201).json({message: 'Add product succesfully!'});
-    }
-    catch(error){
-        res.status(404).json({error: error.message, message: 'Error adding product'});
-    }
-})
+        console.log("---- MULTER DEBUG ----");
+        console.log("Headers:", req.headers["content-type"]);
+        console.log("Body:", req.body);
+        console.log("Files:", req.files);
+        console.log("----------------------");
+
+        if (err) {
+            console.error("Multer error:", err);
+            return res.status(400).json({
+                success: false,
+                message: err.message
+            });
+        }
+
+        try {
+            const autoExtend = req.body.autoExtend === "true";
+            const sellerId = parseInt(req.params.id);
+
+            const [product] = await productService.addProduct({
+                name: req.body.name,
+                current_price: req.body.startPrice,
+                sell_price: req.body.buyNowPrice || null,
+                bid_step: req.body.bidStep,
+                extend_after: autoExtend ? 5 : 0,
+                extend_minutes: autoExtend ? 10 : 0,
+                description: req.body.description,
+                seller: sellerId,
+                upload_date: new Date(),
+                bid_counts: 0,
+                state_id: 1
+            });
+
+            const productId = product.id;
+
+            const productDir = path.join("static/images", String(productId));
+            fs.mkdirSync(productDir, { recursive: true });
+
+            const imagePaths = [];
+                req.files?.forEach((file, index) => {
+                    const newName = `${index + 1}.webp`;
+                    const newPath = path.join(productDir, newName);
+                    fs.renameSync(file.path, newPath);
+                    imagePaths.push(newName);
+            });
+
+            await productService.updateImagePath(productId, JSON.stringify(imagePaths));
+
+            res.status(201).json({ success: true });
+
+        } catch (e) {
+            console.error(e);
+            res.status(500).json({ success: false });
+        }
+    });
+});
 
 router.get('/getByCat/:cat_id',async(req,res) => {
     try{

@@ -22,26 +22,28 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.set('trust proxy', 1);
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cors());
 
+app.use(cors());
 // Passport session middleware
 app.use(session({
     secret: process.env.SECRET_KEY,
     resave: false,
     saveUninitialized: false
 }));
+
 app.use(passport.initialize());
 app.use(passport.session());
+app.use('/product', productRouter);
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use('/static', express.static(path.join(__dirname, 'static')));
 app.use('/account', accountRouter);
-app.use('/product', productRouter);
 app.use('/category', categoryRouter);
 app.use('/bidding', biddingRouter);
 app.use('/contact',contactRouter);
 app.use('/auth', authRouter);
+
 
 app.listen(PORT, function () {
     console.log(`Server is running on http://localhost:${PORT}`);

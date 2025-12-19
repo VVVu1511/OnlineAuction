@@ -127,3 +127,25 @@ export async function getDeniedBidders(productId) {
 
     return rows;
 }
+
+//rate bidder
+export async function rateBidder(bidderId, productId, comment, rating) {
+    try {
+        const product = await db('PRODUCT').where({ id: productId }).first();
+        if (!product) {
+            throw new Error('Product not found');
+        }
+
+        await db('RATING').insert({
+            rater_id: product.seller,
+            rated_id: bidderId,
+            product_id: productId,
+            comment: comment,
+            rating: rating,
+            created_at: new Date()
+        });
+    } catch (err) {
+        console.error('Cannot rate bidder', err);
+        throw err;
+    }     
+}
