@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
 import * as categoryService from "../../../service/category.service.jsx";
+import {LoadingContext} from "../../../context/LoadingContext.jsx";
+import { useContext } from "react";
 
 export default function CategoryManagement({ user }) {
     const [categories, setCategories] = useState([]);
     const [newCat, setNewCat] = useState("");
-
     const [editingId, setEditingId] = useState(null);
     const [editingText, setEditingText] = useState("");
-
-    const [loading, setLoading] = useState(false);
+    const { setLoading} = useContext(LoadingContext);
 
     // LOAD
     useEffect(() => {
         if (!user) return;
 
+        
         const loadCategories = async () => {
             try {
                 setLoading(true);
@@ -38,13 +39,18 @@ export default function CategoryManagement({ user }) {
         }
 
         try {
+            setLoading(true);
+
             const res = await categoryService.addCategory(newCat.trim());
             if (!res.success) throw new Error(res.message);
 
-            setCategories(prev => [...prev, res.category]);
+            setCategories(prev => [...prev, res.data]);
             setNewCat("");
+
         } catch (err) {
             alert(err.message || "Thêm category thất bại");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -56,6 +62,8 @@ export default function CategoryManagement({ user }) {
         }
 
         try {
+            setLoading(true);
+
             const res = await categoryService.updateCategory(id, editingText.trim());
             if (!res.success) throw new Error(res.message);
 
@@ -69,6 +77,8 @@ export default function CategoryManagement({ user }) {
             setEditingText("");
         } catch (err) {
             alert(err.message || "Cập nhật thất bại");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -77,12 +87,17 @@ export default function CategoryManagement({ user }) {
         if (!window.confirm("Xóa category này?")) return;
 
         try {
+            setLoading(true);
+
             const res = await categoryService.deleteCategory(id);
             if (!res.success) throw new Error(res.message);
 
             setCategories(prev => prev.filter(c => c.id !== id));
+        
         } catch (err) {
             alert(err.message || "Không thể xóa category");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -90,8 +105,7 @@ export default function CategoryManagement({ user }) {
         <div className="border p-4 rounded">
             <h3 className="mb-3">Category Management</h3>
 
-            {loading && <p>Đang tải...</p>}
-
+            
             <table className="table table-bordered">
                 <thead>
                     <tr>

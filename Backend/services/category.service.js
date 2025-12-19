@@ -2,9 +2,9 @@ import db from '../utils/db.js'
 
 export async function addNewCategory(description) {
     try {
-        await db('CATEGORY')
-            .insert({description: description});    
-            
+        return await db('CATEGORY')
+            .insert({ description })
+            .returning(['id', 'description']);
     } catch (err) {
         console.error('Cannot add new category', err);
         throw err;

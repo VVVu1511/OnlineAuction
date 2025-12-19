@@ -4,17 +4,24 @@ import authMiddleware from "../middleware/auth.js"; // adjust path
 
 const router = express.Router();
 
+router.post('/', async (req, res) => {
+    try {
+        const [category] = await categoryService.addNewCategory(
+            req.body.description
+        );
 
-router.post('' ,async(req,res) => {
-    try{
-        await categoryService.addNewCategory(req.body.description);
-    
-        res.status(201).json({message: 'Add category successfully'});
-    }
-    catch(err){
+        res.status(201).json({
+            message: 'Add category successfully',
+            success: true,
+            data: category   // { id, description }
+        });
+    } catch (err) {
         console.error(err);
-
-        res.status(500).json({ message: "Error adding category", error: err.message});
+        res.status(500).json({
+            message: "Error adding category",
+            error: err.message,
+            success: false
+        });
     }
 });
 
@@ -23,12 +30,12 @@ router.put('', async(req,res) => {
         
         await categoryService.updateCategory(req.body);
     
-        res.status(201).json({message: 'Update category successfully'});
+        res.status(201).json({message: 'Update category successfully', success: true});
     }
     catch(err){
         console.error(err);
 
-        res.status(500).json({ message: "Error updating category", error: err.message});
+        res.status(500).json({ message: "Error updating category", error: err.message,  success: false});
     }
 });
 

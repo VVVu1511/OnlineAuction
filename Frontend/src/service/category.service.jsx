@@ -47,13 +47,15 @@ export async function getAllCategories() {
 
 export async function addCategory(description) {
     const res = await instance.post("/", { description });
-    if (res.status === 200) return res.data;
+    
+    if (res.status === 200 || res.status === 201) return res.data;
+
     throw new Error("Add category failed");
 }
 
 export async function updateCategory(id, description) {
     const res = await instance.put("/", { id, description });
-    if (res.status === 200) return res.data;
+    if (res.status === 200 || res.status === 201) return res.data;
     throw new Error("Update category failed");
 }
 
@@ -61,7 +63,7 @@ export async function deleteCategory(id) {
     const res = await instance.delete("/", {
         data: { id }
     });
-    if (res.status === 200) return res.data;
+    if (res.status === 200 || res.status === 201) return res.data;
     throw new Error("Delete category failed");
 }
 
