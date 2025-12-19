@@ -41,7 +41,7 @@ export async function fetchChildCategory(id) {
 
 export async function getAllCategories() {
     const res = await instance.get("/all");
-    if (res.status === 200) return res.data;
+    if (res.status === 200 || res.status === 201) return res.data;
     throw new Error("Error fetching categories");
 }
 

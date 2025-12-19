@@ -19,6 +19,7 @@ export default function CategoryManagement({ user }) {
                 setLoading(true);
                 const res = await categoryService.getAllCategories();
                 setCategories(res.data || []);
+                
             } catch (err) {
                 alert(err.response?.data?.message || "Không tải được category");
             } finally {

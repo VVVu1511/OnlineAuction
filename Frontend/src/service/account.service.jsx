@@ -110,3 +110,12 @@ export async function updateProfile(payload,id) {
     throw new Error("Update profile failed");
 }
 
+//getAllUsers
+export async function getAllUsers() {
+    const res = await instance.get("/all");
+    
+    if (res.status === 201 || res.status === 200) return res.data;
+
+    throw new Error("Error fetching users");
+}
+

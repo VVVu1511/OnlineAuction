@@ -7,7 +7,6 @@ import ChangePassword from "../Information/ChangePassword.jsx";
 
 export default function AdminProfile({ user}) {
     
-
     return (
         <div className="p-5 d-flex flex-column gap-5">
             <PersonalInformation user={user} />

@@ -42,16 +42,33 @@ export default function ProductManagement({ user }) {
                 Product Management
             </h3>
 
-            <div className="flex flex-wrap gap-4">
+            <div className="grid grid-cols-5 gap-4">
                 {products.map(p => (
                     <div
                         key={p.id}
-                        className="w-[220px] flex flex-col"
+                        className="flex flex-col"
                     >
                         <ProductCard
                             data={p}
                             liked={false}
                         />
+
+                        {
+                            <>
+                                {p.extend_after && (
+                                    <div className="text-sm text-green-600 mt-1">
+                                        Đã gia hạn lúc: {new Date(p.extend_after).toLocaleString()}
+                                    </div>
+                                )}
+                                Gia hạn thêm: {
+                                    p.extend_minutes === 0
+                                        ? "Không thể gia hạn"
+                                        :
+
+                                        `+${p.extend_minutes} phút`
+                                }
+                            </>
+                        }
 
                         <button
                             onClick={() => removeProduct(p.id)}
@@ -73,6 +90,7 @@ export default function ProductManagement({ user }) {
                     </div>
                 ))}
             </div>
+
         </div>
     );
 }

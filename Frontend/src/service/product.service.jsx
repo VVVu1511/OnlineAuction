@@ -153,7 +153,7 @@ export async function getTop5Price() {
 
 export async function getAllProducts() {
     const res = await instance.get("/all");
-    if (res.status === 200) return res.data;
+    if (res.status === 200 || res.status === 201) return res.data;
     throw new Error("Error fetching all products");
 }
 
