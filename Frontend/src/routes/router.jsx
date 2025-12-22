@@ -20,6 +20,7 @@ import AdminProfile from "../Component/Profile/Admin/AdminProfile.jsx";
 
 import Category from "../Component/Category/Category.jsx";
 import TopProducts from "../Component/TopProducts/TopProducts.jsx";
+import OrderCompletion from "../Component/OrderCompletion/OrderCompletion.jsx";
 
 const router = createBrowserRouter([
   // ========= ROOT =========
@@ -62,6 +63,11 @@ const router = createBrowserRouter([
         path: "profile",
         element: <ProfileRouter />,
       },
+
+      {
+        path: "order",
+        element: <OrderCompletion />
+      }
     ],
   },
 
