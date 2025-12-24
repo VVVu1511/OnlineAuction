@@ -19,19 +19,22 @@ export default function RootLayout() {
 
             {/* Main Content */}
             <div className="pt-12 min-h-screen bg-gray-50">
-                <div className="max-w-7xl mx-auto grid grid-cols-12 gap-4">
-                    
-                    {/* Left spacer */}
-                    <div className="hidden lg:block lg:col-span-2 bg-gray-100 rounded-xl" />
+            <div className="flex">
 
-                    {/* Main outlet */}
-                    <main className="col-span-12 lg:col-span-8 pt-4 pb-10">
-                        <Outlet />
-                    </main>
+                {/* Left spacer */}
+                <div className="hidden lg:block flex-1 bg-gray-100" />
 
-                    {/* Right spacer */}
-                    <div className="hidden lg:block lg:col-span-2 bg-gray-100 rounded-xl" />
+                {/* Center content */}
+                <div className="w-full max-w-7xl mx-auto">
+                <main className="pt-4 pb-10 px-4">
+                    <Outlet />
+                </main>
                 </div>
+
+                {/* Right spacer */}
+                <div className="hidden lg:block flex-1 bg-gray-100" />
+
+            </div>
             </div>
 
             <Footer />

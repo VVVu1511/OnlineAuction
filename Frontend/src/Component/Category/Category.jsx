@@ -33,7 +33,9 @@ function Category() {
     };
 
     return (
-        <div className="mt-8 px-4">
+        <div className="mt-12 px-4">
+            
+            
             {/* Title */}
             <h2 className="text-2xl font-bold mb-6 text-center">
                 DANH MỤC

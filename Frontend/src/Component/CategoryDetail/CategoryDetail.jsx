@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import * as categoryService from "../../service/category.service.jsx";
+import Back from "../Back/Back.jsx";
 
 function CategoryDetail() {
     const [childCategory, setChildCategory] = useState([]);
@@ -36,6 +37,8 @@ function CategoryDetail() {
 
     return (
         <div className="px-4 py-6 max-w-6xl mx-auto">
+            <Back />
+            
             <h1 className="text-3xl font-bold mb-4 text-gray-800">{category?.description}</h1>
             
             {childCategory.length > 0 && (

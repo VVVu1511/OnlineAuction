@@ -6,6 +6,7 @@ import { FaDollarSign, FaHeart, FaRegHeart } from "react-icons/fa";
 import ProductCard from "../ProductCard/ProductCard";
 import ProductDescription from "./ProductDescription";
 import OrderCompletion from "../OrderCompletion/OrderCompletion";
+import Back from "../Back/Back.jsx";
 import useWatchlist from "../../hooks/useWatchList";
 import * as productService from "../../service/product.service";
 import * as accountService from "../../service/account.service";
@@ -32,6 +33,9 @@ export default function ProductInfor() {
     const [auctionEnded, setAuctionEnded] = useState(false);
     const [liked, toggleLike] = useWatchlist(isLiked);
     const { setLoading } = useContext(LoadingContext);
+
+    const baseUrl = `http://localhost:3000/static/images/${product?.id}`;
+    const [activeImage, setActiveImage] = useState(product.image_path[0]);
 
     /* ================= USER (localStorage only) ================= */
     useEffect(() => {
@@ -171,50 +175,107 @@ export default function ProductInfor() {
     /* ================= UI ================= */
     return (
         <div className="mt-5 max-w-7xl mx-auto px-6 py-8 space-y-10">
+                <Back />    
 
-            {/* IMAGE + INFO */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <img
-                    src={`http://localhost:3000/static/images/${product.id}/${product.image_path[0]}`}
-                    className="rounded-xl"
-                />
-                {/* Other image here... */}
-                {
-                    //run from 1 to image_path.length
-                    product.image_path.slice(1).map((img, i) => (
-                        <img
-                            key={i}
-                            src={`http://localhost:3000/static/images/${product.id}/${img}`}
-                            className="rounded-xl"
-                        />
-                    ))
-                }
+                {/* IMAGE + INFO */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                <div className="space-y-4">
 
-                <div className="md:col-span-2 space-y-3">
-                    <h1 className="text-2xl font-bold">{product.name}</h1>
-                    <p>💰 Current: {product.current_price}</p>
-                    {product.sell_price && <p>⚡ Buy now: {product.sell_price}</p>}
-                    <p>⏰ {displayTime}</p>
-
-                    <ProductDescription product={product} userId={userId} />
-
-                    {role === "bidder" && (
-                        <div className="flex gap-4 mt-4 items-center">
-                            <button onClick={() => toggleLike(product.id)}>
-                                {liked ? <FaHeart className="text-red-500" /> : <FaRegHeart />}
-                            </button>
-
-                            {!denyBidders.some(b => b.user_id === userId) && (
-                                <button
-                                    onClick={handleBid}
-                                    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg"
-                                >
-                                    <FaDollarSign /> Place Bid
-                                </button>
-                            )}
-                        </div>
-                    )}
+                {/* Main image */}
+                <div className="w-full aspect-square overflow-hidden rounded-xl border bg-white">
+                    <img
+                    src={`${baseUrl}/${activeImage}`}
+                    className="w-full h-full object-cover"
+                    />
                 </div>
+
+                {/* Thumbnail row */}
+                <div className="flex gap-3 overflow-x-auto">
+                    {product.image_path.map((img, i) => (
+                    <button
+                        key={i}
+                        onClick={() => setActiveImage(img)}
+                        className={`border rounded-lg p-1 flex-shrink-0 ${
+                        activeImage === img
+                            ? "border-red-500"
+                            : "border-gray-200"
+                        }`}
+                    >
+                        <img
+                        src={`${baseUrl}/${img}`}
+                        className="w-20 h-20 object-cover rounded-md"
+                        />
+                    </button>
+                    ))}
+                </div>
+            </div>
+
+                <div className="md:col-span-2 pl-6 md:pl-10 space-y-5">
+
+            {/* Product name */}
+            <h1 className="text-2xl font-semibold leading-snug">
+                {product.name}
+            </h1>
+
+            {/* Price block */}
+            <div className="bg-gray-100 rounded-lg p-4 space-y-2">
+                <p className="text-lg">
+                <span className="text-gray-500">Current price</span>{" "}
+                <span className="text-red-600 font-bold text-2xl">
+                    {product.current_price}
+                </span>
+                </p>
+
+                {product.sell_price && (
+                <p className="text-sm text-gray-700">
+                    Buy now:{" "}
+                    <span className="font-semibold text-green-600">
+                    {product.sell_price}
+                    </span>
+                </p>
+                )}
+            </div>
+
+            {/* Time */}
+            <p className="text-sm text-gray-500">
+                ⏰ {displayTime}
+            </p>
+
+            {/* Description */}
+            <div className="pt-2">
+                <ProductDescription product={product} userId={userId} />
+            </div>
+
+            {/* Actions */}
+            {role === "bidder" && (
+                <div className="flex gap-4 pt-4 items-center">
+
+                {/* Like */}
+                <button
+                    onClick={() => toggleLike(product.id)}
+                    className="p-2 border rounded-full hover:bg-gray-100"
+                >
+                    {liked ? (
+                    <FaHeart className="text-red-500" />
+                    ) : (
+                    <FaRegHeart />
+                    )}
+                </button>
+
+                {/* Bid */}
+                {!denyBidders.some((b) => b.user_id === userId) && (
+                    <button
+                    onClick={handleBid}
+                    className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold"
+                    >
+                    <FaDollarSign />
+                    </button>
+                )}
+                </div>
+            )}
+            </div>
+
             </div>
 
             {/* HISTORY */}
