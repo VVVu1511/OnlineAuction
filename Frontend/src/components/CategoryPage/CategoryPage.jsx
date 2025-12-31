@@ -1,0 +1,197 @@
+import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
+
+import * as categoryService from "../../services/category.service.jsx";
+import * as productService from "../../services/product.service.jsx";
+import Back from "../Back/Back.jsx"
+import ProductCard from "../ProductCard/ProductCard.jsx";
+
+const PAGE_SIZE = 5;
+
+export default function CategoryPage() {
+    const { id } = useParams();
+
+    const [category, setCategory] = useState(null);
+    const [childCategories, setChildCategories] = useState([]);
+    const [products, setProducts] = useState([]);
+
+    const [selectedCat, setSelectedCat] = useState(id);
+    const [sortType, setSortType] = useState("endTimeDesc"); 
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const [loading, setLoading] = useState(false);
+
+    /* =========================
+       LOAD CATEGORY + CHILD
+    ========================= */
+    useEffect(() => {
+        const loadCategory = async () => {
+            try {
+                const [catRes, childRes] = await Promise.all([
+                    categoryService.getCategoryById(id),
+                    categoryService.fetchChildCategory(id),
+                ]);
+
+                setCategory(catRes.data || catRes);
+                setChildCategories(childRes.data || childRes);
+            } catch (err) {
+                console.error("Load category error:", err);
+            }
+        };
+
+        loadCategory();
+    }, [id]);
+
+    /* =========================
+       LOAD PRODUCTS
+    ========================= */
+    useEffect(() => {
+        const loadProducts = async () => {
+            try {
+                setLoading(true);
+                const res = await productService.getProductsByCategory(
+                    selectedCat
+                );
+                setProducts(res.data || res);
+                setCurrentPage(1); // reset page khi đổi category
+            } catch (err) {
+                console.error("Load products error:", err);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadProducts();
+    }, [selectedCat]);
+
+    /* =========================
+       SORT PRODUCTS
+    ========================= */
+    const sortedProducts = useMemo(() => {
+        const arr = [...products];
+
+        if (sortType === "endTimeDesc") {
+            arr.sort(
+                (a, b) =>
+                    new Date(b.end_time) - new Date(a.end_time)
+            );
+        }
+
+        if (sortType === "priceAsc") {
+            arr.sort((a, b) => a.current_price - b.current_price);
+        }
+
+        return arr;
+    }, [products, sortType]);
+
+    /* =========================
+       PAGINATION
+    ========================= */
+    const totalPages = Math.ceil(sortedProducts.length / PAGE_SIZE);
+
+    const pagedProducts = useMemo(() => {
+        const start = (currentPage - 1) * PAGE_SIZE;
+        return sortedProducts.slice(start, start + PAGE_SIZE);
+    }, [sortedProducts, currentPage]);
+
+    return (
+        <div className="px-6">
+            <Back />
+
+            {/* ===== TITLE ===== */}
+            <h1 className="mt-5 text-2xl font-semibold mb-4">
+                {category?.name || "Danh mục"}
+            </h1>
+
+            {/* ===== FILTER CATEGORY ===== */}
+            {childCategories.length > 0 && (
+                <div className="flex gap-3 mb-4 flex-wrap">
+                    <FilterButton
+                        active={selectedCat === id}
+                        onClick={() => setSelectedCat(id)}
+                    >
+                        Tất cả
+                    </FilterButton>
+
+                    {childCategories.map((c) => (
+                        <FilterButton
+                            key={c.id}
+                            active={selectedCat === c.id}
+                            onClick={() => setSelectedCat(c.id)}
+                        >
+                            {c.description}
+                        </FilterButton>
+                    ))}
+                </div>
+            )}
+
+            {/* ===== SORT ===== */}
+            <div className="flex gap-3 mb-6">
+                <select
+                    value={sortType}
+                    onChange={(e) => setSortType(e.target.value)}
+                    className="border rounded px-3 py-2"
+                >
+                    <option value="endTimeDesc">
+                        ⏳ Kết thúc muộn → sớm
+                    </option>
+                    <option value="priceAsc">
+                        💰 Giá tăng dần
+                    </option>
+                </select>
+            </div>
+
+            {/* ===== PRODUCT GRID ===== */}
+            {loading ? (
+                <p>Đang tải sản phẩm...</p>
+            ) : pagedProducts.length === 0 ? (
+                <p>Không có sản phẩm</p>
+            ) : (
+                <>
+                    <div className="grid grid-cols-5 gap-4 mb-6">
+                        {pagedProducts.map((p) => (
+                            <ProductCard key={p.id} product={p} />
+                        ))}
+                    </div>
+
+                    {/* ===== PAGINATION ===== */}
+                    <div className="flex gap-2 justify-center">
+                        {Array.from({ length: totalPages }).map((_, i) => (
+                            <button
+                                key={i}
+                                onClick={() => setCurrentPage(i + 1)}
+                                className={`px-3 py-1 border rounded
+                                    ${
+                                        currentPage === i + 1
+                                            ? "bg-blue-600 text-white"
+                                            : "hover:bg-gray-100"
+                                    }`}
+                            >
+                                {i + 1}
+                            </button>
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
+/* =========================
+   FILTER BUTTON
+========================= */
+function FilterButton({ children, active, onClick }) {
+    return (
+        <button
+            onClick={onClick}
+            className={`px-4 py-2 rounded border text-sm transition
+                ${
+                    active
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white hover:bg-gray-100"
+                }`}
+        >
+            {children}
+        </button>
+    );
+}

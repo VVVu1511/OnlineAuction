@@ -5,8 +5,9 @@ import authMiddleware from "../middleware/auth.js"; // adjust path
 
 dotenv.config();
 
-export async function add(user){
-    return db('USER').insert(user);
+export async function add(user) {
+    const [id] = await db('USER').insert(user).returning('id');
+    return id;
 }
 
 export async function findAllEmail(){
@@ -21,52 +22,43 @@ export async function getAllByEmail(email) {
 }
 
 export async function updateEmail(data) {
-    try {
-        await db('USER')
-            .where({ id: data.user_id })
-            .update({ email: data.email });   // <── sửa
-    } catch (err) {
-        console.error('Cannot update email', err);
-        throw err;
-    }
+    const affected = await db('USER')
+        .where({ id: data.user_id })
+        .update({ email: data.email });
+
+    return affected; // số row update
 }
 
 //update address
 export async function updateAddress(data) {
-    try {
-        await db('USER')
-            .where({ id: data.user_id })
-            .update({ address: data.address });   // <── sửa
-    } catch (err) {
-        console.error('Cannot update address', err);
-        throw err;
-    }   
+    const affected = await db('USER')
+        .where({ id: data.user_id })
+        .update({ address: data.address });
+
+    return affected;
 }
+
 
 //update full name
 export async function updateFullName(data) {
-    try {
-        await db('USER')
-            .where({ id: data.user_id })
-            .update({ full_name: data.full_name });   // <── sửa
-    } catch (err) {
-        console.error('Cannot update full name', err);
-        throw err;
-    }
+    const affected = await db('USER')
+        .where({ id: data.user_id })
+        .update({ full_name: data.full_name });
+
+    return affected;
 }
+
 
 export async function updatePassword(data) {
-    try {
-        const hashed = bcrypt.hashSync(data.new_password, 10);
+    const hashed = bcrypt.hashSync(data.new_password, 10);
 
-        await db('USER')
-            .where({ id: data.user_id })
-            .update({ password: hashed });    
-    } catch (err) {
-        console.error('Cannot update password', err);
-        throw err;
-    }
+    const affected = await db('USER')
+        .where({ id: data.user_id })
+        .update({ password: hashed });
+
+    return affected;
 }
+
 
 // services/otp.service.js
 import nodemailer from "nodemailer";
@@ -74,89 +66,49 @@ import nodemailer from "nodemailer";
 const otpStore = {}; // { email: { otp, expiresAt } }
 
 export async function sendOtp(userEmail, otp) {
-    try {
-        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-            throw new Error("EMAIL_USER or EMAIL_PASS not defined in .env");
-        }
+    otpStore[userEmail] = {
+        otp,
+        expiresAt: Date.now() + 5 * 60 * 1000
+    };
 
-        // Store OTP in memory with expiration
-        otpStore[userEmail] = {
-            otp,
-            expiresAt: Date.now() + 5 * 60 * 1000, // 5 minutes
-        };
+    await transporter.sendMail(mailOptions);
 
-        const transporter = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-        });
-
-        const mailOptions = {
-            from: `"Your Website" <${process.env.EMAIL_USER}>`,
-            to: userEmail,
-            subject: "Your OTP Code",
-            text: `Your OTP code is: ${otp}`,
-            html: `<h3>Your OTP code is: <b>${otp}</b></h3><p>This code expires in 5 minutes.</p>`,
-        };
-
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`OTP sent to ${userEmail}: ${otp}`);
-        console.log("Message ID:", info.messageId);
-
-    } catch (err) {
-        console.error("Failed to send OTP:", err.response || err);
-        throw err;
-    }
+    return {
+        success: true,
+        message: "OTP sent successfully"
+    };
 }
 
 export function verifyOtp(email, otp) {
     const record = otpStore[email];
 
-    if (!record) {
+    if (!record)
         return { success: false, message: "OTP not found" };
-    }
 
-    if (Date.now() > record.expiresAt) {
+    if (Date.now() > record.expiresAt)
         return { success: false, message: "OTP expired" };
-    }
-    if (record.otp !== otp) {
+
+    if (record.otp !== otp)
         return { success: false, message: "Wrong OTP" };
-    }
 
-    // OTP valid → remove it
     delete otpStore[email];
-
     return { success: true, message: "OTP verified" };
 }
 
+
 export async function getRating(userId) {
-    try {
-        const ratings = await db('RATING')
-            .where('rated_id', userId)
-            .select('*');
-        return ratings;
-        
-    } catch (err) {
-        console.error("Failed to get rating", err);
-        throw err;
-    }
+    return await db('RATING')
+        .where('rated_id', userId)
+        .select('*');
 }
 
+
 export async function getWinProducts(userId) {
-    try {
-        const win = await db('PRODUCT')
-            .where('winner', userId)
-            .select('*');
-        
-        return win;
-        
-    } catch (err) {
-        console.error("Failed to get win products", err);
-        throw err;
-    }
+    return await db('PRODUCT')
+        .where('winner', userId)
+        .select('*');
 }
+
 
 export async function getWatchList(user_id) {
     try {
@@ -174,43 +126,37 @@ export async function getWatchList(user_id) {
 }
 
 export async function addWatchList(user_id, product_id) {
-    try {
-        await db('WATCHLIST')
-            .insert({user_id: user_id, product_id: product_id});
+    const [id] = await db('WATCHLIST')
+        .insert({ user_id, product_id })
+        .returning('id');
 
-    } catch (err) {
-        console.error('Cannot add watch list', err);
-        throw err;
-    }
+    return id;
 }
+
 
 export async function delWatchList(user_id, product_id) {
-    try {
-        await db('WATCHLIST')
-            .where({user_id: user_id, product_id: product_id})
-            .delete();
+    const deleted = await db('WATCHLIST')
+        .where({ user_id, product_id })
+        .del();
 
-    } catch (err) {
-        console.error('Cannot delete 1 row watch list', err);
-        throw err;
-    }
+    return deleted;
 }
 
+
 export async function requestSell(user_id) {
-    try {
-        // Cập nhật cột request_sell = true
-        await db('USER')
+    const affected = await db('USER')
         .where({ id: user_id })
         .update({
             request_sell: true,
             request_expire: db.raw(`CURRENT_TIMESTAMP + interval '7 days'`)
-  });
+        });
 
-    } catch (err) {
-        console.error('Error requesting sell', err);
-        throw err;
-    }
+    return {
+        success: affected > 0,
+        message: "Request sell submitted"
+    };
 }
+
 
 export async function findAllById(id) {
     try {
@@ -237,41 +183,31 @@ export async function getAllUsers() {
 }
 
 export async function delById(id) {
-    try {
-        // DELETE returns the number of deleted rows
-        const deletedCount = await db("USER")
-            .where("id", id)
-            .del();
+    const deleted = await db("USER")
+        .where("id", id)
+        .del();
 
-        return deletedCount;  // 1 = deleted, 0 = not found
-    } catch (err) {
-        console.error("delById error:", err);
-        throw new Error("Error deleting user by ID");
-    }
+    return {
+        success: deleted > 0,
+        deleted
+    };
 }
 
 export async function confirmRequestSell(id, approve) {
-    try {
-        if (approve) {
-            // nâng cấp lên seller
-            await db("USER")
-                .update({ 
-                    role: 2,
-                    request_sell: 0,
-                    request_expire: null
-                })
-                .where("id", id);
-        } else {
-            // từ chối
-            await db("USER")
-                .update({ request_sell: 0 ,request_expire: null})
-                .where("id", id);
-        }
-    } catch (err) {
-        console.error("confirmRequestSell error:", err);
-        throw new Error("Error confirming request");
-    }
+    const updateData = approve
+        ? { role: 2, request_sell: 0, request_expire: null }
+        : { request_sell: 0, request_expire: null };
+
+    const affected = await db("USER")
+        .where("id", id)
+        .update(updateData);
+
+    return {
+        success: affected > 0,
+        approved: approve
+    };
 }
+
 
 // getProfileById
 export async function getProfileById(id) {

@@ -7,134 +7,150 @@ const router = express.Router();
 
 router.post('/login', async (req, res) => {
     try {
-        console.log('hi')
-        const data = await accountService.getAllByEmail(req.body.email);
+        const user = await accountService.getAllByEmail(req.body.email);
 
-        if (!data || !data.password) {
-            return res.status(400).json({ message: "Wrong username or password" , data: data});
+        if (!user || !user.password) {
+            return res.status(400).json({
+                success: false,
+                message: "Wrong email or password",
+                data: null
+            });
         }
 
-        const valid = bcrypt.compareSync(req.body.password, data.password);
-
+        const valid = bcrypt.compareSync(req.body.password, user.password);
         if (!valid) {
-            return res.status(400).json({ message: "Wrong username or password" });
+            return res.status(400).json({
+                success: false,
+                message: "Wrong email or password",
+                data: null
+            });
         }
 
-        // Create JWT
         const payload = {
-            id: data.id,
-            address: data.address,
-            score: data.score,
-            role: data.role,
-            full_name: data.full_name,
-            email: req.body.email,
+            id: user.id,
+            email: user.email,
+            full_name: user.full_name,
+            address: user.address,
+            role: user.role,
+            score: user.score
         };
 
-        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const roleDesc = await accountService.getRoleDescription(payload.role);
+        payload.role = roleDesc.description;
 
-        payload.role = await accountService.getRoleDescription(payload.role);
-        payload.role = payload.role.description;
-
-        res.status(201).json({ 
+        res.status(200).json({
             success: true,
-            data: payload,
             message: "Login successfully",
-            token 
+            data: payload,
         });
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: "Error log in", error: err.message });
+        res.status(500).json({
+            success: false,
+            message: "Login failed",
+            data: err.message
+        });
     }
 });
 
-router.post('/register', async (req,res) => {
-    try{
-        // const captcha = req.body.captcha;
-
-        // const googleVerifyURL = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captcha}`;
-
-        // const response = await fetch(googleVerifyURL, { method: "POST" });
-
-        // const data = await response.json();
-        
-        // if (!data.success) {
-        //     return res.status(400).json({ message: "CAPTCHA failed!" });
-        // }
-
+router.post('/register', async (req, res) => {
+    try {
         const hashPassword = bcrypt.hashSync(req.body.password, 10);
-    
+
         const user = {
+            email: req.body.email,
             password: hashPassword,
             address: req.body.address,
-            email: req.body.email,
             full_name: req.body.fullName,
             role: req.body.role
+        };
+
+        const emails = await accountService.findAllEmail();
+        if (emails.includes(user.email)) {
+            return res.status(400).json({
+                success: false,
+                message: "Email already exists",
+                data: null
+            });
         }
 
-        const allEmail = await accountService.findAllEmail();
-        
-        if(allEmail.includes(user.email)){
-            throw new Error("Email already exists");
-        }
-    
-        const result = await accountService.add(user);
+        const userId = await accountService.add(user);
 
         res.status(201).json({
             success: true,
-            userId: result[0],     
-            message: "User registered successfully. OTP sent."
+            message: "User registered successfully",
+            data: { userId }
         });
 
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Register failed",
+            data: err.message
+        });
     }
-
-    catch(error){
-        res.status(500).json({ message: "Error registering user", error: error.message});
-    }
-    
-})
+});
 
 //update password
 router.put('/change-password/:id', async (req, res) => {
     try {
-        const user_id = req.params.id;
+        const user_id = parseInt(req.params.id);
         const { old_password, new_password } = req.body;
-        const storedPassword = await accountService.getPasswordById(user_id);
 
+        const storedPassword = await accountService.getPasswordById(user_id);
         const valid = bcrypt.compareSync(old_password, storedPassword);
+
         if (!valid) {
-            return res.status(400).json({ message: "Old password is incorrect!" , success: false });
+            return res.status(400).json({
+                success: false,
+                message: "Old password incorrect",
+                data: null
+            });
         }
 
-        await accountService.updatePassword({ user_id, new_password });
-        res.json({ message: "Password changed successfully!" , success: true });
-    } catch (error) {
-        res.status(500).json({ message: "Error changing password!", error: error.message , success: false});
-    }   
+        const affected = await accountService.updatePassword({ user_id, new_password });
+
+        res.json({
+            success: true,
+            message: "Password updated successfully",
+            data: affected
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Change password failed",
+            data: err.message
+        });
+    }
 });
 
 //update profile
 router.put('/profile/:id', async (req, res) => {
     try {
-        const {full_name, address} = req.body;
-        const user_id = req.params.id;
+        const user_id = parseInt(req.params.id);
+        const { full_name, address } = req.body;
 
-        // Update email
-        if (address) {
-            await accountService.updateAddress({ user_id, address});
-        }
+        let updated = 0;
 
-        // Update full name
-        if (full_name) {
-            await accountService.updateFullName({ user_id, full_name });
-        }
+        if (address) updated += await accountService.updateAddress({ user_id, address });
+        if (full_name) updated += await accountService.updateFullName({ user_id, full_name });
 
-        res.json({ message: "Update profile successfully!" , success: true });
-        
-    } catch (error) {
-        res.status(500).json({ message: "Error updating profile!", error: error.message , success: false});
+        res.json({
+            success: true,
+            message: "Profile updated successfully",
+            data: updated
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Update profile failed",
+            data: err.message
+        });
     }
 });
+
 
 router.post("/send-otp", async (req, res) => {
     const { email } = req.body;
@@ -204,99 +220,100 @@ router.get('/win/:id', async(req,res) => {
     }
 })
 
-router.delete('/watchlist/:id', async function (req,res) {
+router.delete('/watchlist/:id', async (req, res) => {
     try {
-        const userID = parseInt(req.params.id);
-         // decoded token set by middleware
-        const productId = req.body.productId;
+        const user_id = parseInt(req.params.id);
+        const { productId } = req.body;
 
-        if (!productId) return res.status(400).json({ message: "Missing product ID" });
+        const deleted = await accountService.delWatchList(user_id, productId);
 
-        // Add to watchlist
-        await accountService.delWatchList(userID, productId);
-
-        res.status(201).json({ 
+        res.json({
             success: true,
-            message: 'Product added to watchlist successfully!',
+            message: "Removed from watchlist",
+            data: deleted
         });
 
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ 
+    } catch (err) {
+        res.status(500).json({
             success: false,
-            message: 'Error deleting product of watchlist', 
-            error: error.message,
-        });
-    }
-})
-
-router.post('/watchlist/:id', async function (req, res) {
-    try {
-        const userID = parseInt(req.params.id);
-         // decoded token set by middleware
-        const productId = req.body.productId;
-
-        if (!productId) return res.status(400).json({ message: "Missing product ID" });
-
-        // Add to watchlist
-        await accountService.addWatchList(userID, productId);
-
-        res.status(201).json({ 
-            success: true,
-            message: 'Product added to watchlist successfully!',
-        });
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Error adding product to watchlist', 
-            error: error.message,
+            message: "Delete watchlist failed",
+            data: err.message
         });
     }
 });
 
-router.get('/watchlist/:id', async function (req,res)  {
-    try{
-        const id = parseInt(req.params.id);
 
-        const data = await accountService.getWatchList(id);
-        
-        res.status(201).json({data: data , message: 'Get watch list successfully!'});
+router.post('/watchlist/:id', async (req, res) => {
+    try {
+        const user_id = parseInt(req.params.id);
+        const { productId } = req.body;
+
+        const id = await accountService.addWatchList(user_id, productId);
+
+        res.status(201).json({
+            success: true,
+            message: "Added to watchlist",
+            data: { watchlistId: id }
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Add watchlist failed",
+            data: err.message
+        });
     }
-    catch(error){
-        res.status(404).json({error: error.message, message: 'Error getting watch list'});
+});
+
+
+router.get('/watchlist/:id', async (req, res) => {
+    try {
+        const data = await accountService.getWatchList(parseInt(req.params.id));
+
+        res.json({
+            success: true,
+            message: "Get watchlist successfully",
+            data
+        });
+
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Get watchlist failed",
+            data: err.message
+        });
     }
-})
+});
 
 router.put('/requestSell/:id', async (req, res) => {
     try {
-        const user_id = parseInt(req.params.id);
+        const result = await accountService.requestSell(parseInt(req.params.id));
 
-        // Gọi service để request sell
-        await accountService.requestSell(user_id);
-
-        res.status(200).json({
-            success: true,
-            message: 'Yêu cầu nâng cấp Seller đã được gửi! Admin sẽ duyệt.'
+        res.json({
+            success: result.success,
+            message: result.message,
+            data: null
         });
+
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: err.message });
+        res.status(500).json({
+            success: false,
+            message: err.message,
+            data: null
+        });
     }
 });
 
 router.put('/approve/:id', async (req, res) => {
-    try {
+    const result = await accountService.confirmRequestSell(+req.params.id, true);
 
-        await accountService.confirmRequestSell(parseInt(req.params.id), true);
-
-        res.json({ success: true, message: "Approved user request!" });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: err.message });
-    }
+    res.json({
+        success: result.success,
+        message: "Approved request",
+        data: result
+    });
 });
+
 
 router.put('/deny/:id', async (req, res) => {
     try {
@@ -310,35 +327,17 @@ router.put('/deny/:id', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
-    try {
-        const user_id = parseInt(req.params.id);
+    const result = await accountService.delById(+req.params.id);
 
-        if (isNaN(user_id)) {
-            return res.status(400).json({ success: false, message: "Invalid user ID" });
-        }
-
-        // DELETE user
-        const deleted = await accountService.delById(user_id);
-
-        if (deleted === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "User deleted successfully"
-        });
-
-    } catch (err) {
-        console.error("Delete user error:", err);
-        res.status(500).json({
-            success: false,
-            message: err.message || "Server error"
-        });
+    if (!result.success) {
+        return res.status(404).json(result);
     }
+
+    res.json({
+        success: true,
+        message: "User deleted successfully",
+        data: null
+    });
 });
 
 router.get('/all', async(req,res) => {

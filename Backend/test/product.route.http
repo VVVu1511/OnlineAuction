@@ -8,7 +8,7 @@ GET {{baseUrl}}/myActiveProducts/13
 GET {{baseUrl}}/myWonProducts/13
 
 ### Search products
-GET {{baseUrl}}/search?q=iphone
+GET {{baseUrl}}/search?q=laptop
 
 ### Get product info
 GET {{baseUrl}}/infor/1

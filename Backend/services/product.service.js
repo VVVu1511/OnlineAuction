@@ -1,257 +1,213 @@
-import db from '../utils/db.js'
-import * as contactService from '../services/contact.service.js'
+import db from '../utils/db.js';
+import * as contactService from '../services/contact.service.js';
 
-export async function getQ_A(id) {
-    try{
-        const ques_ans = await db('QUESTION_ANSWER').select('*')
-            .where('product_id', id);
-
-        return ques_ans;
-    }
-    catch(err){
-        console.error('Error getting Q & A product: ', err);
+/**
+ * =========================
+ * Q & A
+ * =========================
+ */
+export async function getQ_A(productId) {
+    try {
+        return await db('QUESTION_ANSWER')
+            .where({ product_id: productId })
+            .select('*');
+    } catch (err) {
+        console.error('Error getting Q & A product:', err);
         throw err;
     }
 }
 
+/**
+ * =========================
+ * PRODUCT BASIC
+ * =========================
+ */
 export async function getProductInfor(id) {
-    try{
-        const product = await db('PRODUCT').select('*').where({id}).first();
-
-        return product;
-    }
-    catch(err){
-        console.error('Error fetching product: ', err);
+    try {
+        return await db('PRODUCT')
+            .where({ id })
+            .first() || null;
+    } catch (err) {
+        console.error('Error fetching product:', err);
         throw err;
     }
 }
 
 export async function addProduct(product) {
-    return db("PRODUCT").insert(product).returning("id");
+    const [id] = await db('PRODUCT')
+        .insert(product)
+        .returning('id');
+
+    return { id };
 }
 
 export async function updateImagePath(productId, imagePathsJson) {
-    return db("PRODUCT")
+    const updated = await db('PRODUCT')
         .where({ id: productId })
-        .update({
-            image_path: imagePathsJson
-        });
-}
+        .update({ image_path: imagePathsJson });
 
-export async function getAllProducts() {
-    try{
-        return db('PRODUCT').select('*');
-    }
-    catch(err){
-        console.error('Error getting all products: ', err);
-        throw err;
-    }
-}
-
-export async function getTop5Price() {
-    try{
-        return db('PRODUCT')
-            .select('*')
-            .orderBy('current_price','desc')
-            .limit(5);
-    }
-    catch(err){
-        console.error('Error getting top 5 products');
-        throw err;
-    }
-}
-
-export async function getTop5BidCounts() {
-    try{
-        return db('PRODUCT')
-            .select('*')
-            .orderBy('bid_counts','desc')
-            .limit(5);
-    }
-    catch(err){
-        console.error('Error getting top 5 products');
-        throw err;
-    }
-}
-
-export async function getTop5NearEnd() {
-    try{
-        return db('PRODUCT')
-            .select('*')
-            .orderBy('time_left','asc')
-            .limit(5);
-    }
-    catch(err){
-        console.error('Error getting top 5 products');
-        throw err;
-    }
-}
-
-export async function getByCategory(cat_id) {
-    try {
-        
-        const childRows = await db('CATEGORY_PARENT')
-            .select('child_id')
-            .where('parent_id', cat_id);
-
-        let categoryIds;
-
-        if (childRows.length > 0) {
-            categoryIds = childRows.map(row => row.child_id);
-        } else {
-            categoryIds = [cat_id];
-        }
-
-        const products = await db('PRODUCT')
-            .join('PRODUCT_CATEGORY', 'PRODUCT.id', 'PRODUCT_CATEGORY.product_id')
-            .select('PRODUCT.*')
-            .whereIn('PRODUCT_CATEGORY.category_id', categoryIds);
-
-        return products;
-
-    } catch (err) {
-        console.error('Cannot get products by category:', err);
-        throw err;
-    }
-}
-
-export async function search(keyword) {
-    return await db('PRODUCT')
-        .whereRaw(`fts @@ plainto_tsquery('simple', unaccent(?))`, [keyword]);
+    return { productId, updated };
 }
 
 export async function deleteProduct(id) {
-    try {
-        await db('PRODUCT')
-            .where({id: id})
-            .delete();
-    } 
-    catch (err) {
-        console.error('Error deleting product', err);
-        throw err;
-    }
+    const deleted = await db('PRODUCT')
+        .where({ id })
+        .delete();
+
+    return { id, deleted };
 }
 
-export async function getBestBidder(id) {
-    try {
-        return await db('BID_HISTORY')
-            .where({product_id: id})
-            .join('USER','USER.id', 'BID_HISTORY.user_id')
-            .orderBy('price','desc')
-            .first()
-            .select('USER.*');
-            
-
-    } catch (err) {
-        console.error('Error getting best bidder', err);
-        throw err;
-    }
+/**
+ * =========================
+ * PRODUCT LIST
+ * =========================
+ */
+export async function getAllProducts() {
+    return await db('PRODUCT').select('*');
 }
 
-export async function getSellerInfor(product_id) {
-    try {
-        return await db('PRODUCT')
-            .where('PRODUCT.id',product_id)
-            .join('USER','USER.id', 'PRODUCT.seller')
-            .select('USER.*');
-            
-
-    } catch (err) {
-        console.error('Error getting selling information', err);
-        throw err;
-    }
+export async function getTop5Price() {
+    return await db('PRODUCT')
+        .orderBy('current_price', 'desc')
+        .limit(5);
 }
 
+export async function getTop5BidCounts() {
+    return await db('PRODUCT')
+        .orderBy('bid_counts', 'desc')
+        .limit(5);
+}
+
+export async function getTop5NearEnd() {
+    return await db('PRODUCT')
+        .orderBy('time_left', 'asc')
+        .limit(5);
+}
+
+/**
+ * =========================
+ * CATEGORY
+ * =========================
+ */
+export async function getByCategory(cat_id) {
+    const childRows = await db('CATEGORY_PARENT')
+        .where({ parent_id: cat_id })
+        .select('child_id');
+
+    const categoryIds = childRows.length
+        ? childRows.map(r => r.child_id)
+        : [cat_id];
+
+    return await db('PRODUCT')
+        .join('PRODUCT_CATEGORY', 'PRODUCT.id', 'PRODUCT_CATEGORY.product_id')
+        .whereIn('PRODUCT_CATEGORY.category_id', categoryIds)
+        .select('PRODUCT.*');
+}
+
+/**
+ * =========================
+ * SEARCH
+ * =========================
+ */
+export async function search(keyword) {
+    return await db('PRODUCT')
+        .whereRaw(
+            `fts @@ plainto_tsquery('simple', unaccent(?))`,
+            [keyword]
+        );
+}
+
+/**
+ * =========================
+ * SELLER / BIDDER
+ * =========================
+ */
+export async function getBestBidder(productId) {
+    return await db('BID_HISTORY')
+        .where({ product_id: productId })
+        .join('USER', 'USER.id', 'BID_HISTORY.user_id')
+        .orderBy('price', 'desc')
+        .select('USER.*')
+        .first() || null;
+}
+
+export async function getSellerInfor(productId) {
+    return await db('PRODUCT')
+        .where('PRODUCT.id', productId)
+        .join('USER', 'USER.id', 'PRODUCT.seller')
+        .select('USER.*')
+        .first() || null;
+}
+
+/**
+ * =========================
+ * RELATED PRODUCTS
+ * =========================
+ */
 export async function get5relatedProducts(productId) {
-    try {
-        
-        const parentCatRow = await db('PRODUCT')
-            .where('PRODUCT.id', productId)
-            .join('PRODUCT_CATEGORY', 'PRODUCT.id', 'PRODUCT_CATEGORY.product_id')
-            .join('CATEGORY_PARENT', 'PRODUCT_CATEGORY.category_id', 'CATEGORY_PARENT.child_id')
-            .select('CATEGORY_PARENT.parent_id')
-            .first();
+    const parentCat = await db('PRODUCT')
+        .where('PRODUCT.id', productId)
+        .join('PRODUCT_CATEGORY', 'PRODUCT.id', 'PRODUCT_CATEGORY.product_id')
+        .join('CATEGORY_PARENT', 'PRODUCT_CATEGORY.category_id', 'CATEGORY_PARENT.child_id')
+        .select('CATEGORY_PARENT.parent_id')
+        .first();
 
-        if (!parentCatRow) return []; 
+    if (!parentCat) return [];
 
-        const parentId = parentCatRow.parent_id;
+    const childIds = await db('CATEGORY_PARENT')
+        .where({ parent_id: parentCat.parent_id })
+        .pluck('child_id');
 
-        const childCategories = await db('CATEGORY_PARENT')
-            .where('CATEGORY_PARENT.parent_id', parentId)
-            .select('child_id');
-
-        const childCategoryIds = childCategories.map(cat => cat.child_id);
-
-        const relatedProducts = await db('PRODUCT')
-            .join('PRODUCT_CATEGORY', 'PRODUCT.id', 'PRODUCT_CATEGORY.product_id')
-            .whereIn('PRODUCT_CATEGORY.category_id', childCategoryIds)
-            .whereNot('PRODUCT.id', productId)
-            .select('PRODUCT.*')
-            .limit(5);
-
-        return relatedProducts;
-
-    } catch (err) {
-        console.error('Error getting 5 related products', err);
-        throw err;
-    }
+    return await db('PRODUCT')
+        .join('PRODUCT_CATEGORY', 'PRODUCT.id', 'PRODUCT_CATEGORY.product_id')
+        .whereIn('PRODUCT_CATEGORY.category_id', childIds)
+        .whereNot('PRODUCT.id', productId)
+        .select('PRODUCT.*')
+        .limit(5);
 }
 
+/**
+ * =========================
+ * REVIEW
+ * =========================
+ */
 export async function getReviews(userId) {
-    try {
-        let query = db('RATING')
-            .where('rated_id', userId) // reviews about this user
-            .select('rating');
-
-        const reviews = await query;
-        return reviews;
-    } catch (err) {
-        console.error('Error getting reviews', err);
-        throw err;
-    }
+    return await db('RATING')
+        .where({ rated_id: userId })
+        .select('rating', 'comment', 'created_at');
 }
 
-export async function getProductById(productId) {
-    try {
-        const product = await db('PRODUCT')
-            .where('id', productId)
-            .first(); // lấy một dòng duy nhất
-
-        if (!product) return null;
-
-        return product;
-    } catch (err) {
-        console.error('Error fetching product by ID', err);
-        throw err;
-    }
-}
-
+/**
+ * =========================
+ * DESCRIPTION
+ * =========================
+ */
 export async function appendDescription(productId, newDescription) {
-    // Lấy sản phẩm, kiểm tra quyền
-    const product = await db('PRODUCT').where({ id: productId }).first();
+    const product = await getProductInfor(productId);
     if (!product) throw new Error('Product not found');
 
-    // Append mô tả mới vào mô tả cũ
-    const updatedDescription = product.description
-        ? product.description + "\n" + newDescription
+    const description = product.description
+        ? product.description + '\n' + newDescription
         : newDescription;
 
-    // Cập nhật vào DB
     await db('PRODUCT')
         .where({ id: productId })
-        .update({ description: updatedDescription });
+        .update({ description });
 
-    // Trả về sản phẩm đã cập nhật
-    return { ...product, description: updatedDescription };
+    return { ...product, description };
 }
 
+/**
+ * =========================
+ * SELLER DASHBOARD
+ * =========================
+ */
 export async function getActiveProducts(userId) {
     return await db('PRODUCT')
         .where({ seller: userId })
-        .whereNull('winner')        // chưa có người thắng
-        .andWhere('time_left', '>', 0) // còn thời gian (giả sử time_left là số giây còn lại)
-        .orderBy('upload_date', 'desc')
-        .select('*');
+        .whereNull('winner')
+        .andWhere('time_left', '>', 0)
+        .orderBy('upload_date', 'desc');
 }
 
 export async function getWonProducts(userId) {
@@ -259,21 +215,37 @@ export async function getWonProducts(userId) {
         .join('USER as Winner', 'PRODUCT.winner', 'Winner.id')
         .leftJoin('RATING as R', 'PRODUCT.id', 'R.product_id')
         .where({ seller: userId })
-        .whereNotNull('winner')   // đã có người thắng
-        .orderBy('upload_date', 'desc')
-        .select('PRODUCT.*','Winner.full_name as winner_name', 'Winner.email as winner_email', 'R.rating as winner_rating', 'R.comment as winner_comment', 'R.created_at as created_at');
+        .whereNotNull('winner')
+        .select(
+            'PRODUCT.*',
+            'Winner.full_name as winner_name',
+            'Winner.email as winner_email',
+            'R.rating',
+            'R.comment',
+            'R.created_at'
+        );
 }
 
+/**
+ * =========================
+ * END BID
+ * =========================
+ */
 export async function productEndBid(productId) {
-    // Chuyển state sản phẩm từ active → ended
     await db('PRODUCT')
         .where({ id: productId })
         .update({ state_id: 2 });
 
-    // Lấy đầy đủ thông tin sản phẩm
     const product = await getProductInfor(productId);
 
-    await contactService.emailEndBid(product.best_bidder, product.seller, product.id);
+    await contactService.emailEndBid(
+        product.best_bidder,
+        product.seller,
+        product.id
+    );
 
-    return { productId, status: "ended" };
+    return {
+        productId,
+        state: "ended"
+    };
 }

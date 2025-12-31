@@ -1,109 +1,162 @@
-import express from 'express'
-import * as categoryService from '../services/category.service.js'
-import authMiddleware from "../middleware/auth.js"; // adjust path
+import express from 'express';
+import * as categoryService from '../services/category.service.js';
+import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 
+/**
+ * Add new category
+ */
 router.post('/', async (req, res) => {
     try {
-        const [category] = await categoryService.addNewCategory(
-            req.body.description
-        );
+        const data = await categoryService.addNewCategory(req.body.description);
 
         res.status(201).json({
-            message: 'Add category successfully',
             success: true,
-            data: category   // { id, description }
+            message: 'Add category successfully',
+            data
         });
     } catch (err) {
         console.error(err);
         res.status(500).json({
-            message: "Error adding category",
-            error: err.message,
-            success: false
+            success: false,
+            message: 'Error adding category',
+            data: null
         });
     }
 });
 
-router.put('', async(req,res) => {
-    try{
-        
-        await categoryService.updateCategory(req.body);
-    
-        res.status(201).json({message: 'Update category successfully', success: true});
-    }
-    catch(err){
-        console.error(err);
+/**
+ * Update category
+ */
+router.put('/', async (req, res) => {
+    try {
+        const data = await categoryService.updateCategory(req.body);
 
-        res.status(500).json({ message: "Error updating category", error: err.message,  success: false});
+        res.status(200).json({
+            success: true,
+            message: 'Update category successfully',
+            data
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            success: false,
+            message: 'Error updating category',
+            data: null
+        });
     }
 });
 
-router.delete('',  async(req,res) => {
-    try{
-        await categoryService.deleteCategory(req.body.id);
-    
-        res.status(201).json({message: 'Delete category successfully', success: true});
-    }
-    catch(err){
-        console.error(err);
+/**
+ * Delete category
+ */
+router.delete('/', async (req, res) => {
+    try {
+        const data = await categoryService.deleteCategory(req.body.id);
 
-        res.status(500).json({ message: "Error deleting category", error: err.message, success: false});
+        res.status(200).json({
+            success: true,
+            message: 'Delete category successfully',
+            data
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            success: false,
+            message: 'Error deleting category',
+            data: null
+        });
     }
 });
 
-router.get('/all', async(req,res) => {
-    try{
+/**
+ * Get all categories
+ */
+router.get('/all', async (req, res) => {
+    try {
         const data = await categoryService.getAll();
-    
-        res.status(201).json({data: data, message: 'Get all categories successfully'});
-    }
-    catch(err){
-        console.error(err);
 
-        res.status(500).json({ message: "Error getting all categories", error: err.message});
+        res.status(200).json({
+            success: true,
+            message: 'Get all categories successfully',
+            data
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            success: false,
+            message: 'Error getting all categories',
+            data: null
+        });
     }
 });
 
-router.get('/child/:id', async(req,res) => {
-    try{
+/**
+ * Get child categories
+ */
+router.get('/child/:id', async (req, res) => {
+    try {
         const id = parseInt(req.params.id);
         const data = await categoryService.getChild(id);
-    
-        res.status(201).json({data: data, message: 'Get child categories successfully'});
-    }
-    catch(err){
+
+        res.status(200).json({
+            success: true,
+            message: 'Get child categories successfully',
+            data
+        });
+    } catch (err) {
         console.error(err);
-
-        res.status(500).json({ message: "Error getting child categories", error: err.message});
+        res.status(500).json({
+            success: false,
+            message: 'Error getting child categories',
+            data: null
+        });
     }
-})
+});
 
-router.get('/allParent', async(req,res) => {
-    try{
+/**
+ * Get parent categories
+ */
+router.get('/allParent', async (req, res) => {
+    try {
         const data = await categoryService.getParent();
-    
-        res.status(201).json({data: data, message: 'Get all parent categories successfully'});
-    }
-    catch(err){
+
+        res.status(200).json({
+            success: true,
+            message: 'Get all parent categories successfully',
+            data
+        });
+    } catch (err) {
         console.error(err);
-
-        res.status(500).json({ message: "Error getting all parent categories", error: err.message});
+        res.status(500).json({
+            success: false,
+            message: 'Error getting parent categories',
+            data: null
+        });
     }
-})
+});
 
-router.get('/:id', async(req,res) => {
-    try{
+/**
+ * Get category by id
+ */
+router.get('/:id', async (req, res) => {
+    try {
         const id = parseInt(req.params.id);
         const data = await categoryService.getCategoryById(id);
 
-        res.status(201).json({data: data, message: 'Get category by id successfully'});
-    }
-    catch(err){
-
+        res.status(200).json({
+            success: true,
+            message: 'Get category by id successfully',
+            data
+        });
+    } catch (err) {
         console.error(err);
-
-        res.status(500).json({ message: "Error getting category by id", error: err.message});
+        res.status(500).json({
+            success: false,
+            message: 'Error getting category by id',
+            data: null
+        });
     }
 });
 

@@ -1,196 +1,280 @@
-// routes/product.js
 import express from 'express';
-import * as biddingService from '../services/bidding.service.js'
-import * as productService from '../services/product.service.js'
-import * as accountService from '../services/account.service.js'
-import * as contactService from '../services/contact.service.js'
-import authMiddleware from "../middleware/auth.js"; // adjust path
+import * as biddingService from '../services/bidding.service.js';
+import * as productService from '../services/product.service.js';
+import * as accountService from '../services/account.service.js';
+import * as contactService from '../services/contact.service.js';
+import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get('', async function (req,res)  {
-    try{
-        const id = req.user.id;
-
-        const data = await biddingService.getBiddingList(id);
-        
-        res.status(201).json({data: data , message: 'Get bidding list successfully!'});
-    }
-    catch(error){
-        res.status(404).json({error: error.message, message: 'Error getting bidding list'});
-    }
-})
-
-// Từ chối lượt ra giá của bidder
-router.put('/refuse', async (req, res) => {
-    const { productId, bidderId } = req.body;
-
+/**
+ * GET bidding list of current user
+ */
+router.get('/', authMiddleware, async (req, res) => {
     try {
-        const updatedProduct = await biddingService.refuseBidder(productId, bidderId);
-        res.status(200).json({
+        const data = await biddingService.getBiddingList(req.user.id);
+
+        return res.status(200).json({
             success: true,
-            message: 'Bidder has been refused successfully!',
-            data: updatedProduct
+            message: 'Get bidding list successfully',
+            data
         });
-    } catch (err) {
-        res.status(400).json({
+    } catch (error) {
+        return res.status(500).json({
             success: false,
-            message: err.message
+            message: 'Error getting bidding list',
+            data: null
         });
     }
 });
 
-router.post('/checkCanBid', async (req, res) => {
+/**
+ * Refuse bidder (seller)
+ */
+router.put('/refuse', authMiddleware, async (req, res) => {
+    try {
+        const { productId, bidderId } = req.body;
+
+        const data = await biddingService.refuseBidder(productId, bidderId);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Bidder refused successfully',
+            data
+        });
+    } catch (err) {
+        return res.status(400).json({
+            success: false,
+            message: err.message,
+            data: null
+        });
+    }
+});
+
+/**
+ * Check if bidder can bid
+ */
+router.post('/checkCanBid', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
         const { product_id } = req.body;
 
         const product = await productService.getProductById(product_id);
-        if (!product) return res.status(404).json({ message: 'Product not found' });
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found',
+                data: null
+            });
+        }
 
-        // Lấy 10 đánh giá gần nhất, full, đếm +, chia SL
-        const recentReviews = await productService.getReviews(userId);
+        const reviews = await productService.getReviews(userId);
+
         let canBid = false;
         let reason = '';
 
-        if (recentReviews.length === 0) {
-            //haven't been rated
-            // canBid = product.allow_unrated_bids;
-            if (!canBid) reason = 'You are not allowed to bid without ratings.';
+        if (reviews.length > 0) {
+            const positive = reviews.filter(r => r.rating > 0).length;
+            canBid = positive / reviews.length >= 0.8;
+            if (!canBid) {
+                reason = 'Your positive rating is too low';
+            }
         } else {
-            const positiveCount = recentReviews.filter(r => r.rating > 0).length;
-            const rate = positiveCount / recentReviews.length;
-            canBid = rate >= 0.8;
-            if (!canBid) reason = `Your positive rating is too low (${Math.round(rate*100)}%).`;
+            reason = 'You are not allowed to bid without ratings';
         }
 
-        const minPrice = product.current_price + product.bid_step;
-
-        res.json({
-            canBid,
-            reason,
-            suggestedPrice: minPrice
+        return res.json({
+            success: true,
+            message: 'Check bid permission successfully',
+            data: {
+                canBid,
+                reason,
+                suggestedPrice: product.current_price + product.bid_step
+            }
         });
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error checking bid eligibility' });
+        return res.status(500).json({
+            success: false,
+            message: 'Error checking bid eligibility',
+            data: null
+        });
     }
 });
 
-router.post('/bid', async (req, res) => {
+/**
+ * Place a bid
+ */
+router.post('/bid', authMiddleware, async (req, res) => {
     try {
-        if(!req.user.id || req.user.role_description !== "bidder"){
-            res.status(500).json({ message: `Not a bidder` });
+        if (req.user.role_description !== "bidder") {
+            return res.status(403).json({
+                success: false,
+                message: 'Not a bidder',
+                data: null
+            });
         }
 
-        const userId = req.user.id;
         const { product_id, price } = req.body;
-
         const product = await productService.getProductById(product_id);
-        if (!product) return res.status(404).json({ message: 'Product not found' });
 
-        // Kiểm tra giá hợp lệ
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: 'Product not found',
+                data: null
+            });
+        }
+
         const minPrice = product.current_price + product.bid_step;
-        if (price < minPrice) return res.status(400).json({ message: `Bid must be at least ${minPrice}` });
+        if (price < minPrice) {
+            return res.status(400).json({
+                success: false,
+                message: `Bid must be at least ${minPrice}`,
+                data: null
+            });
+        }
 
-        //if price == sell price ? -> end
-        //if timeup -> end
-        if(price == product.sell_price){
+        if (price === product.sell_price) {
             await productService.productEndBid(product_id);
         }
 
-        await biddingService.new_bid({
-            user_id: userId,
+        const data = await biddingService.new_bid({
+            user_id: req.user.id,
             product_id,
-            time: new Date(),
             price
         });
 
         await contactService.emailAfterBid(product_id, product.seller, req.user.id, price);
 
-        res.status(201).json({ message: 'Bid placed successfully', final_price: price });
+        return res.status(201).json({
+            success: true,
+            message: 'Bid placed successfully',
+            data
+        });
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error placing bid' });
+        return res.status(500).json({
+            success: false,
+            message: 'Error placing bid',
+            data: null
+        });
     }
 });
 
-router.get('/bid_history/:product_id', async function (req,res) {
-    try{
-        const product_id = parseInt(req.params.product_id);
-
-        const data = await biddingService.getBidHistory(product_id);
-        
-        res.status(201).json({data:data ,message: 'Get bid history successfully!'});
-    }
-    catch(error){
-        res.status(404).json({error: error.message, message: 'Error getting bid history'});
-    }
-})
-
-router.post('/denyBidder/:product_id', async (req, res) => {
-    
-    
-    if(!req.user.role_description || req.user.role_description !== "seller"){
-        res.status(500).json({ success: false, message: "Not seller" });
-    }
-    
-    
-    const productId = req.params.product_id;
-    const { bidderId } = req.body;
-    
-    const product = await productService.getProductInfor(productId);
-    const bidder = await accountService.findAllById(bidderId);
-    
-    if(req.user.id !== product.seller){
-        res.status(500).json({ success: false, message: `Not seller ${product.seller} of this product, yours is ${req.user.id}` });
-    }
-
-    if (!bidderId) return res.status(400).json({ success: false, message: "Missing bidderId" });
-
+/**
+ * Get bid history
+ */
+router.get('/bid_history/:product_id', authMiddleware, async (req, res) => {
     try {
-        
-        const result = await biddingService.denyBidder(productId, bidderId);
+        const data = await biddingService.getBidHistory(req.params.product_id);
 
+        return res.status(200).json({
+            success: true,
+            message: 'Get bid history successfully',
+            data
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error getting bid history',
+            data: null
+        });
+    }
+});
+
+/**
+ * Deny bidder (seller)
+ */
+router.post('/denyBidder/:product_id', authMiddleware, async (req, res) => {
+    try {
+        if (req.user.role_description !== "seller") {
+            return res.status(403).json({
+                success: false,
+                message: 'Not seller',
+                data: null
+            });
+        }
+
+        const productId = req.params.product_id;
+        const { bidderId } = req.body;
+
+        const product = await productService.getProductInfor(productId);
+        if (req.user.id !== product.seller) {
+            return res.status(403).json({
+                success: false,
+                message: 'Not owner of this product',
+                data: null
+            });
+        }
+
+        const data = await biddingService.denyBidder(productId, bidderId);
+
+        const bidder = await accountService.findAllById(bidderId);
         await contactService.emailDeniedBidder(product, bidder);
 
-        res.json({ success: true, data: result });
+        return res.json({
+            success: true,
+            message: 'Bidder denied successfully',
+            data
+        });
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: "Server error" });
+        return res.status(500).json({
+            success: false,
+            message: 'Server error',
+            data: null
+        });
     }
 });
 
-router.get('/denyBidder/:product_id', async (req, res) => {
-    const productId = req.params.product_id;
-
+/**
+ * Get denied bidders
+ */
+router.get('/denyBidder/:product_id', authMiddleware, async (req, res) => {
     try {
-        const deniedBidders = await biddingService.getDeniedBidders(productId);
-        res.json({ success: true, data: deniedBidders });
+        const data = await biddingService.getDeniedBidders(req.params.product_id);
+
+        return res.json({
+            success: true,
+            message: 'Get denied bidders successfully',
+            data
+        });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false, message: 'Lỗi khi lấy danh sách bị từ chối' });
+        return res.status(500).json({
+            success: false,
+            message: 'Error getting denied bidders',
+            data: null
+        });
     }
 });
 
-router.get('/fun', async(req,res) => {
-    res.json({ success: true, data: req.user });
-})
-
-//rate bidder
-router.post('/rateBidder', async (req, res) => {
+/**
+ * Rate bidder
+ */
+router.post('/rateBidder', authMiddleware, async (req, res) => {
     try {
         const { bidder_id, product_id, comment, rating } = req.body;
-        
-        const result = await biddingService.rateBidder(bidder_id, product_id, comment, rating);
-        res.status(201).json({ message: 'Bidder rated successfully', data: result });
+
+        const data = await biddingService.rateBidder(
+            bidder_id,
+            product_id,
+            comment,
+            rating
+        );
+
+        return res.status(201).json({
+            success: true,
+            message: 'Bidder rated successfully',
+            data
+        });
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error rating bidder' });
+        return res.status(500).json({
+            success: false,
+            message: 'Error rating bidder',
+            data: null
+        });
     }
 });
 

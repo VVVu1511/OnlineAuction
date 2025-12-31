@@ -1,0 +1,79 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import CategoryCard from "../CategoryCard/CategoryCard.jsx";
+import ProductCard from "../ProductCard/ProductCard.jsx";
+import * as productService from "../../services/product.service.jsx";
+import * as categoryService from "../../services/category.service.jsx";
+
+export default function GuestHome() {
+    const [categories, setCategories] = useState([]);
+
+    const [top5End, setTop5End] = useState([]);
+    const [top5Bid, setTop5Bid] = useState([]);
+    const [top5Price, setTop5Price] = useState([]);
+
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const [catRes, endRes, bidRes, priceRes] = await Promise.all([
+                    categoryService.fetchParentCategories(),
+                    productService.getTop5NearEnd(),
+                    productService.getTop5BidCounts(),
+                    productService.getTop5Price(),
+                ]);
+
+                setCategories(catRes.data || []);
+                setTop5End(endRes.data || []);
+                setTop5Bid(bidRes.data || []);
+                setTop5Price(priceRes.data || []);
+            } catch (err) {
+                console.error("Load GuestHome error:", err);
+            }
+        };
+
+        loadData();
+    }, []);
+
+    return (
+        <div className="w-full">
+            {/* ===== CATEGORY CARD ===== */}
+            <Section title="📂 Danh mục">
+                {categories.map((cat) => (
+                    <CategoryCard key={cat.id} category={cat} />
+                ))}
+            </Section>
+
+            {/* ===== TOP 5 GẦN KẾT THÚC ===== */}
+            <Section title="🔥 Sắp kết thúc">
+                {top5End.map((p) => (
+                    <ProductCard key={p.id} product={p} />
+                ))}
+            </Section>
+
+            {/* ===== TOP 5 NHIỀU LƯỢT RA GIÁ ===== */}
+            <Section title="📈 Nhiều lượt ra giá nhất">
+                {top5Bid.map((p) => (
+                    <ProductCard key={p.id} product={p} />
+                ))}
+            </Section>
+
+            {/* ===== TOP 5 GIÁ CAO NHẤT ===== */}
+            <Section title="💰 Giá cao nhất">
+                {top5Price.map((p) => (
+                    <ProductCard key={p.id} product={p} />
+                ))}
+            </Section>
+        </div>
+    );
+}
+
+function Section({ title, children }) {
+    return (
+        <div className="px-6 mb-10">
+            <h2 className="text-xl font-semibold mb-4">{title}</h2>
+            <div className="grid grid-cols-5 gap-4">
+                {children}
+            </div>
+        </div>
+    );
+}
