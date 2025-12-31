@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useContext } from "react";
 import { useParams } from "react-router-dom";
 import * as productService from "../../services/product.service.jsx";
 import ProductCard from "../ProductCard/ProductCard.jsx";
-import Back from "../Back/Back.jsx"
+import Back from "../Back/Back.jsx";
+
+import { LoadingContext } from "../../context/LoadingContext.jsx";
+import { AuthContext } from "../../context/AuthContext.jsx";
 
 const PAGE_SIZE = 10;
 
@@ -10,33 +13,39 @@ export default function SearchPage() {
     const { keyword } = useParams();
     const decodedKeyword = decodeURIComponent(keyword);
 
+    const { setLoading } = useContext(LoadingContext);
+    const { user } = useContext(AuthContext); // hiện chưa dùng, để sẵn
+
     const [products, setProducts] = useState([]);
     const [sort, setSort] = useState("time_desc");
     const [page, setPage] = useState(1);
-    const [loading, setLoading] = useState(false);
 
     /* =========================
     LOAD SEARCH RESULT
     ========================= */
     useEffect(() => {
+        let mounted = true;
+
         const load = async () => {
             try {
                 setLoading(true);
-                
-                console.log(decodedKeyword);
+
                 const res = await productService.searchProducts(decodedKeyword);
+
+                if (!mounted) return;
 
                 setProducts(res.data || res);
                 setPage(1);
             } catch (err) {
                 console.error(err);
             } finally {
-                setLoading(false);
+                mounted && setLoading(false);
             }
         };
 
         load();
-    }, [decodedKeyword]);
+        return () => (mounted = false);
+    }, [decodedKeyword, setLoading]);
 
     /* =========================
     SORT
@@ -45,12 +54,16 @@ export default function SearchPage() {
         const list = [...products];
         switch (sort) {
             case "time_asc":
-                return list.sort((a, b) => new Date(a.end_time) - new Date(b.end_time));
+                return list.sort(
+                    (a, b) => new Date(a.end_time) - new Date(b.end_time)
+                );
             case "price_asc":
                 return list.sort((a, b) => a.current_price - b.current_price);
             case "time_desc":
             default:
-                return list.sort((a, b) => new Date(b.end_time) - new Date(a.end_time));
+                return list.sort(
+                    (a, b) => new Date(b.end_time) - new Date(a.end_time)
+                );
         }
     }, [products, sort]);
 
@@ -77,13 +90,11 @@ export default function SearchPage() {
             </div>
 
             {/* ===== CONTENT ===== */}
-            {loading ? (
-                <p>Đang tìm kiếm...</p>
-            ) : pagedProducts.length === 0 ? (
+            {pagedProducts.length === 0 ? (
                 <p>Không tìm thấy sản phẩm</p>
             ) : (
                 <div className="grid grid-cols-5 gap-4">
-                    {pagedProducts.map(p => (
+                    {pagedProducts.map((p) => (
                         <ProductCard key={p.id} product={p} />
                     ))}
                 </div>
@@ -97,9 +108,11 @@ export default function SearchPage() {
                             key={i}
                             onClick={() => setPage(i + 1)}
                             className={`px-3 py-1 rounded border
-                                ${page === i + 1
-                                    ? "bg-blue-600 text-white"
-                                    : "hover:bg-gray-100"}`}
+                                ${
+                                    page === i + 1
+                                        ? "bg-blue-600 text-white"
+                                        : "hover:bg-gray-100"
+                                }`}
                         >
                             {i + 1}
                         </button>
@@ -111,7 +124,7 @@ export default function SearchPage() {
 }
 
 /* =========================
-   SORT SELECT
+SORT SELECT
 ========================= */
 function Select({ value, onChange }) {
     return (

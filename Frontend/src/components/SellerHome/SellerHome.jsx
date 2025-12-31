@@ -1,40 +1,40 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import * as productService from "../../services/product.service.jsx";
+import { LoadingContext } from "../../context/LoadingContext.jsx";
+import { AuthContext } from "../../context/AuthContext.jsx";
+import ProductCard from "../ProductCard/ProductCard.jsx"
 
 export default function SellerHome() {
-    // ===== Data =====
+    // ===== CONTEXT =====
+    const { user } = useContext(AuthContext);
+    const { setLoading } = useContext(LoadingContext);
+
+    // ===== DATA =====
     const [myProducts, setMyProducts] = useState([]);
     const [wonProducts, setWonProducts] = useState([]);
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // ===== Append modal =====
-    const [showAppendModal, setShowAppendModal] = useState(false);
-    const [currentProduct, setCurrentProduct] = useState(null);
-    const [appendHtml, setAppendHtml] = useState("");
-    const [savingAppend, setSavingAppend] = useState(false);
-
-    // ===== Rate modal =====
-    const [showRateModal, setShowRateModal] = useState(false);
+    // ===== RATE =====
     const [rateTarget, setRateTarget] = useState(null);
     const [rateValue, setRateValue] = useState(1);
     const [rateComment, setRateComment] = useState("");
     const [rating, setRating] = useState(false);
 
-    // ===== Cancel modal =====
-    const [showCancelModal, setShowCancelModal] = useState(false);
+    // ===== CANCEL =====
     const [cancelTarget, setCancelTarget] = useState(null);
     const [canceling, setCanceling] = useState(false);
 
-    // ---------- Fetch data ----------
+    /* ================= FETCH DATA ================= */
     useEffect(() => {
+        if (!user) return; // 🔴 bắt buộc
+
         let mounted = true;
-        const user = JSON.parse(localStorage.getItem("user"));
 
         const loadData = async () => {
-            setLoading(true);
-            setError("");
             try {
+                setLoading(true);
+                setError("");
+
                 const [myRes, wonRes] = await Promise.all([
                     productService.getMyActiveProducts(user.id),
                     productService.getMyWonProducts(user.id),
@@ -42,20 +42,11 @@ export default function SellerHome() {
 
                 if (!mounted) return;
 
-                if (myRes.success) {
-                    setMyProducts(myRes.data || []);
-                } else {
-                    setError(myRes.message);
-                }
-
-                if (wonRes.success) {
-                    setWonProducts(wonRes.data || []);
-                } else {
-                    setError(wonRes.message);
-                }
+                setMyProducts(myRes.data || []);
+                setWonProducts(wonRes.data || []);
             } catch (err) {
                 mounted &&
-                    setError(err.response?.data?.message || "Lỗi tải dữ liệu");
+                    setError(err.response?.data?.message || "Lấy dữ liệu thất bại");
             } finally {
                 mounted && setLoading(false);
             }
@@ -63,117 +54,85 @@ export default function SellerHome() {
 
         loadData();
         return () => (mounted = false);
-    }, []);
+    }, [user, setLoading]);
 
-    // ---------- Helpers ----------
+    /* ================= HELPERS ================= */
     const chunkArray = (arr, size) =>
         Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
             arr.slice(i * size, i * size + size)
         );
 
-    // ---------- Handlers ----------
-    const handleAppendDescription = async () => {
-        if (!appendHtml.trim()) return alert("Nhập nội dung trước khi lưu");
-
-        try {
-            setSavingAppend(true);
-            const res = await productService.appendProductDescription(
-                currentProduct.id,
-                appendHtml
-            );
-
-            if (res.success) {
-                alert("Bổ sung mô tả thành công");
-                setShowAppendModal(false);
-                setAppendHtml("");
-            } else {
-                alert(res.message);
-            }
-        } catch (err) {
-            alert(err.response?.data?.message || "Lỗi server");
-        } finally {
-            setSavingAppend(false);
-        }
-    };
-
+    /* ================= RATE BIDDER ================= */
     const handleRateBidder = async () => {
+        if (!rateComment.trim()) return;
+
         try {
             setRating(true);
+            setLoading(true);
+
             const res = await productService.rateBidder(
-                rateTarget.product.id,
-                rateTarget.winner.id,
+                rateTarget.id,
+                rateTarget.winner_id,
                 rateValue,
                 rateComment
             );
 
             if (res.success) {
                 alert("Đánh giá thành công");
-                setShowRateModal(false);
+                setRateTarget(null);
+                setRateComment("");
             } else {
-                alert(res.message);
+                alert(res.message || "Đánh giá thất bại");
             }
         } catch (err) {
             alert(err.response?.data?.message || "Lỗi server");
         } finally {
             setRating(false);
+            setLoading(false);
         }
     };
 
+    /* ================= CANCEL TRANSACTION ================= */
     const handleCancelTransaction = async () => {
         try {
             setCanceling(true);
-            const res = await productService.cancelTransaction(
-                cancelTarget.product.id
-            );
+            setLoading(true);
+
+            const res = await productService.cancelTransaction(cancelTarget.id);
 
             if (res.success) {
-                alert("Đã huỷ giao dịch (tự động -1 người thắng)");
-                setShowCancelModal(false);
+                alert(
+                    "Đã huỷ giao dịch\nNgười thắng không thanh toán (-1)"
+                );
+                setCancelTarget(null);
             } else {
-                alert(res.message);
+                alert(res.message || "Huỷ thất bại");
             }
         } catch (err) {
             alert(err.response?.data?.message || "Lỗi server");
         } finally {
             setCanceling(false);
+            setLoading(false);
         }
     };
 
-    // ---------- Render ----------
-    if (loading) return <p>Đang tải dữ liệu...</p>;
-    if (error) return <p className="text-red-500">{error}</p>;
-
+    /* ================= RENDER ================= */
     return (
-        <div className="space-y-10">
-            {/* ===== Active products ===== */}
-            <section>
-                <h2 className="text-xl font-bold mb-4">
-                    Sản phẩm đang đấu giá
-                </h2>
+        <div className="p-5">
+            {error && <p className="text-danger">{error}</p>}
+
+            {/* ===== ACTIVE PRODUCTS ===== */}
+            <section className="mb-5">
+                <h4>Sản phẩm đang đăng & còn hạn</h4>
 
                 {myProducts.length === 0 ? (
                     <p>Chưa có sản phẩm</p>
                 ) : (
-                    chunkArray(myProducts, 3).map((row, i) => (
-                        <div key={i} className="grid grid-cols-3 gap-4 mb-4">
+                    chunkArray(myProducts, 5).map((row, i) => (
+                        <div className="row g-4 mb-3" key={i}>
                             {row.map((p) => (
-                                <div
-                                    key={p.id}
-                                    className="border rounded p-4 space-y-2"
-                                >
-                                    <h3 className="font-semibold">
-                                        {p.name}
-                                    </h3>
-                                    <p>Giá hiện tại: {p.currentPrice}</p>
-                                    <button
-                                        className="btn btn-sm"
-                                        onClick={() => {
-                                            setCurrentProduct(p);
-                                            setShowAppendModal(true);
-                                        }}
-                                    >
-                                        Bổ sung mô tả
-                                    </button>
+                                <div className="col-2" key={p.id}>
+                                    <ProductCard data={p} />
                                 </div>
                             ))}
                         </div>
@@ -181,48 +140,90 @@ export default function SellerHome() {
                 )}
             </section>
 
-            {/* ===== Won products ===== */}
+            {/* ===== WON PRODUCTS ===== */}
             <section>
-                <h2 className="text-xl font-bold mb-4">
-                    Sản phẩm đã có người thắng
-                </h2>
+                <h4>Sản phẩm đã có người thắng đấu giá</h4>
 
                 {wonProducts.length === 0 ? (
                     <p>Chưa có sản phẩm</p>
                 ) : (
-                    wonProducts.map((item) => (
-                        <div
-                            key={item.product.id}
-                            className="border rounded p-4 mb-3 space-y-2"
-                        >
-                            <h3 className="font-semibold">
-                                {item.product.name}
-                            </h3>
-                            <p>
-                                Người thắng: {item.winner.fullName}
-                            </p>
+                    wonProducts.map((p) => (
+                        <div key={p.id} className="border rounded p-3 mb-3">
+                            <ProductCard data={p} />
 
-                            <div className="flex gap-3">
-                                <button
-                                    className="btn btn-sm"
-                                    onClick={() => {
-                                        setRateTarget(item);
-                                        setShowRateModal(true);
-                                    }}
-                                >
-                                    Đánh giá
-                                </button>
-
-                                <button
-                                    className="btn btn-sm btn-danger"
-                                    onClick={() => {
-                                        setCancelTarget(item);
-                                        setShowCancelModal(true);
-                                    }}
-                                >
-                                    Huỷ giao dịch
-                                </button>
+                            <div className="mt-2">
+                                <strong>Người thắng:</strong> {p.winner_name}
+                                <br />
+                                <strong>Email:</strong> {p.winner_email}
                             </div>
+
+                            {/* ĐÃ ĐÁNH GIÁ */}
+                            {p.winner_rating && (
+                                <div className="mt-2">
+                                    <strong>Đánh giá:</strong>{" "}
+                                    {p.winner_rating === 1 ? "Tốt" : "Xấu"}
+                                    <br />
+                                    <strong>Nhận xét:</strong>{" "}
+                                    {p.winner_comment}
+                                </div>
+                            )}
+
+                            {/* CHƯA ĐÁNH GIÁ */}
+                            {!p.winner_rating && (
+                                <div className="mt-2 border rounded p-2">
+                                    <textarea
+                                        className="form-control mb-2"
+                                        rows={2}
+                                        placeholder="Nhập nhận xét..."
+                                        value={
+                                            rateTarget?.id === p.id
+                                                ? rateComment
+                                                : ""
+                                        }
+                                        onChange={(e) => {
+                                            setRateTarget(p);
+                                            setRateComment(e.target.value);
+                                        }}
+                                    />
+
+                                    <div className="d-flex gap-2">
+                                        <button
+                                            className="btn btn-success btn-sm"
+                                            onClick={() => {
+                                                setRateTarget(p);
+                                                setRateValue(1);
+                                                handleRateBidder();
+                                            }}
+                                            disabled={rating}
+                                        >
+                                            +1
+                                        </button>
+
+                                        <button
+                                            className="btn btn-danger btn-sm"
+                                            onClick={() => {
+                                                setRateTarget(p);
+                                                setRateValue(-1);
+                                                handleRateBidder();
+                                            }}
+                                            disabled={rating}
+                                        >
+                                            -1
+                                        </button>
+
+                                        <button
+                                            className="btn btn-outline-danger btn-sm"
+                                            onClick={() => {
+                                                setCancelTarget(p);
+                                                handleCancelTransaction();
+                                            }}
+                                            disabled={canceling}
+                                        >
+                                            Huỷ giao dịch
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ))
                 )}

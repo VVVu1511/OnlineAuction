@@ -2,6 +2,7 @@ import express from 'express'
 import bcrypt from 'bcryptjs'
 import * as accountService from '../services/account.service.js'
 import jwt from "jsonwebtoken";
+import { verifyCaptcha } from "../utils/verifyCaptcha.js";
 
 const router = express.Router();
 
@@ -55,6 +56,18 @@ router.post('/login', async (req, res) => {
 
 router.post('/register', async (req, res) => {
     try {
+        const { captcha } = req.body;
+
+        // 1. Check captcha
+        const isHuman = await verifyCaptcha(captcha);
+        if (!isHuman) {
+            return res.status(400).json({
+                success: false,
+                message: "Captcha verification failed"
+            });
+        }
+
+        // 2. Hash password
         const hashPassword = bcrypt.hashSync(req.body.password, 10);
 
         const user = {
@@ -65,15 +78,16 @@ router.post('/register', async (req, res) => {
             role: req.body.role
         };
 
+        // 3. Check email duplicate
         const emails = await accountService.findAllEmail();
         if (emails.includes(user.email)) {
             return res.status(400).json({
                 success: false,
-                message: "Email already exists",
-                data: null
+                message: "Email already exists"
             });
         }
 
+        // 4. Insert user
         const userId = await accountService.add(user);
 
         res.status(201).json({
@@ -162,7 +176,6 @@ router.post("/send-otp", async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     try {
-        
         await accountService.sendOtp(email, otp);
 
         res.json({ success: true, message: "OTP sent successfully" });
@@ -354,6 +367,26 @@ router.get('/all', async(req,res) => {
         res.status(500).json({ success: false, message: err.message });
     }
 })
+
+router.put("/reset-password", async (req, res) => {
+    try {
+        const { email, new_password } = req.body;
+
+        const hashed = bcrypt.hashSync(new_password, 10);
+        await accountService.resetPassword(email, hashed);
+
+        res.json({
+            success: true,
+            message: "Password reset successfully",
+        });
+    } catch (err) {
+        res.status(500).json({
+            success: false,
+            message: "Reset password failed",
+            error: err.message,
+        });
+    }
+});
 
 
 

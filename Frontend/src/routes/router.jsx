@@ -7,6 +7,7 @@ import SearchPage from "../components/SearchPage/SearchPage.jsx";
 import Login from "../components/Login/Login.jsx";
 import Register from "../components/Register/Register.jsx";
 import ForgotPassword from "../components/ForgotPassword/ForgotPassword.jsx"
+import Profile from "../components/Profile/Profile.jsx";
 
 const router = createBrowserRouter([
   {
@@ -32,6 +33,10 @@ const router = createBrowserRouter([
       {
         path: "/search/:keyword",
         element: <SearchPage />
+      },
+      {
+        path: "/profile",
+        element: <Profile />
       }
     ],
   },

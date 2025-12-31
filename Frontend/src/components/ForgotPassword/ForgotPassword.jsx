@@ -44,10 +44,8 @@ export default function ForgotPassword() {
         e.preventDefault();
         setError("");
         try {
-            await accountService.changePassword(
-                { new_password: newPassword },
-                "forgot" // backend thường không cần id khi reset
-            );
+            await accountService.resetPassword(email, newPassword);
+            
             navigate("/login");
         } catch {
             setError("Không thể đổi mật khẩu");

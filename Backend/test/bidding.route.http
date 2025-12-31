@@ -1,5 +1,4 @@
 @baseUrl = http://localhost:3000/bidding
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjE0IiwiYWRkcmVzcyI6IjQ1NiDEkcaw4budbmcgQSwgcGjGsOG7nW5nIEIsIFRQSENNIiwicm9sZSI6IjMiLCJmdWxsX25hbWUiOiJWxakgVsSDbiBWxakiLCJlbWFpbCI6InZ2dnUyM0BjbGMuZml0dXMuZWR1LnZuIiwiaWF0IjoxNzY0OTA3MTc2LCJleHAiOjE3NjQ5MTA3NzZ9.3WrKmHxQ46ecanQEEF5MRGKXnQOt4wI5y8y9MEf8_30
 
 
 ###

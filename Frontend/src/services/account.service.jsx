@@ -47,3 +47,9 @@ export const handleAccountAction = (id, action) =>
 
 export const deleteUser = (id) =>
     instance.delete(`/${id}`, { data: { id } }).then(res => res.data);
+
+export const resetPassword = (email, newPassword) =>
+    instance.put("/reset-password", {
+        email,
+        new_password: newPassword,
+    }).then(res => res.data);

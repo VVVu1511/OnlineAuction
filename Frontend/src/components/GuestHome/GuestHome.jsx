@@ -1,19 +1,25 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import CategoryCard from "../CategoryCard/CategoryCard.jsx";
 import ProductCard from "../ProductCard/ProductCard.jsx";
 import * as productService from "../../services/product.service.jsx";
 import * as categoryService from "../../services/category.service.jsx";
 
-export default function GuestHome() {
-    const [categories, setCategories] = useState([]);
+import { AuthContext } from "../../context/AuthContext.jsx";
+import { LoadingContext } from "../../context/LoadingContext.jsx";
 
+export default function GuestHome() {
+    const { user } = useContext(AuthContext); // dùng sau nếu cần
+    const { setLoading } = useContext(LoadingContext);
+
+    const [categories, setCategories] = useState([]);
     const [top5End, setTop5End] = useState([]);
     const [top5Bid, setTop5Bid] = useState([]);
     const [top5Price, setTop5Price] = useState([]);
 
     useEffect(() => {
         const loadData = async () => {
+            setLoading(true);
             try {
                 const [catRes, endRes, bidRes, priceRes] = await Promise.all([
                     categoryService.fetchParentCategories(),
@@ -22,17 +28,19 @@ export default function GuestHome() {
                     productService.getTop5Price(),
                 ]);
 
-                setCategories(catRes.data || []);
-                setTop5End(endRes.data || []);
-                setTop5Bid(bidRes.data || []);
-                setTop5Price(priceRes.data || []);
+                setCategories(catRes?.data || []);
+                setTop5End(endRes?.data || []);
+                setTop5Bid(bidRes?.data || []);
+                setTop5Price(priceRes?.data || []);
             } catch (err) {
                 console.error("Load GuestHome error:", err);
+            } finally {
+                setLoading(false);
             }
         };
 
         loadData();
-    }, []);
+    }, [setLoading]);
 
     return (
         <div className="w-full">

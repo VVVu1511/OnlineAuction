@@ -1,13 +1,32 @@
-import dayjs from "../../utils/dayjs"
+import dayjs from "../../utils/dayjs";
+import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../../context/AuthContext.jsx";
+import { LoadingContext } from "../../context/LoadingContext.jsx";
 
 export default function ProductCard({ product }) {
+    const navigate = useNavigate();
+    const { user } = useContext(AuthContext);
+    const { setLoading } = useContext(LoadingContext);
+
     const timeLeft = dayjs(product.end_time).fromNow(true);
 
     const isNew =
         dayjs().diff(dayjs(product.created_at), "minute") <= 10;
 
+    const handleClick = () => {
+        setLoading(true);
+        
+        navigate(`/product/${product.id}`);
+
+        setLoading(false);
+    };
+
     return (
-        <div className="border rounded hover:shadow-lg transition cursor-pointer relative">
+        <div
+            onClick={handleClick}
+            className="border rounded hover:shadow-lg transition cursor-pointer relative"
+        >
             {isNew && (
                 <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded">
                     NEW

@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import * as accountService from "../../services/account.service.jsx";
 import { FaEnvelope, FaLock } from "react-icons/fa";
+import Back from "../Back/Back.jsx"
 
 export default function Login() {
     const { login } = useContext(AuthContext);
@@ -31,6 +32,8 @@ export default function Login() {
                 onSubmit={handleSubmit}
                 className="bg-white w-full max-w-md p-8 rounded-2xl shadow-lg space-y-5"
             >
+                <Back />
+
                 <h1 className="mb-5 text-2xl font-bold text-center text-blue-600">
                     Đăng nhập
                 </h1>

@@ -79,12 +79,12 @@ export default function Header() {
                     ) : (
                         <div className="flex items-center gap-3">
                             {/* User icon */}
-                            <div className="flex items-center gap-1 text-gray-700">
+                            <Link to="/profile" className="!no-underline flex items-center gap-1 text-gray-700">
                                 <FaUser />
                                 <span className="text-sm font-medium">
                                     {user.full_name || "User"}
                                 </span>
-                            </div>
+                            </Link>
 
                             {/* Logout */}
                             <button

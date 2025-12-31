@@ -1,8 +1,15 @@
 // components/CategoryCard/CategoryCard.jsx
+import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
+
+import { AuthContext } from "../../context/AuthContext.jsx";
+import { LoadingContext } from "../../context/LoadingContext.jsx";
 
 export default function CategoryCard({ category }) {
     const navigate = useNavigate();
+
+    const { user } = useContext(AuthContext); // để sẵn cho phân quyền sau
+    const { setLoading } = useContext(LoadingContext);
 
     const handleClick = () => {
         navigate(`/category/${category.id}`);

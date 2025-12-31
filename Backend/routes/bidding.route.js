@@ -10,7 +10,7 @@ const router = express.Router();
 /**
  * GET bidding list of current user
  */
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
         const data = await biddingService.getBiddingList(req.user.id);
 
@@ -31,7 +31,7 @@ router.get('/', authMiddleware, async (req, res) => {
 /**
  * Refuse bidder (seller)
  */
-router.put('/refuse', authMiddleware, async (req, res) => {
+router.put('/refuse', async (req, res) => {
     try {
         const { productId, bidderId } = req.body;
 
@@ -54,7 +54,7 @@ router.put('/refuse', authMiddleware, async (req, res) => {
 /**
  * Check if bidder can bid
  */
-router.post('/checkCanBid', authMiddleware, async (req, res) => {
+router.post('/checkCanBid', async (req, res) => {
     try {
         const userId = req.user.id;
         const { product_id } = req.body;
@@ -105,7 +105,7 @@ router.post('/checkCanBid', authMiddleware, async (req, res) => {
 /**
  * Place a bid
  */
-router.post('/bid', authMiddleware, async (req, res) => {
+router.post('/bid',  async (req, res) => {
     try {
         if (req.user.role_description !== "bidder") {
             return res.status(403).json({
@@ -165,7 +165,7 @@ router.post('/bid', authMiddleware, async (req, res) => {
 /**
  * Get bid history
  */
-router.get('/bid_history/:product_id', authMiddleware, async (req, res) => {
+router.get('/bid_history/:product_id',  async (req, res) => {
     try {
         const data = await biddingService.getBidHistory(req.params.product_id);
 
@@ -186,7 +186,7 @@ router.get('/bid_history/:product_id', authMiddleware, async (req, res) => {
 /**
  * Deny bidder (seller)
  */
-router.post('/denyBidder/:product_id', authMiddleware, async (req, res) => {
+router.post('/denyBidder/:product_id', async (req, res) => {
     try {
         if (req.user.role_description !== "seller") {
             return res.status(403).json({
@@ -231,7 +231,7 @@ router.post('/denyBidder/:product_id', authMiddleware, async (req, res) => {
 /**
  * Get denied bidders
  */
-router.get('/denyBidder/:product_id', authMiddleware, async (req, res) => {
+router.get('/denyBidder/:product_id', async (req, res) => {
     try {
         const data = await biddingService.getDeniedBidders(req.params.product_id);
 
@@ -252,7 +252,7 @@ router.get('/denyBidder/:product_id', authMiddleware, async (req, res) => {
 /**
  * Rate bidder
  */
-router.post('/rateBidder', authMiddleware, async (req, res) => {
+router.post('/rateBidder', async (req, res) => {
     try {
         const { bidder_id, product_id, comment, rating } = req.body;
 

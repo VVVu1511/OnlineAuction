@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import db from "../utils/db.js"
 import dotenv from "dotenv";
-import authMiddleware from "../middleware/auth.js"; // adjust path
+import sendMail from "../utils/sendMail.js";
 
 dotenv.config();
 
@@ -48,7 +48,6 @@ export async function updateFullName(data) {
     return affected;
 }
 
-
 export async function updatePassword(data) {
     const hashed = bcrypt.hashSync(data.new_password, 10);
 
@@ -59,10 +58,6 @@ export async function updatePassword(data) {
     return affected;
 }
 
-
-// services/otp.service.js
-import nodemailer from "nodemailer";
-
 const otpStore = {}; // { email: { otp, expiresAt } }
 
 export async function sendOtp(userEmail, otp) {
@@ -71,7 +66,19 @@ export async function sendOtp(userEmail, otp) {
         expiresAt: Date.now() + 5 * 60 * 1000
     };
 
-    await transporter.sendMail(mailOptions);
+    const subject = "Your OTP Code";
+    const html = `
+        <h2>OTP Verification</h2>
+        <p>Your OTP is:</p>
+        <h1>${otp}</h1>
+        <p>This code will expire in 5 minutes.</p>
+    `;
+
+    const sent = await sendMail(userEmail, subject, html);
+
+    if (!sent) {
+        throw new Error("Send OTP failed");
+    }
 
     return {
         success: true,
@@ -174,11 +181,21 @@ export async function findAllById(id) {
 export async function getAllUsers() {
     try {
         const users = await db("USER")
-            .select('*')
+            .join("ROLE", "USER.role", "ROLE.id")
+            .select(
+                "USER.id",
+                "USER.email",
+                "USER.full_name",
+                "USER.address",
+                "USER.request_sell",
+                "USER.request_expire",
+                "ROLE.description as role"
+            );
 
-        return users; 
+        return users;
     } catch (err) {
         console.error("cannot get all users:", err);
+        throw err;
     }
 }
 
@@ -253,3 +270,10 @@ export async function getPasswordById(user_id) {
         throw new Error("Error getting password by user id");
     }
 }
+
+export async function resetPassword(email, newPassword) {
+    return db("USER")
+        .where({ email })
+        .update({ password: newPassword});
+}
+

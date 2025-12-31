@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-
 import * as categoryService from "../../services/category.service.jsx";
 import * as productService from "../../services/product.service.jsx";
 import Back from "../Back/Back.jsx"
 import ProductCard from "../ProductCard/ProductCard.jsx";
+import { AuthContext } from "../../context/AuthContext.jsx";
+import { LoadingContext } from "../../context/LoadingContext.jsx";
 
 const PAGE_SIZE = 5;
 
@@ -19,7 +20,8 @@ export default function CategoryPage() {
     const [sortType, setSortType] = useState("endTimeDesc"); 
     const [currentPage, setCurrentPage] = useState(1);
 
-    const [loading, setLoading] = useState(false);
+    const { user } = useContext(AuthContext);
+    const [pageLoading, setPageLoading] = useState(false);
 
     /* =========================
        LOAD CATEGORY + CHILD
@@ -27,6 +29,7 @@ export default function CategoryPage() {
     useEffect(() => {
         const loadCategory = async () => {
             try {
+                setPageLoading(true);
                 const [catRes, childRes] = await Promise.all([
                     categoryService.getCategoryById(id),
                     categoryService.fetchChildCategory(id),
@@ -36,33 +39,36 @@ export default function CategoryPage() {
                 setChildCategories(childRes.data || childRes);
             } catch (err) {
                 console.error("Load category error:", err);
+            } finally {
+                setPageLoading(false);
             }
         };
 
         loadCategory();
-    }, [id]);
+        
+    }, [id, user]);
 
     /* =========================
-       LOAD PRODUCTS
+    LOAD PRODUCTS
     ========================= */
     useEffect(() => {
         const loadProducts = async () => {
             try {
-                setLoading(true);
-                const res = await productService.getProductsByCategory(
-                    selectedCat
-                );
+                setPageLoading(true);
+                const res = await productService.getProductsByCategory(selectedCat);
                 setProducts(res.data || res);
-                setCurrentPage(1); // reset page khi đổi category
+                setCurrentPage(1);
             } catch (err) {
                 console.error("Load products error:", err);
             } finally {
-                setLoading(false);
+                setPageLoading(false);
             }
         };
 
         loadProducts();
-    }, [selectedCat]);
+    }, [selectedCat, user]);
+
+
 
     /* =========================
        SORT PRODUCTS
@@ -91,7 +97,7 @@ export default function CategoryPage() {
 
     const pagedProducts = useMemo(() => {
         const start = (currentPage - 1) * PAGE_SIZE;
-        return sortedProducts.slice(start, start + PAGE_SIZE);
+            return sortedProducts.slice(start, start + PAGE_SIZE);
     }, [sortedProducts, currentPage]);
 
     return (
@@ -100,7 +106,7 @@ export default function CategoryPage() {
 
             {/* ===== TITLE ===== */}
             <h1 className="mt-5 text-2xl font-semibold mb-4">
-                {category?.name || "Danh mục"}
+                {category?.description || "Danh mục"}
             </h1>
 
             {/* ===== FILTER CATEGORY ===== */}
@@ -142,7 +148,7 @@ export default function CategoryPage() {
             </div>
 
             {/* ===== PRODUCT GRID ===== */}
-            {loading ? (
+            {pageLoading ? (
                 <p>Đang tải sản phẩm...</p>
             ) : pagedProducts.length === 0 ? (
                 <p>Không có sản phẩm</p>

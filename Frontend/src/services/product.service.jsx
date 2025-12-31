@@ -6,7 +6,7 @@ const instance = axios.create({
 });
 
 /* =========================
-   PRODUCT SERVICES
+PRODUCT SERVICES
 ========================= */
 
 export const getProductsByCategory = (categoryId) =>
@@ -82,3 +82,7 @@ export const removeProduct = (id) =>
     instance.delete(`/${id}`, {
         data: { id },
     }).then(res => res.data);
+
+export const getProductInfo = (productId) =>
+    instance.get(`/infor/${productId}`)
+        .then(res => res.data);
