@@ -6,6 +6,7 @@ import { AuthContext } from "../../context/AuthContext.jsx";
 import { LoadingContext } from "../../context/LoadingContext.jsx";
 import Back from "../Back/Back.jsx";
 import ProductCard from "../ProductCard/ProductCard.jsx";
+import ReactQuill from "react-quill";
 
 export default function Product() {
     const { id } = useParams();
@@ -21,54 +22,105 @@ export default function Product() {
     const [related, setRelated] = useState([]);
     const [error, setError] = useState("");
     const [bidHistory, setBidHistory] = useState([]);
-
+    const [saving, setSaving] = useState(false);
     const [mainImage, setMainImage] = useState(null);
+    const [newText, setNewText] = useState("");
+    const [question, setQuestion] = useState("");
+
+    /* ================= ASK SELLER ================= */
+    const handleAskSeller = async () => {
+        if (!userId) {
+            alert("Please login to ask seller");
+            return;
+        }
+
+        if (!question.trim()) return;
+
+        setLoading(true);
+
+        const res = await contactService.askSeller(product.id, question);
+        if (res.success) {
+            setQaHistory((p) => [...p, { question, answer: null }]);
+            setQuestion("");
+            setAskStatus("Đã gửi câu hỏi!");
+        }
+
+        setLoading(false);
+    };
+
+    const handleAppend = async () => {
+        const plainText = stripHtml(newText);
+        if (!plainText.trim()) {
+            alert("Nhập nội dung mới trước khi thêm.");
+            return;
+        }
+
+        try {
+            setSaving(true);
+
+            const res = await productService.appendProductDescription(
+                product.id,
+                plainText
+            );
+
+            if (res.success) {
+                loadData();
+                setNewText("");
+                alert("Thêm mô tả thành công!");
+
+            } else {
+                alert(res.message || "Thêm thất bại");
+            }
+        } catch (err) {
+            console.error("Append description error:", err);
+            alert(err.response?.data?.message || "Lỗi khi thêm mô tả");
+        } finally {
+            setSaving(false);
+        }
+    };
 
     // ===== Load product detail =====
+    const loadData = async () => {
+        try {
+            setLoading(true);
+
+            const [
+                productRes,
+                sellerRes,
+                bidderRes,
+                qaRes,
+                relatedRes,
+                bidHistoryRes
+            ] = await Promise.all([
+                productService.getProductInfo(id),
+                productService.getSellerInfo(id),
+                productService.getBestBidder(id),
+                productService.getQaHistory(id),
+                productService.getRelatedProducts(id),
+                biddingService.getBidHistory(id)
+            ]);
+
+
+            setProduct(productRes?.data || productRes);
+            setSeller(sellerRes.success ? sellerRes.data : null);
+            setBestBidder(bidderRes.success ? bidderRes.data : null);
+            setQaHistory(qaRes.success ? qaRes.data : []);
+            setRelated(relatedRes.success ? relatedRes.data : []);
+            setBidHistory(bidHistoryRes.success ? bidHistoryRes.data : []);
+        } catch (err) {
+                setError(
+                    err.response?.data?.message ||
+                    "Không tải được sản phẩm"
+                );
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        let mounted = true;
-
-        const loadData = async () => {
-            try {
-                setLoading(true);
-
-                const [
-                    productRes,
-                    sellerRes,
-                    bidderRes,
-                    qaRes,
-                    relatedRes,
-                    bidHistoryRes
-                ] = await Promise.all([
-                    productService.getProductInfo(id),
-                    productService.getSellerInfo(id),
-                    productService.getBestBidder(id),
-                    productService.getQaHistory(id),
-                    productService.getRelatedProducts(id),
-                    biddingService.getBidHistory(id)
-                ]);
-
-                if (!mounted) return;
-
-                setProduct(productRes?.data || productRes);
-                setSeller(sellerRes.success ? sellerRes.data : null);
-                setBestBidder(bidderRes.success ? bidderRes.data : null);
-                setQaHistory(qaRes.success ? qaRes.data : []);
-                setRelated(relatedRes.success ? relatedRes.data : []);
-                setBidHistory(bidHistoryRes.success ? bidHistoryRes.data : []);
-            } catch (err) {
-                mounted &&
-                    setError(
-                        err.response?.data?.message ||
-                        "Không tải được sản phẩm"
-                    );
-            } finally {
-                mounted && setLoading(false);
-            }
-        };
 
         loadData();
-        return () => (mounted = false);
+        
     }, [id, setLoading]);
 
     useEffect(() => {
@@ -132,6 +184,34 @@ export default function Product() {
 
                 <div className="space-y-3">
                     <h1 className="text-2xl font-bold">{product.name}</h1>
+                    
+                    {/* Actions */}
+                    {user?.role === "bidder" && (
+                        <div className="flex gap-4 pt-4 items-center">
+
+                        {/* Like */}
+                        <button
+                            onClick={() => toggleLike(product.id)}
+                            className="p-2 border rounded-full hover:bg-gray-100"
+                        >
+                            {liked ? (
+                            <FaHeart className="text-red-500" />
+                            ) : (
+                            <FaRegHeart />
+                            )}
+                        </button>
+
+                        {/* Bid */}
+                        {!denyBidders.some((b) => b.user_id === userId) && (
+                            <button
+                            onClick={handleBid}
+                            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold"
+                            >
+                            <FaDollarSign />
+                            </button>
+                        )}
+                        </div>
+                    )}
 
                     <p>
                         Giá hiện tại:{" "}
@@ -176,6 +256,40 @@ export default function Product() {
                         __html: product.description.replace(/\\n/g, "<br />"),
                     }}
                 />
+
+                {/* ===== Seller editor ===== */}
+                {user?.role === "seller" && (
+                    <div className="mt-3 border rounded-xl p-4 bg-gray-50 space-y-3">
+                        <p className="font-medium text-gray-800">
+                            ✏️ Thêm mô tả mới
+                        </p>
+
+                        <ReactQuill
+                            theme="snow"
+                            value={newText}
+                            onChange={setNewText}
+                            placeholder="Thêm nội dung mô tả mới..."
+                        />
+
+                        <div className="flex justify-end">
+                            <button
+                                onClick={handleAppend}
+                                disabled={saving}
+                                className={`
+                                    px-5 py-2 rounded-lg text-sm font-medium
+                                    transition
+                                    ${
+                                        saving
+                                            ? "bg-gray-300 cursor-not-allowed"
+                                            : "bg-blue-600 text-white hover:bg-blue-700"
+                                    }
+                                `}
+                            >
+                                {saving ? "Saving..." : "Add"}
+                            </button>
+                        </div>
+                    </div>
+                )}
             </section>
             
             {
@@ -191,6 +305,12 @@ export default function Product() {
                                     <th className="border px-3 py-2 text-left">Thời điểm</th>
                                     <th className="border px-3 py-2 text-left">Người mua</th>
                                     <th className="border px-3 py-2 text-right">Giá</th>
+                                    {/* CHỈ SELLER MỚI THẤY */}
+                                    {user.role === "seller" && (
+                                        <th className="border px-3 py-2 text-center w-20">
+                                            Từ chối
+                                        </th>
+                                    )}
                                 </tr>
                             </thead>
 
@@ -218,6 +338,28 @@ export default function Product() {
                                         <td className="border px-3 py-2 text-right font-medium">
                                             {bid.price.toLocaleString("vi-VN")} ₫
                                         </td>
+
+                                        {/* ===== ACTION COLUMN ===== */}
+                                        {user.role === "seller" && (
+                                            <td className="border px-3 py-2 text-center">
+                                                <button
+                                                    onClick={async () => {
+                                                        await biddingService.denyBidder(
+                                                            product.id,
+                                                            bid.user_id
+                                                        );
+
+                                                        setDenyBidders(p => [
+                                                            ...p,
+                                                            { user_id: bid.user_id }
+                                                        ]);
+                                                    }}
+                                                    className="text-red-500 px-2 py-1 rounded-lg"
+                                                >
+                                                    X
+                                                </button>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
@@ -227,47 +369,80 @@ export default function Product() {
                 )
             }
 
-            {/* ========= Q & A ========= */}
-            <section>
-                <h2 className="text-xl font-bold mb-4">Hỏi & đáp</h2>
+            {/* Q&A */}
+            <div>
+                <h3 className="font-semibold mb-3">Q&A</h3>
 
-                {qaHistory.length === 0 && (
-                    <p className="text-gray-500">Chưa có câu hỏi nào</p>
+                {qaHistory.map((qa, i) => (
+                <div key={i} className="mb-3">
+
+                    {/* Question & Answer display */}
+                    <div className="border rounded-lg p-3 mb-2">
+                        <p><b>Q:</b> {qa.question}</p>
+                        <p><b>A:</b> {qa.answer || "Chưa trả lời"}</p>
+                    </div>
+
+                        {/* ANSWER – Seller only */}
+                        {user.role === "seller" && !qa.answer && (
+                            <div className="border rounded-lg p-3">
+                                <input
+                                    className="border rounded-lg px-3 py-2 w-full"
+                                    placeholder="Nhập câu trả lời..."
+                                    onBlur={async (e) => {
+                                        const answer = e.target.value.trim();
+                                        if (!answer) return;
+
+                                        await contactService.answerQuestion(
+                                            product.id,
+                                            qa.question,
+                                            answer
+                                        );
+
+                                        setQaHistory((prev) => {
+                                            const copy = [...prev];
+                                            copy[i] = { ...copy[i], answer };
+                                            return copy;
+                                        });
+                                    }}
+                                />
+                            </div>
+                        )}
+                    </div>
+                ))}
+
+                {user.role === "bidder" && (
+                    <div className="flex gap-2 mt-3">
+                        <input
+                            className="border rounded-lg px-3 py-2 flex-1"
+                            value={question}
+                            onChange={(e) => setQuestion(e.target.value)}
+                            placeholder="Nhập câu hỏi..."
+                        />
+                        <button
+                            onClick={handleAskSeller}
+                            className="bg-blue-600 text-white px-4 rounded-lg"
+                        >
+                            Gửi
+                        </button>
+                    </div>
                 )}
-
-                <div className="space-y-4">
-                    {qaHistory.map((qa) => (
-                        <div key={qa.id} className="border rounded p-4">
-                            <p className="font-semibold">
-                                Hỏi: {qa.question}
-                            </p>
-
-                            {qa.answer ? (
-                                <p className="mt-2 text-green-700">
-                                    Đáp: {qa.answer}
-                                </p>
-                            ) : (
-                                <p className="mt-2 text-gray-400">
-                                    Chưa được trả lời
-                                </p>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </section>
+            </div>
 
             {/* ========= RELATED PRODUCTS ========= */}
-            <section>
-                <h2 className="text-xl font-bold mb-4">
-                    Sản phẩm cùng chuyên mục
-                </h2>
+            {!user || user.role === "bidder" && (
+                <section>
+                    <h2 className="text-xl font-bold mb-4">
+                        Sản phẩm cùng chuyên mục
+                    </h2>
 
-                <div className="grid grid-cols-5 gap-4">
-                    {related.map((p) => (
-                        <ProductCard key={p.id} product={p} />
-                    ))}
-                </div>
-            </section>
+                    <div className="grid grid-cols-5 gap-4">
+                        {related.map((p) => (
+                            <ProductCard key={p.id} product={p} />
+                        ))}
+                    </div>
+                </section>
+            )
+            }
         </div>
     );
 }
