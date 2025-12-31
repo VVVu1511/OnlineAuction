@@ -241,7 +241,7 @@ export default function AdminHome() {
                     </div>
                 ))}
 
-                <h3 className="text-xl font-semibold mt-6 mb-2">
+                <h3 className="mt-5 text-xl font-semibold mt-6 mb-2">
                     Yêu cầu nâng cấp Bidder → Seller
                 </h3>
 

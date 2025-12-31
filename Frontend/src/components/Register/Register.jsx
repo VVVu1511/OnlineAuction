@@ -58,7 +58,7 @@ export default function Register() {
                 {step === 1 && (
                     <>
                         <input name="fullName" placeholder="Full name" onChange={handleChange}
-                            className="w-full border px-4 py-2 rounded" />
+                            className="mt-5 w-full border px-4 py-2 rounded" />
                         <input name="email" placeholder="Email" onChange={handleChange}
                             className="w-full border px-4 py-2 rounded" />
                         <input name="password" type="password" placeholder="Password" onChange={handleChange}
@@ -68,7 +68,7 @@ export default function Register() {
 
                         <button
                             onClick={sendOtp}
-                            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
+                            className="mt-5 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
                         >
                             Send OTP
                         </button>

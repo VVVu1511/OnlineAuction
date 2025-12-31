@@ -34,26 +34,29 @@ export default function Header() {
                 </Link>
 
                 {/* Search */}
-                <form onSubmit={handleSearch} className="flex-1 mx-6 flex">
-                    <input
-                        value={keyword}
-                        onChange={(e) => setKeyword(e.target.value)}
-                        type="text"
-                        placeholder="Tìm kiếm sản phẩm..."
-                        className="flex-1 border border-r-0 rounded-l-lg px-4 py-2
-                                   focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    />
+                {!user || user.role == "bidder" && (
+                    <form onSubmit={handleSearch} className="flex-1 mx-6 flex">
+                        <input
+                            value={keyword}
+                            onChange={(e) => setKeyword(e.target.value)}
+                            type="text"
+                            placeholder="Tìm kiếm sản phẩm..."
+                            className="flex-1 border border-r-0 rounded-l-lg px-4 py-2
+                                    focus:outline-none focus:ring-2 focus:ring-blue-400"
+                        />
 
-                    <button
-                        type="button"
-                        onClick={handleSearch}
-                        className="px-4 bg-blue-600 text-white rounded-r-lg
-                                   hover:bg-blue-500 transition
-                                   flex items-center justify-center"
-                    >
-                        <FaSearch />
-                    </button>
-                </form>
+                        <button
+                            type="button"
+                            onClick={handleSearch}
+                            className="px-4 bg-blue-600 text-white rounded-r-lg
+                                    hover:bg-blue-500 transition
+                                    flex items-center justify-center"
+                        >
+                            <FaSearch />
+                        </button>
+                    </form>
+                )}
+
 
                 {/* Right */}
                 <div className="flex items-center gap-4 whitespace-nowrap">
@@ -68,7 +71,7 @@ export default function Header() {
                             <Link
                                 to="/login"
                                 className="px-4 py-2 bg-blue-600 text-white rounded-lg
-                                           hover:bg-blue-700 !no-underline"
+                                        hover:bg-blue-700 !no-underline"
                             >
                                 Login
                             </Link>
@@ -79,7 +82,7 @@ export default function Header() {
                             <div className="flex items-center gap-1 text-gray-700">
                                 <FaUser />
                                 <span className="text-sm font-medium">
-                                    {user.fullName || "User"}
+                                    {user.full_name || "User"}
                                 </span>
                             </div>
 
@@ -87,7 +90,7 @@ export default function Header() {
                             <button
                                 onClick={handleLogout}
                                 className="flex items-center gap-1 text-red-500
-                                           hover:text-red-600 transition"
+                                        hover:text-red-600 transition"
                             >
                                 <FaSignOutAlt />
                                 <span className="text-sm">Logout</span>

@@ -6,6 +6,7 @@ import CategoryPage from "../components/CategoryPage/CategoryPage.jsx";
 import SearchPage from "../components/SearchPage/SearchPage.jsx";
 import Login from "../components/Login/Login.jsx";
 import Register from "../components/Register/Register.jsx";
+import ForgotPassword from "../components/ForgotPassword/ForgotPassword.jsx"
 
 const router = createBrowserRouter([
   {
@@ -41,6 +42,10 @@ const router = createBrowserRouter([
   {
     path: "/register",
       element: <Register />
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPassword />
   }
 ]);
 
