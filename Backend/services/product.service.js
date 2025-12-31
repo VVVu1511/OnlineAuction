@@ -34,11 +34,11 @@ export async function getProductInfor(id) {
 }
 
 export async function addProduct(product) {
-    const [id] = await db('PRODUCT')
+    const [{ id }] = await db('PRODUCT')
         .insert(product)
         .returning('id');
 
-    return { id };
+    return { id }; // id là NUMBER
 }
 
 export async function updateImagePath(productId, imagePathsJson) {
@@ -80,7 +80,7 @@ export async function getTop5BidCounts() {
 
 export async function getTop5NearEnd() {
     return await db('PRODUCT')
-        .orderBy('time_left', 'asc')
+        .orderBy('end_date', 'asc')
         .limit(5);
 }
 
@@ -206,7 +206,7 @@ export async function getActiveProducts(userId) {
     return await db('PRODUCT')
         .where({ seller: userId })
         .whereNull('winner')
-        .andWhere('time_left', '>', 0)
+        .andWhere('end_date', '>', Date.now())
         .orderBy('upload_date', 'desc');
 }
 

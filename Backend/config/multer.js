@@ -15,5 +15,8 @@ const storage = multer.diskStorage({
 
 export const upload = multer({
     storage,
-    limits: { files: 4 },
+    limits: {
+        fileSize: 5 * 1024 * 1024 // 5MB / ảnh (khuyên dùng)
+    }
 });
+

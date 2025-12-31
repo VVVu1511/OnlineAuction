@@ -388,6 +388,52 @@ router.put("/reset-password", async (req, res) => {
     }
 });
 
+/* ADD USER */
+router.post("/add", async (req, res) => {
+    try {
+        const user = await accountService.addUser(req.body);
 
+        res.status(201).json({
+            success: true,
+            message: "User added successfully",
+            data: user
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(400).json({
+            success: false,
+            message: "Add user failed",
+            data: null
+        });
+    }
+});
+
+/* UPDATE USER */
+router.put("/update/:id", async (req, res) => {
+    try {
+        const user = await accountService.updateUserById(req.params.id, req.body);
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found or no fields updated",
+                data: null
+            });
+        }
+
+        res.json({
+            success: true,
+            message: "User updated successfully",
+            data: user
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(400).json({
+            success: false,
+            message: "Update user failed",
+            data: null
+        });
+    }
+});
 
 export default router;

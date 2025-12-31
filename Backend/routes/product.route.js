@@ -5,6 +5,24 @@ import { upload } from '../config/multer.js';
 import path from "path";
 import fs from "fs";
 
+// id
+// name
+// image_path
+// current_price
+// best_bidder
+// sell_price
+// upload_date
+// bid_counts
+// seller
+// description
+// fts
+// bid_step
+// state_id
+// winner
+// starting_price
+// extend
+// end_date
+
 const router = express.Router();
 
 /* ===================== GET ===================== */
@@ -139,7 +157,7 @@ router.post('/add/:id', (req, res) => {
             const sellerId = +req.params.id;
             const autoExtend = req.body.autoExtend === "true";
 
-            const [{ id: productId }] = await productService.addProduct({
+            const { id: productId } = await productService.addProduct({
                 name: req.body.name,
                 current_price: req.body.startPrice,
                 sell_price: req.body.buyNowPrice || null,

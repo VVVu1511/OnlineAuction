@@ -25,28 +25,30 @@ export default function SellerHome() {
     const [canceling, setCanceling] = useState(false);
 
     /* ================= FETCH DATA ================= */
+    
+    const loadData = async () => {
+        try {
+            setLoading(true);
+            setError("");
+
+            const [myRes, wonRes] = await Promise.all([
+                productService.getMyActiveProducts(user.id),
+                productService.getMyWonProducts(user.id),
+            ]);
+
+            setMyProducts(myRes.data || []);
+            setWonProducts(wonRes.data || []);
+                            
+        } catch (err) {
+            setError(err.response?.data?.message || "Lấy dữ liệu thất bại");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (!user) return; // 🔴 bắt buộc
 
-        const loadData = async () => {
-            try {
-                setLoading(true);
-                setError("");
-
-                const [myRes, wonRes] = await Promise.all([
-                    productService.getMyActiveProducts(user.id),
-                    productService.getMyWonProducts(user.id),
-                ]);
-
-                setMyProducts(myRes.data || []);
-                setWonProducts(wonRes.data || []);
-                                
-            } catch (err) {
-                setError(err.response?.data?.message || "Lấy dữ liệu thất bại");
-            } finally {
-                setLoading(false);
-            }
-        };
 
         loadData();
         
@@ -123,7 +125,7 @@ export default function SellerHome() {
             )}
 
             {/* ===== ADD PRODUCT ===== */}
-            <AddAuctionProduct />
+            <AddAuctionProduct call={loadData} />
 
             {/* ================= ACTIVE PRODUCTS ================= */}
             <section className="space-y-4">
@@ -257,11 +259,10 @@ export default function SellerHome() {
     );
 }
 
-
 import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
-function AddAuctionProduct() {
+function AddAuctionProduct({ call }) {
     const [name, setName] = useState("");
     const [images, setImages] = useState([]);
     const [startPrice, setStartPrice] = useState("");
@@ -269,9 +270,9 @@ function AddAuctionProduct() {
     const [buyNowPrice, setBuyNowPrice] = useState("");
     const [description, setDescription] = useState("");
     const [autoExtend, setAutoExtend] = useState(true);
-    const {setLoading} = useContext(LoadingContext);
     const [addError, setAddError] = useState(false);
-    const [user,setUser] = useState(null);
+    const { user } = useContext(AuthContext);
+    const { setLoading } = useContext(LoadingContext);
 
     useEffect(() => {
         return () => {
@@ -282,9 +283,17 @@ function AddAuctionProduct() {
     }, [images]);
 
     const handleSubmit = async (e) => {
-        const res = JSON.parse(localStorage.getItem("user"));
-        setUser(res);
         e.preventDefault();
+
+        if (!user) {
+            alert("Bạn cần đăng nhập");
+            return;
+        }
+
+        if (user.role !== "seller") {
+            alert("Chỉ seller mới được đăng sản phẩm");
+            return;
+        }
 
         if (images.length < 3) {
             alert("Vui lòng tải lên ít nhất 3 ảnh.");
@@ -292,9 +301,8 @@ function AddAuctionProduct() {
         }
 
         const formData = new FormData();
-        
         formData.append("name", name);
-        images.forEach((img) => formData.append("images", img));
+        images.forEach(img => formData.append("images", img));
         formData.append("startPrice", startPrice);
         formData.append("bidStep", bidStep);
         formData.append("buyNowPrice", buyNowPrice);
@@ -306,10 +314,12 @@ function AddAuctionProduct() {
 
             const data = await productService.addProduct(formData, user.id);
 
-            if (data.success) {
+            if (data?.success) {
                 alert("Tạo sản phẩm thành công!");
+
+                call?.();
                 
-                // Reset form
+                // reset form   
                 setName("");
                 setImages([]);
                 setStartPrice("");
@@ -320,14 +330,12 @@ function AddAuctionProduct() {
                 setAddError(false);
                 
             } else {
-                alert(data.message || "Lỗi hệ thống");
+                alert(data?.message || "Lỗi hệ thống");
             }
         } catch (err) {
-            alert(err);
-
+            console.error(err);
+            alert(err.response?.data?.message || "Lỗi hệ thống");
             setAddError(true);
-
-            // alert(err.response?.data?.message || "Lỗi hệ thống");
         } finally {
             setLoading(false);
         }
@@ -345,7 +353,6 @@ function AddAuctionProduct() {
 
         setImages(files);
     };
-
 
     return (
         <div className="flex justify-center py-10">

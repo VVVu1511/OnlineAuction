@@ -22,6 +22,7 @@ export default function CategoryPage() {
 
     const { user } = useContext(AuthContext);
     const [pageLoading, setPageLoading] = useState(false);
+    const {setLoading} = useContext(LoadingContext);
 
     /* =========================
        LOAD CATEGORY + CHILD
@@ -66,6 +67,7 @@ export default function CategoryPage() {
         };
 
         loadProducts();
+
     }, [selectedCat, user]);
 
 

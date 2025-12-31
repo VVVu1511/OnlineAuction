@@ -135,5 +135,24 @@ DELETE {{baseUrl}}/18
 ### -------------------------
 GET {{baseUrl}}/all
 
+### ADD USER
+POST http://localhost:3000/account/add
+Content-Type: application/json
 
+{
+  "email": "testuser@gmail.com",
+  "password": "123456",
+  "role": 3,
+  "address": "Ho Chi Minh City",
+  "full_name": "vu"
+}
 
+### UPDATE USER
+PUT http://localhost:3000/account/update/21
+Content-Type: application/json
+
+{
+  "role": 2,
+  "address": "Ha Noi",
+  "full_name": "Vu"
+}

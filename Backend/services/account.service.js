@@ -277,3 +277,55 @@ export async function resetPassword(email, newPassword) {
         .update({ password: newPassword});
 }
 
+/* ADD USER */
+export async function addUser(data) {
+    try {
+        const { email, password, role, address, full_name } = data;
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const [user] = await db("USER")
+            .insert({
+                email,
+                password: hashedPassword,
+                role,
+                address,
+                full_name
+            })
+            .returning(["id", "email", "full_name", "role", "address"]);
+
+        return user;
+    } catch (err) {
+        console.error("addUser error:", err);
+        throw new Error("Error adding user");
+    }
+}
+
+
+/* UPDATE USER */
+export async function updateUserById(user_id, data) {
+    try {
+        const updateData = {};
+
+        if (data.email) updateData.email = data.email;
+        if (data.role !== undefined) updateData.role = data.role;
+        if (data.address) updateData.address = data.address;
+        if (data.full_name) updateData.full_name = data.full_name;
+
+        if (data.password) {
+            updateData.password = await bcrypt.hash(data.password, 10);
+        }
+
+        if (Object.keys(updateData).length === 0) return null;
+
+        const [user] = await db("USER")
+            .where("id", user_id)
+            .update(updateData)
+            .returning(["id", "email", "full_name", "role", "address"]);
+
+        return user || null;
+    } catch (err) {
+        console.error("updateUserById error:", err);
+        throw new Error("Error updating user");
+    }
+}

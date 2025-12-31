@@ -1,4 +1,5 @@
 import axios from "axios";
+import { ROLE } from "../constants/role";
 
 const instance = axios.create({
     baseURL: "http://localhost:3000/account",
@@ -53,3 +54,24 @@ export const resetPassword = (email, newPassword) =>
         email,
         new_password: newPassword,
     }).then(res => res.data);
+
+export const addUser = (data) =>
+    instance.post("/add", {
+        email: data.email,
+        password: data.password,
+        full_name: data.name,
+        address: data.address,
+        role: ROLE[data.role],
+    }).then(res => res.data.data);
+
+
+/* UPDATE USER */
+export const updateUser = (id, data) => {
+    instance
+        .put(`/update/${id}`, {
+            full_name: data.name,
+            address: data.address,
+            role: data.role,
+        })
+        .then(res => res.data.data);
+};

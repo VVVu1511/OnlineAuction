@@ -7,6 +7,7 @@ import { LoadingContext } from "../../context/LoadingContext.jsx";
 import Back from "../Back/Back.jsx";
 import ProductCard from "../ProductCard/ProductCard.jsx";
 import ReactQuill from "react-quill";
+import dayjs from "../../utils/dayjs.js";
 
 export default function Product() {
     const { id } = useParams();
@@ -29,7 +30,7 @@ export default function Product() {
 
     /* ================= ASK SELLER ================= */
     const handleAskSeller = async () => {
-        if (!userId) {
+        if (!user) {
             alert("Please login to ask seller");
             return;
         }
@@ -148,81 +149,87 @@ export default function Product() {
         return `${hours} giờ nữa`;
     };
     
+    const endTimeText = product.end_date
+        ? dayjs(product.end_date).format("HH:mm DD/MM/YYYY")
+        : "Đã kết thúc";
+
     return (
         <div className="space-y-10">
             <Back />
-            {/* ========= MAIN INFO ========= */}
+           {/* ========= MAIN INFO ========= */}
             <section className="grid grid-cols-2 gap-8">
                 <div>
                     {/* ===== IMAGE LỚN ===== */}
                     <img
-                        src={`http://localhost:3000/static/images/${product.id}/${mainImage}`}
+                        src={
+                            product.image_path[0]
+                                ? `http://localhost:3000/static/images/${product.id}/${mainImage}`
+                                : "/no-image.png"
+                        }
                         alt={product.name}
                         className="w-full h-96 object-cover rounded border"
                     />
 
                     {/* ===== IMAGE NHỎ ===== */}
                     <div className="grid grid-cols-4 gap-2 mt-3">
-                        {product.image_path
-                            .map((img, i) => (
-                                <img
-                                    key={i}
-                                    src={`http://localhost:3000/static/images/${product.id}/${img}`}
-                                    alt=""
-                                    onClick={() => setMainImage(img)}
-                                    className={`h-24 w-full object-cover rounded cursor-pointer border
-                                        ${
-                                            mainImage === img
-                                                ? "border-blue-600"
-                                                : "border-transparent hover:border-gray-400"
-                                        }`}
-                                />
-                            ))}
+                        {product.image_path.map((img, i) => (
+                            <img
+                                key={i}
+                                src={`http://localhost:3000/static/images/${product.id}/${img}`}
+                                alt=""
+                                onClick={() => setMainImage(img)}
+                                className={`h-24 w-full object-cover rounded cursor-pointer border
+                                    ${
+                                        mainImage === img
+                                            ? "border-blue-600"
+                                            : "border-transparent hover:border-gray-400"
+                                    }`}
+                            />
+                        ))}
                     </div>
                 </div>
 
-
                 <div className="space-y-3">
                     <h1 className="text-2xl font-bold">{product.name}</h1>
-                    
+
                     {/* Actions */}
                     {user?.role === "bidder" && (
                         <div className="flex gap-4 pt-4 items-center">
-
-                        {/* Like */}
-                        <button
-                            onClick={() => toggleLike(product.id)}
-                            className="p-2 border rounded-full hover:bg-gray-100"
-                        >
-                            {liked ? (
-                            <FaHeart className="text-red-500" />
-                            ) : (
-                            <FaRegHeart />
-                            )}
-                        </button>
-
-                        {/* Bid */}
-                        {!denyBidders.some((b) => b.user_id === userId) && (
+                            {/* Like */}
                             <button
-                            onClick={handleBid}
-                            className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold"
+                                onClick={() => toggleLike(product.id)}
+                                className="p-2 border rounded-full hover:bg-gray-100"
                             >
-                            <FaDollarSign />
+                                {liked ? (
+                                    <FaHeart className="text-red-500" />
+                                ) : (
+                                    <FaRegHeart />
+                                )}
                             </button>
-                        )}
+
+                            {/* Bid */}
+                            {!denyBidders.some(b => b.user_id === userId) && (
+                                <button
+                                    onClick={handleBid}
+                                    className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold"
+                                >
+                                    <FaDollarSign />
+                                    Đấu giá
+                                </button>
+                            )}
                         </div>
                     )}
 
                     <p>
                         Giá hiện tại:{" "}
                         <span className="font-semibold text-red-600">
-                            {product.current_price}
+                            {product.current_price.toLocaleString()} đ
                         </span>
                     </p>
 
-                    {product.current_price && (
+                    {product.sell_price && (
                         <p className="text-green-600">
-                            Giá mua ngay: {product.sell_price}
+                            Giá mua ngay: {product.sell_price.toLocaleString()} đ
                         </p>
                     )}
 
@@ -239,27 +246,17 @@ export default function Product() {
 
                     <p>
                         Ngày đăng:{" "}
-                        {new Date(product.upload_date).toLocaleString()}
+                        {dayjs(product.upload_date).format("HH:mm DD/MM/YYYY")}
                     </p>
 
                     <p>
-                        Kết thúc: <b>{formatTime(product.endTime)}</b>
+                        Kết thúc: <b>{endTimeText}</b>
                     </p>
                 </div>
-            </section>
-
-            <section>
-                <h2 className="text-xl font-bold mb-2">Mô tả sản phẩm</h2>
-                <div
-                    className="prose max-w-none"
-                    dangerouslySetInnerHTML={{
-                        __html: product.description.replace(/\\n/g, "<br />"),
-                    }}
-                />
 
                 {/* ===== Seller editor ===== */}
                 {user?.role === "seller" && (
-                    <div className="mt-3 border rounded-xl p-4 bg-gray-50 space-y-3">
+                    <div className="border rounded-xl p-4 bg-gray-50 space-y-3">
                         <p className="font-medium text-gray-800">
                             ✏️ Thêm mô tả mới
                         </p>
@@ -290,6 +287,7 @@ export default function Product() {
                         </div>
                     </div>
                 )}
+            
             </section>
             
             {
@@ -383,7 +381,7 @@ export default function Product() {
                     </div>
 
                         {/* ANSWER – Seller only */}
-                        {user.role === "seller" && !qa.answer && (
+                        {user?.role === "seller" && !qa.answer && (
                             <div className="border rounded-lg p-3">
                                 <input
                                     className="border rounded-lg px-3 py-2 w-full"
@@ -410,7 +408,7 @@ export default function Product() {
                     </div>
                 ))}
 
-                {user.role === "bidder" && (
+                {user?.role === "bidder" && (
                     <div className="flex gap-2 mt-3">
                         <input
                             className="border rounded-lg px-3 py-2 flex-1"
