@@ -3,7 +3,7 @@
 
 ###
 ### 1. Get bidding list (auth required)
-GET {{baseUrl}}
+GET {{baseUrl}}/14
 
 ###
 ### 2. Refuse bidder (seller action)
@@ -18,22 +18,22 @@ Content-Type: application/json
 
 ###
 ### 3. Check if user can bid (auth required)
-POST {{baseUrl}}/checkCanBid
+POST {{baseUrl}}/checkCanBid/15
 Content-Type: application/json
 
 {
-    "product_id": 1
+    "product_id": 18
 }
 
 
 ###
 ### 4. Place a new bid (auth required)
-POST {{baseUrl}}/bid
+POST {{baseUrl}}/bid/15
 Content-Type: application/json
 
 {
     "product_id": 20,
-    "price": 
+    "price": 210000
 }
 
 

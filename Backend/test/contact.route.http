@@ -15,7 +15,7 @@ PUT {{baseUrl}}/answer
 Content-Type: application/json
 
 {
-    "productId": 1,
-    "questionId": 105,
+    "productId": 18,
+    "questionId": 106,
     "answer": "Yes, it is still available!"
 }

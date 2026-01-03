@@ -20,10 +20,13 @@ import dayjs from "../../utils/dayjs";
 import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { LoadingContext } from "../../context/LoadingContext.jsx";
+import { Heart } from "../Product/Product.jsx";
+import { AuthContext } from "../../context/AuthContext.jsx";
 
 export default function ProductCard({ product }) {
     const navigate = useNavigate();
     const { setLoading } = useContext(LoadingContext);
+    const { user } = useContext(AuthContext);
 
     /* ===== IMAGE PATH ===== */
     let images = [];
@@ -59,11 +62,19 @@ export default function ProductCard({ product }) {
             onClick={handleClick}
             className="border rounded-lg hover:shadow-lg transition cursor-pointer relative bg-white"
         >
-            {isNew && (
-                <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded font-semibold">
-                    NEW
-                </span>
-            )}
+            <div className="relative">
+                {isNew && (
+                    <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded font-semibold z-10">
+                        NEW
+                    </span>
+                )}
+
+                {user?.role === "bidder" && (
+                    <div className="absolute top-2 right-2 z-10">
+                        <Heart userId={user.id} productId={product.id} />
+                    </div>
+                )}
+            </div>
 
             <img
                 src={thumbnail}

@@ -65,7 +65,7 @@ Content-Type: application/json
 
 ###
 # GET RATING
-GET {{baseUrl}}/rating
+GET {{baseUrl}}/rating/15
 
 ###
 # GET PROFILE
@@ -74,7 +74,7 @@ GET {{baseUrl}}/profile
 
 ###
 # GET WIN PRODUCTS
-GET {{baseUrl}}/win
+GET {{baseUrl}}/win/14
 
 
 ###
@@ -99,13 +99,13 @@ Content-Type: application/json
 
 ###
 # GET WATCHLIST
-GET {{baseUrl}}/watchlist
+GET {{baseUrl}}/watchlist/15
 
 
 ### -------------------------
 # USER REQUEST SELL UPGRADE
 ### -------------------------
-PUT {{baseUrl}}/requestSell
+PUT {{baseUrl}}/requestSell/15
 
 
 
@@ -155,4 +155,34 @@ Content-Type: application/json
   "role": 2,
   "address": "Ha Noi",
   "full_name": "Vu"
+}
+
+### =========================
+### GET WATCHLIST STATE
+### =========================
+GET http://localhost:3000/account/watchlist/15/18
+Content-Type: application/json
+
+
+### =========================
+### ADD WATCHLIST
+### =========================
+POST http://localhost:3000/account/watchlist/add
+Content-Type: application/json
+
+{
+  "user_id": 14,
+  "product_id": 10
+}
+
+
+### =========================
+### REMOVE WATCHLIST
+### =========================
+DELETE http://localhost:3000/account/watchlist/remove
+Content-Type: application/json
+
+{
+  "user_id": 14,
+  "product_id": 10
 }

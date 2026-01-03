@@ -2,12 +2,70 @@ import { useEffect, useState, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import * as productService from "../../services/product.service.jsx";
 import * as biddingService from "../../services/bidding.service.jsx";
+import * as contactService from "../../services/contact.service.jsx";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import { LoadingContext } from "../../context/LoadingContext.jsx";
 import Back from "../Back/Back.jsx";
 import ProductCard from "../ProductCard/ProductCard.jsx";
 import ReactQuill from "react-quill";
 import dayjs from "../../utils/dayjs.js";
+import {
+    getWatchlistState,
+    addWatchlist,
+    removeWatchlist
+} from "../../services/account.service.jsx";
+import { FaDollarSign} from "react-icons/fa";
+
+
+export function Heart({ userId, productId }) {
+    const [liked, setLiked] = useState(false);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (!userId || !productId) return;
+
+        getWatchlistState(userId, productId)
+            .then(data => setLiked(data.liked));
+    }, [userId, productId]);
+
+    const toggle = async (e) => {
+        e.stopPropagation();
+        
+        if (!userId || !productId || loading) return;
+
+        setLoading(true);
+        try {
+            if (liked) {
+                await removeWatchlist(userId, productId);
+                setLiked(false);
+            } else {
+                await addWatchlist(userId, productId);
+                setLiked(true);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <button
+            onClick={toggle}
+            className="text-2xl"
+            disabled={loading}
+        >
+            {liked ? "❤️" : "🤍"}
+        </button>
+    );
+}
+
+export function maskName(fullName) {
+    if (!fullName) return "";
+
+    const parts = fullName.trim().split(/\s+/);
+    const lastName = parts[parts.length - 1];
+
+    return "****" + lastName;
+}
 
 export default function Product() {
     const { id } = useParams();
@@ -28,6 +86,78 @@ export default function Product() {
     const [newText, setNewText] = useState("");
     const [question, setQuestion] = useState("");
 
+    const [now, setNow] = useState(dayjs());
+    const [endHandled, setEndHandled] = useState(false);
+
+    /* ⏱ Tick mỗi giây */
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setNow(dayjs());
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, []);
+
+    /* ⏰ Thời gian kết thúc */
+    const endTime = product?.end_date ? dayjs(product.end_date) : null;
+
+    /* 🔚 Điều kiện kết thúc */
+    const isTimeEnded = endTime && now.isAfter(endTime);
+    const isBuyNowEnded =
+        product?.sell_price != null &&
+        product?.current_price >= product.sell_price;
+
+    const isEnded = isTimeEnded || isBuyNowEnded;
+
+    /* 📝 Text hiển thị */
+    let endTimeText = "Đã kết thúc";
+
+    if (!isEnded && endTime) {
+        const diffSeconds = endTime.diff(now, "second");
+
+        if (diffSeconds <= 300) {
+            const d = dayjs.duration(diffSeconds, "seconds");
+            endTimeText = `Còn ${d.minutes()}:${String(d.seconds()).padStart(2, "0")}`;
+        } else {
+            endTimeText = endTime.format("HH:mm DD/MM/YYYY");
+        }
+    }
+
+    if (isBuyNowEnded) {
+        endTimeText = "Đã mua ngay";
+    }
+
+    /* 🚨 Khi kết thúc → gọi API + redirect */
+    useEffect(() => {
+        if (!product) return;
+        if (!isEnded) return;
+        if (endHandled) return;
+
+        setEndHandled(true);
+
+        console.log("⏹ Auction ended");
+
+        // 🔥 Gọi API (simulate)
+        // auctionService.finishAuction(product.id)
+        //     .then(() => {
+        //         if (
+        //             user?.id === product.winner ||
+        //             user?.id === product.seller
+        //         ) {
+        
+        if(user?.role === "seller" || (user?.role === "bidder" && user?.id === product?.best_bidder)){
+            navigate(`/order/complete/${product.id}`);
+        }
+
+        //         } else {
+        //             navigate(`/product/${product.id}`);
+        //         }
+        //     })
+        //     .catch(console.error);
+
+    }, [isEnded, endHandled, product]);
+
+
     /* ================= ASK SELLER ================= */
     const handleAskSeller = async () => {
         if (!user) {
@@ -37,16 +167,17 @@ export default function Product() {
 
         if (!question.trim()) return;
 
-        setLoading(true);
+        // setLoading(true);
 
-        const res = await contactService.askSeller(product.id, question);
+        const res = await contactService.askSeller(product.id, question, user.id);
+
         if (res.success) {
             setQaHistory((p) => [...p, { question, answer: null }]);
             setQuestion("");
             setAskStatus("Đã gửi câu hỏi!");
         }
 
-        setLoading(false);
+        // setLoading(false);
     };
 
     const handleAppend = async () => {
@@ -149,9 +280,35 @@ export default function Product() {
         return `${hours} giờ nữa`;
     };
     
-    const endTimeText = product.end_date
-        ? dayjs(product.end_date).format("HH:mm DD/MM/YYYY")
-        : "Đã kết thúc";
+
+    const handleBid = async () => {
+        if (!user.id) {
+            alert("Please login to bid");
+            return;
+        }
+
+        try {
+            setLoading(true);
+
+            const check = await biddingService.checkCanBid(product.id, user.id);
+            
+            if (!check.data.canBid) return alert(check.reason);
+
+            if (!window.confirm(`Giá đề nghị: ${check.data.suggestedPrice}`)) return;
+
+            await biddingService.placeBid(product.id, check.data.suggestedPrice, user.id);
+
+            loadData();
+
+            alert("Đặt giá thành công!");
+
+        } catch (err) {
+            alert("Bid error");
+
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className="space-y-10">
@@ -190,46 +347,49 @@ export default function Product() {
                 </div>
 
                 <div className="space-y-3">
-                    <h1 className="text-2xl font-bold">{product.name}</h1>
+                    <div className="d-flex justify-between">
+                        <h1 className="text-2xl font-bold">{product.name}</h1>
 
-                    {/* Actions */}
-                    {user?.role === "bidder" && (
-                        <div className="flex gap-4 pt-4 items-center">
-                            {/* Like */}
-                            <button
-                                onClick={() => toggleLike(product.id)}
-                                className="p-2 border rounded-full hover:bg-gray-100"
-                            >
-                                {liked ? (
-                                    <FaHeart className="text-red-500" />
-                                ) : (
-                                    <FaRegHeart />
-                                )}
-                            </button>
+                        {/* Actions */}
+                        {user?.role === "bidder" && (
+                            <div className="flex gap-4 text-2xl items-center">
+                                <Heart userId={user.id} productId={product.id}/>
 
-                            {/* Bid */}
-                            {!denyBidders.some(b => b.user_id === userId) && (
-                                <button
-                                    onClick={handleBid}
-                                    className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold"
-                                >
-                                    <FaDollarSign />
-                                    Đấu giá
-                                </button>
-                            )}
-                        </div>
-                    )}
+                                {
+                                    (
+                                        <button
+                                            onClick={handleBid}
+                                            className="
+                                                group
+                                                flex items-center justify-center
+                                                rounded-full
+                                                text-gray-600
+                                                hover:text-red-600
+                                                transition
+                                                duration-200
+                                                hover:scale-110
+                                                active:scale-95
+                                            "
+                                            title="Đặt giá"
+                                        >
+                                            <FaDollarSign className="text-xl transition group-hover:rotate-6" />
+                                        </button>
+                                    )
+                                } 
+                            </div>
+                        )}
+                    </div>
 
                     <p>
                         Giá hiện tại:{" "}
                         <span className="font-semibold text-red-600">
-                            {product.current_price.toLocaleString()} đ
+                            {product.current_price?.toLocaleString()} đ
                         </span>
                     </p>
 
                     {product.sell_price && (
                         <p className="text-green-600">
-                            Giá mua ngay: {product.sell_price.toLocaleString()} đ
+                            Giá mua ngay: {product.sell_price?.toLocaleString()} đ
                         </p>
                     )}
 
@@ -334,7 +494,7 @@ export default function Product() {
                                         </td>
 
                                         <td className="border px-3 py-2 text-right font-medium">
-                                            {bid.price.toLocaleString("vi-VN")} ₫
+                                            {bid.price?.toLocaleString("vi-VN")} ₫
                                         </td>
 
                                         {/* ===== ACTION COLUMN ===== */}
@@ -382,29 +542,51 @@ export default function Product() {
 
                         {/* ANSWER – Seller only */}
                         {user?.role === "seller" && !qa.answer && (
-                            <div className="border rounded-lg p-3">
+                            <div className="border rounded-lg p-3 space-y-2">
                                 <input
-                                    className="border rounded-lg px-3 py-2 w-full"
+                                    className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-400"
                                     placeholder="Nhập câu trả lời..."
-                                    onBlur={async (e) => {
-                                        const answer = e.target.value.trim();
-                                        if (!answer) return;
-
-                                        await contactService.answerQuestion(
-                                            product.id,
-                                            qa.question,
-                                            answer
-                                        );
-
+                                    value={qa.answerDraft || ""}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
                                         setQaHistory((prev) => {
                                             const copy = [...prev];
-                                            copy[i] = { ...copy[i], answer };
+                                            copy[i] = { ...copy[i], answerDraft: value };
                                             return copy;
                                         });
                                     }}
                                 />
+
+                                <div className="flex justify-end">
+                                    <button
+                                        onClick={async () => {
+                                            const answer = qa.answerDraft?.trim();
+                                            if (!answer) return;
+
+                                            await contactService.answerQuestion({
+                                                productId: product.id,
+                                                questionId: qa.id,        // ⚠️ nên dùng id, không dùng text
+                                                answer
+                                            });
+
+                                            setQaHistory((prev) => {
+                                                const copy = [...prev];
+                                                copy[i] = {
+                                                    ...copy[i],
+                                                    answer,
+                                                    answerDraft: ""
+                                                };
+                                                return copy;
+                                            });
+                                        }}
+                                        className="px-4 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                                    >
+                                        Gửi
+                                    </button>
+                                </div>
                             </div>
                         )}
+
                     </div>
                 ))}
 

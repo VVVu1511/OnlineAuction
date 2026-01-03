@@ -49,6 +49,7 @@ router.get('/myWonProducts/:id', async (req, res) => {
     try {
         const data = await productService.getWonProducts(+req.params.id);
         res.json({ success: true, message: 'Get won products successfully', data });
+        
     } catch (err) {
         res.status(500).json({ success: false, message: err.message, data: null });
     }
@@ -224,5 +225,6 @@ router.delete('/:id', async (req, res) => {
         res.status(404).json({ success: false, message: err.message, data: null });
     }
 });
+
 
 export default router;

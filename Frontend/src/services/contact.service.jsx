@@ -10,16 +10,16 @@ const instance = axios.create({
 ========================= */
 
 // Bidder asks seller a question
-export const askSeller = (productId, question) =>
-    instance.post("/ask", {
+export const askSeller = (productId, question, id) =>
+    instance.post(`/ask/${id}`, {
         product_id: productId,
         question,
     }).then(res => res.data);
 
 // Seller answers a question
-export const answerQuestion = (questionId, answer, productId) =>
+export const answerQuestion = ({ productId, questionId, answer }) =>
     instance.put("/answer", {
+        productId,
         questionId,
         answer,
-        productId,
     }).then(res => res.data);

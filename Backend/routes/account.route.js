@@ -165,7 +165,6 @@ router.put('/profile/:id', async (req, res) => {
     }
 });
 
-
 router.post("/send-otp", async (req, res) => {
     const { email } = req.body;
 
@@ -198,19 +197,25 @@ router.post("/verify-otp", async (req, res) => {
     }
 });
 
-router.get('/rating/:id', async(req,res) => {
+router.get('/rating/:id', async (req, res) => {
     try {
-        const userId = parseInt(req.params.id);
-        
+        const userId = Number(req.params.id);
         const rating = await accountService.getRating(userId);
 
-        res.status(201).json({ message: 'Get rating OK!', data: rating });
-
+        res.json({
+            success: true,
+            message: 'Get rating OK!',
+            data: rating
+        });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ message: 'Error getting rating' });
+        res.status(500).json({
+            success: false,
+            message: 'Error getting rating',
+            data: null
+        });
     }
-})
+});
 
 router.get('/profile/:id', async (req,res) => {
     const id = parseInt(req.params.id);
@@ -219,64 +224,70 @@ router.get('/profile/:id', async (req,res) => {
     res.status(201).json({ message: 'Get profile', data: data});
 })
 
-router.get('/win/:id', async(req,res) => {
+router.get('/win/:id', async (req, res) => {
     try {
-        const userId = parseInt(req.params.id);
-        
+        const userId = Number(req.params.id);
         const winProducts = await accountService.getWinProducts(userId);
-
-        res.status(201).json({ message: 'Get win products OK!', data: winProducts });
-
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ message: 'Error getting win products' });
-    }
-})
-
-router.delete('/watchlist/:id', async (req, res) => {
-    try {
-        const user_id = parseInt(req.params.id);
-        const { productId } = req.body;
-
-        const deleted = await accountService.delWatchList(user_id, productId);
 
         res.json({
             success: true,
-            message: "Removed from watchlist",
-            data: deleted
+            message: 'Get win products OK!',
+            data: winProducts
         });
-
     } catch (err) {
+        console.error(err);
         res.status(500).json({
             success: false,
-            message: "Delete watchlist failed",
-            data: err.message
+            message: 'Error getting win products',
+            data: null
         });
     }
 });
 
 
-router.post('/watchlist/:id', async (req, res) => {
-    try {
-        const user_id = parseInt(req.params.id);
-        const { productId } = req.body;
+// router.delete('/watchlist/:id', async (req, res) => {
+//     try {
+//         const user_id = parseInt(req.params.id);
+//         const { productId } = req.body;
 
-        const id = await accountService.addWatchList(user_id, productId);
+//         const deleted = await accountService.delWatchList(user_id, productId);
 
-        res.status(201).json({
-            success: true,
-            message: "Added to watchlist",
-            data: { watchlistId: id }
-        });
+//         res.json({
+//             success: true,
+//             message: "Removed from watchlist",
+//             data: deleted
+//         });
 
-    } catch (err) {
-        res.status(500).json({
-            success: false,
-            message: "Add watchlist failed",
-            data: err.message
-        });
-    }
-});
+//     } catch (err) {
+//         res.status(500).json({
+//             success: false,
+//             message: "Delete watchlist failed",
+//             data: err.message
+//         });
+//     }
+// });
+
+// router.post('/watchlist/:id', async (req, res) => {
+//     try {
+//         const user_id = parseInt(req.params.id);
+//         const { productId } = req.body;
+
+//         const id = await accountService.addWatchList(user_id, productId);
+
+//         res.status(201).json({
+//             success: true,
+//             message: "Added to watchlist",
+//             data: { watchlistId: id }
+//         });
+
+//     } catch (err) {
+//         res.status(500).json({
+//             success: false,
+//             message: "Add watchlist failed",
+//             data: err.message
+//         });
+//     }
+// });
 
 
 router.get('/watchlist/:id', async (req, res) => {
@@ -435,5 +446,118 @@ router.put("/update/:id", async (req, res) => {
         });
     }
 });
+
+/* GET WATCHLIST STATE */
+router.get("/watchlist/:user_id/:product_id", async (req, res) => {
+    try {
+        const { user_id, product_id } = req.params;
+
+        const liked = await accountService.getState(
+            user_id,
+            product_id
+        );
+
+        res.json({
+            success: true,
+            message: "Get watchlist state successfully",
+            data: { liked }
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(400).json({
+            success: false,
+            message: "Get watchlist state failed",
+            data: null
+        });
+    }
+});
+
+/* ADD WATCHLIST */
+router.post("/watchlist/add", async (req, res) => {
+    try {
+        const { user_id, product_id } = req.body;
+
+        if (user_id == null || product_id == null) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing user_id or product_id"
+            });
+        }
+
+        const result = await accountService.addWatchList(
+            user_id,
+            product_id
+        );
+
+        res.json({
+            success: true,
+            message: "Added to watchlist",
+            data: result
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(400).json({
+            success: false,
+            message: "Add watchlist failed",
+            data: null
+        });
+    }
+});
+
+/* REMOVE WATCHLIST */
+router.delete("/watchlist/remove", async (req, res) => {
+    try {
+        const { user_id, product_id } = req.body;
+
+        const result = await accountService.removeWatchList(
+            user_id,
+            product_id
+        );
+
+        res.json({
+            success: true,
+            message: "Removed from watchlist",
+            data: result
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(400).json({
+            success: false,
+            message: "Remove watchlist failed",
+            data: null
+        });
+    }
+});
+
+// account.route.js
+router.get("/requestSell/:id", async (req, res) => {
+    try {
+        const userId = parseInt(req.params.id);
+
+        const state = await accountService.getRequestSellState(userId);
+
+        if (!state) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+                data: null
+            });
+        }
+
+        res.json({
+            success: true,
+            message: "Get request sell state successfully",
+            data: state
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            success: false,
+            message: "Get request sell state failed",
+            data: null
+        });
+    }
+});
+
 
 export default router;

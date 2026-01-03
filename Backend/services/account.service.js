@@ -132,23 +132,41 @@ export async function getWatchList(user_id) {
     }
 }
 
-export async function addWatchList(user_id, product_id) {
-    const [id] = await db('WATCHLIST')
-        .insert({ user_id, product_id })
-        .returning('id');
+// export async function addWatchList(user_id, product_id) {
+//     const [id] = await db('WATCHLIST')
+//         .insert({ user_id, product_id })
+//         .returning('id');
 
-    return id;
+//     return id;
+// }
+
+// export async function delWatchList(user_id, product_id) {
+//     const deleted = await db('WATCHLIST')
+//         .where({ user_id, product_id })
+//         .del();
+
+//     return deleted;
+// }
+
+// account.service.js
+export async function getRequestSellState(user_id) {
+    const user = await db("USER")
+        .select("request_sell", "request_expire")
+        .where("id", user_id)
+        .first();
+
+    if (!user) return null;
+
+    const isRequested =
+        user.request_sell === true &&
+        user.request_expire !== null &&
+        new Date(user.request_expire) > new Date();
+
+    return {
+        requested: isRequested,
+        request_expire: user.request_expire
+    };
 }
-
-
-export async function delWatchList(user_id, product_id) {
-    const deleted = await db('WATCHLIST')
-        .where({ user_id, product_id })
-        .del();
-
-    return deleted;
-}
-
 
 export async function requestSell(user_id) {
     const affected = await db('USER')
@@ -327,5 +345,48 @@ export async function updateUserById(user_id, data) {
     } catch (err) {
         console.error("updateUserById error:", err);
         throw new Error("Error updating user");
+    }
+}
+
+/* GET STATE */
+export async function getState(user_id, product_id) {
+    try {
+        const record = await db("WATCHLIST")
+            .where({ user_id, product_id })
+            .first();
+
+        return !!record;
+    } catch (err) {
+        console.error("getState error:", err);
+        throw new Error("Error getting watchlist state");
+    }
+}
+
+/* ADD */
+export async function addWatchList(user_id, product_id) {
+    try {
+        await db("WATCHLIST")
+            .insert({ user_id, product_id });
+
+        return { user_id, product_id };
+    } catch (err) {
+        console.error("add watchlist error:", err);
+        throw new Error("Error adding watchlist");
+    }
+}
+
+/* REMOVE */
+export async function removeWatchList(user_id, product_id) {
+    try {
+        const deleted = await db("WATCHLIST")
+            .where({ user_id, product_id })
+            .del();
+
+        if (!deleted) return null;
+
+        return { user_id, product_id };
+    } catch (err) {
+        console.error("remove watchlist error:", err);
+        throw new Error("Error removing watchlist");
     }
 }

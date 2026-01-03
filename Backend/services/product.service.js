@@ -206,24 +206,35 @@ export async function getActiveProducts(userId) {
     return await db('PRODUCT')
         .where({ seller: userId })
         .whereNull('winner')
-        .andWhere('end_date', '>', Date.now())
+        .andWhere('end_date', '>', new Date())
         .orderBy('upload_date', 'desc');
 }
 
 export async function getWonProducts(userId) {
+    console.log(
+        db('PRODUCT')
+        .where('end_date', '<=', db.fn.now())
+        .toString()
+    );
+
     return await db('PRODUCT')
-        .join('USER as Winner', 'PRODUCT.winner', 'Winner.id')
-        .leftJoin('RATING as R', 'PRODUCT.id', 'R.product_id')
-        .where({ seller: userId })
-        .whereNotNull('winner')
-        .select(
-            'PRODUCT.*',
-            'Winner.full_name as winner_name',
-            'Winner.email as winner_email',
-            'R.rating',
-            'R.comment',
-            'R.created_at'
-        );
+        // .join('USER as Winner', 'PRODUCT.winner', 'Winner.id')
+        // .leftJoin('RATING as R', 'PRODUCT.id', 'R.product_id')
+        // .where('PRODUCT.seller', userId)
+        // .andWhere(function () {
+        //     this.where('PRODUCT.current_price', '>=', db.ref('PRODUCT.sell_price'))
+        //         .orWhere('PRODUCT.end_date', '<=', db.fn.now());
+        // })
+        // .select(
+        //     'PRODUCT.*',
+        //     'Winner.full_name as winner_name',
+        //     'Winner.email as winner_email',
+        //     'R.rating',
+        //     'R.comment',
+        //     'R.created_at'
+        // )
+        // .orderBy('PRODUCT.end_date', 'desc');
+        .where('PRODUCT.end_date', '<=', db.fn.now());
 }
 
 /**

@@ -30,14 +30,14 @@ export const changePassword = (payload, id) =>
     instance.put(`/change-password/${id}`, payload).then(res => res.data);
 
 // DATA
-export const getWatchlist = () =>
-    instance.get("/watchlist").then(res => res.data);
+export const getWatchlist = (id) =>
+    instance.get(`/watchlist/${id}`).then(res => res.data);
 
-export const getRatings = () =>
-    instance.get("/rating").then(res => res.data);
+export const getRatings = (id) =>
+    instance.get(`/rating/${id}`).then(res => res.data);
 
-export const getWonProducts = () =>
-    instance.get("/win").then(res => res.data);
+export const getWonProducts = (id) =>
+    instance.get(`/win/${id}`).then(res => res.data);
 
 // ADMIN
 export const getAllUsers = () =>
@@ -74,4 +74,34 @@ export const updateUser = (id, data) => {
             role: data.role,
         })
         .then(res => res.data.data);
+};
+
+export const getWatchlistState = async (user_id, product_id) => {
+    const res = await instance.get(`/watchlist/${user_id}/${product_id}`);
+    return res.data.data;
+};
+
+export const addWatchlist = async (user_id, product_id) => {
+    const res = await instance.post("/watchlist/add", {
+        user_id,
+        product_id
+    });
+    return res.data.data;
+};
+
+export const removeWatchlist = async (user_id, product_id) => {
+    const res = await instance.delete("/watchlist/remove", {
+        data: { user_id, product_id }
+    });
+    return res.data.data;
+};
+
+export const requestSell = async (user_id) => {
+    const res = await instance.put(`/requestSell/${user_id}`);
+    return res.data;
+};
+
+export const getRequestSellState = async (user_id) => {
+    const res = await instance.get(`/requestSell/${user_id}`);
+    return res.data.data; 
 };

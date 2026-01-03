@@ -7,26 +7,6 @@ import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 
-/**
- * GET bidding list of current user
- */
-router.get('/', async (req, res) => {
-    try {
-        const data = await biddingService.getBiddingList(req.user.id);
-
-        return res.status(200).json({
-            success: true,
-            message: 'Get bidding list successfully',
-            data
-        });
-    } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: 'Error getting bidding list',
-            data: null
-        });
-    }
-});
 
 /**
  * Refuse bidder (seller)
@@ -54,12 +34,13 @@ router.put('/refuse', async (req, res) => {
 /**
  * Check if bidder can bid
  */
-router.post('/checkCanBid', async (req, res) => {
+router.post('/checkCanBid/:id', async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.params.id;
         const { product_id } = req.body;
 
-        const product = await productService.getProductById(product_id);
+        const product = await productService.getProductInfor(product_id);
+        
         if (!product) {
             return res.status(404).json({
                 success: false,
@@ -105,18 +86,10 @@ router.post('/checkCanBid', async (req, res) => {
 /**
  * Place a bid
  */
-router.post('/bid',  async (req, res) => {
+router.post('/bid/:id',  async (req, res) => {
     try {
-        if (req.user.role_description !== "bidder") {
-            return res.status(403).json({
-                success: false,
-                message: 'Not a bidder',
-                data: null
-            });
-        }
-
         const { product_id, price } = req.body;
-        const product = await productService.getProductById(product_id);
+        const product = await productService.getProductInfor(product_id);
 
         if (!product) {
             return res.status(404).json({
@@ -140,12 +113,12 @@ router.post('/bid',  async (req, res) => {
         }
 
         const data = await biddingService.new_bid({
-            user_id: req.user.id,
+            user_id: req.params.id,
             product_id,
             price
         });
 
-        await contactService.emailAfterBid(product_id, product.seller, req.user.id, price);
+        await contactService.emailAfterBid(product_id, product.seller, req.params.id, price);
 
         return res.status(201).json({
             success: true,
@@ -156,7 +129,7 @@ router.post('/bid',  async (req, res) => {
     } catch (err) {
         return res.status(500).json({
             success: false,
-            message: 'Error placing bid',
+            message: err,
             data: null
         });
     }
@@ -186,27 +159,12 @@ router.get('/bid_history/:product_id',  async (req, res) => {
 /**
  * Deny bidder (seller)
  */
-router.post('/denyBidder/:product_id', async (req, res) => {
+router.post('/denyBidder/:product_id/:id', async (req, res) => {
     try {
-        if (req.user.role_description !== "seller") {
-            return res.status(403).json({
-                success: false,
-                message: 'Not seller',
-                data: null
-            });
-        }
-
         const productId = req.params.product_id;
         const { bidderId } = req.body;
 
         const product = await productService.getProductInfor(productId);
-        if (req.user.id !== product.seller) {
-            return res.status(403).json({
-                success: false,
-                message: 'Not owner of this product',
-                data: null
-            });
-        }
 
         const data = await biddingService.denyBidder(productId, bidderId);
 
@@ -278,4 +236,24 @@ router.post('/rateBidder', async (req, res) => {
     }
 });
 
+/**
+ * GET bidding list of current user
+ */
+router.get('/:id', async (req, res) => {
+    try {
+        const data = await biddingService.getBiddingList(req.params.id);
+
+        return res.status(200).json({
+            success: true,
+            message: 'Get bidding list successfully',
+            data
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error getting bidding list',
+            data: null
+        });
+    }
+});
 export default router;

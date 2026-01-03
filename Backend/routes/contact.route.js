@@ -10,17 +10,8 @@ const router = express.Router();
  * SELLER ANSWER QUESTION
  * =========================
  */
-router.put('/answer', authMiddleware, async (req, res) => {
+router.put('/answer', async (req, res) => {
     try {
-        // 1️⃣ Check seller
-        if (!req.user?.id || req.user.role_description !== "seller") {
-            return res.status(403).json({
-                success: false,
-                message: "Not a seller",
-                data: null
-            });
-        }
-
         const { productId, questionId, answer } = req.body;
 
         // 2️⃣ Check product
@@ -29,15 +20,6 @@ router.put('/answer', authMiddleware, async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Product not found",
-                data: null
-            });
-        }
-
-        // 3️⃣ Check seller owns product
-        if (req.user.id !== product.seller) {
-            return res.status(403).json({
-                success: false,
-                message: "You are not the seller of this product",
                 data: null
             });
         }
@@ -73,18 +55,9 @@ router.put('/answer', authMiddleware, async (req, res) => {
  * BIDDER ASK SELLER
  * =========================
  */
-router.post('/ask', authMiddleware, async (req, res) => {
+router.post('/ask/:id', async (req, res) => {
     try {
-        // 1️⃣ Check bidder
-        if (!req.user?.id || req.user.role_description !== "bidder") {
-            return res.status(403).json({
-                success: false,
-                message: "Not a bidder",
-                data: null
-            });
-        }
-
-        const userId = req.user.id;
+        const userId = req.params.id;
         const { product_id, question } = req.body;
 
         if (!product_id || !question) {

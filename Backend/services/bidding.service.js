@@ -72,21 +72,23 @@ export async function getBidHistory(product_id) {
  */
 export async function new_bid(data) {
     try {
-        // insert bid
-        const [bidId] = await db('BID_HISTORY').insert({
-            user_id: data.user_id,
-            product_id: data.product_id,
-            time: data.time || new Date(),
-            price: data.price
-        });
-
-        // update product
+        // insert bid + lấy id
+        const rows = await db('BID_HISTORY')
+            .insert({
+                user_id: data.user_id,
+                product_id: data.product_id,
+                time: data.time || new Date(),
+                price: data.price
+            })
+            
+        // get product
         const product = await db('PRODUCT')
             .where({ id: data.product_id })
             .first();
 
         const newBidCount = (product.bid_counts || 0) + 1;
 
+        // update product
         await db('PRODUCT')
             .where({ id: data.product_id })
             .update({
@@ -96,7 +98,6 @@ export async function new_bid(data) {
             });
 
         return {
-            bid_id: bidId,
             product_id: data.product_id,
             price: data.price,
             bid_counts: newBidCount

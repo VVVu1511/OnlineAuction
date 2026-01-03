@@ -39,17 +39,6 @@ export const getQaHistory = (productId) =>
     instance.get(`/Q_A/${productId}`)
         .then(res => res.data);
 
-export const checkCanBid = (productId) =>
-    instance.post("/checkCanBid", {
-        product_id: productId,
-    }).then(res => res.data);
-
-export const placeBid = (productId, price) =>
-    instance.post("/bid", {
-        product_id: productId,
-        price,
-    }).then(res => res.data);
-
 export const addProduct = (formData, id) =>
     instance.post(`/add/${id}`, formData)
         .then(res => res.data);
