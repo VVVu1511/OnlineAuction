@@ -211,12 +211,6 @@ export async function getActiveProducts(userId) {
 }
 
 export async function getWonProducts(userId) {
-    console.log(
-        db('PRODUCT')
-        .where('end_date', '<=', db.fn.now())
-        .toString()
-    );
-
     return await db('PRODUCT')
         // .join('USER as Winner', 'PRODUCT.winner', 'Winner.id')
         // .leftJoin('RATING as R', 'PRODUCT.id', 'R.product_id')
