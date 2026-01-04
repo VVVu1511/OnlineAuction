@@ -91,6 +91,32 @@ export default function Login() {
                     Đăng nhập
                 </button>
 
+                {/* OR */}
+                <div className="flex items-center my-4">
+                    <div className="flex-grow h-px bg-gray-300"></div>
+                    <span className="px-3 text-sm text-gray-500">HOẶC</span>
+                    <div className="flex-grow h-px bg-gray-300"></div>
+                </div>
+
+                {/* Google Login */}
+                <a
+                    href="http://localhost:3000/auth/google"
+                    className="
+                        w-full flex items-center justify-center gap-3
+                        border border-gray-300 rounded-lg py-2
+                        font-semibold text-gray-700
+                        hover:bg-gray-100 transition
+                        !no-underline
+                    "
+                >
+                    <img
+                        src="https://developers.google.com/identity/images/g-logo.png"
+                        alt="Google"
+                        className="w-5 h-5"
+                    />
+                    Đăng nhập bằng Google
+                </a>
+
                 {/* Register */}
                 <p className="mt-5 text-center text-sm text-gray-600">
                     Chưa có tài khoản?{" "}

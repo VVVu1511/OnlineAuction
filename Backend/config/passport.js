@@ -39,7 +39,7 @@ passport.use(new GoogleStrategy(
                         email,
                         password: null,
                         address: null,
-                        role: 2,
+                        role: 3,
                     })
                     .returning("*");
 

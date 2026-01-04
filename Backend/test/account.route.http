@@ -186,3 +186,9 @@ Content-Type: application/json
   "user_id": 14,
   "product_id": 10
 }
+
+
+### =========================
+### AUTH
+### =========================
+GET http://localhost:3000/auth/me

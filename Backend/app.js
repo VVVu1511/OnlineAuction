@@ -13,6 +13,7 @@ import session from "express-session";
 import dotenv from 'dotenv';
 import jwt from "jsonwebtoken";
 import passport from "./config/passport.js";
+import orderRouter from '../Backend/routes/order.route.js';
 
 dotenv.config();
 
@@ -23,12 +24,21 @@ const __dirname = path.dirname(__filename);
 
 app.set('trust proxy', 1);
 
-app.use(cors());
+app.use(cors({
+    origin: "http://localhost:5173",
+    credentials: true
+}));
+
+
 // Passport session middleware
 app.use(session({
     secret: process.env.SECRET_KEY,
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        sameSite: "lax",   // ⚠️ BẮT BUỘC
+    }
 }));
 
 app.use(passport.initialize());
@@ -43,7 +53,7 @@ app.use('/category', categoryRouter);
 app.use('/bidding', biddingRouter);
 app.use('/contact',contactRouter);
 app.use('/auth', authRouter);
-
+app.use('/order', orderRouter);
 
 app.listen(PORT, function () {
     console.log(`Server is running on http://localhost:${PORT}`);

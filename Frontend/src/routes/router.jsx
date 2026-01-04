@@ -9,6 +9,7 @@ import Register from "../components/Register/Register.jsx";
 import ForgotPassword from "../components/ForgotPassword/ForgotPassword.jsx"
 import Profile from "../components/Profile/Profile.jsx";
 import OrderCompletion from "../components/OrderCompletion/OrderCompletion.jsx";
+import OAuthSuccess from "../components/OAuthSuccess/OAuthSuccess.jsx"
 
 const router = createBrowserRouter([
   {
@@ -42,6 +43,10 @@ const router = createBrowserRouter([
       {
         path: "/order/complete/:id",
         element: <OrderCompletion />
+      },
+      {
+        path:"/oauth-success",
+        element: <OAuthSuccess />
       }
     ],
   },

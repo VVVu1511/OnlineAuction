@@ -1,0 +1,129 @@
+@baseUrl = http://localhost:3000/order
+@productId = 18
+
+@buyerId = 15
+@sellerId = 13
+
+@baseUrl = http://localhost:3000/order
+
+### =========================
+### CREATE ORDER WHEN BIDDER WINS
+### =========================
+POST {{baseUrl}}/create
+Content-Type: application/json
+
+{
+    "product_id": 18,
+    "seller_id": {{sellerId}},
+    "winner_id": {{buyerId}}
+}
+
+
+### =========================
+### 1. BUYER – submit payment + address
+### =========================
+POST {{baseUrl}}/{{productId}}/payment
+Content-Type: application/json
+
+{
+    "userId": {{buyerId}},
+    "payment_info": "Bank transfer - TXN123456 - 2,000,000 VND",
+    "address": "123 Nguyen Trai, District 5, HCMC"
+}
+
+### =========================
+### 2. SELLER – confirm payment + shipping
+### =========================
+POST {{baseUrl}}/{{productId}}/shipping
+Content-Type: application/json
+
+{
+  "userId": {{sellerId}},
+  "shipping_info": "GHTK - Tracking: GHTK99887766"
+}
+
+### =========================
+### 3. BUYER – confirm received
+### =========================
+POST {{baseUrl}}/{{productId}}/confirm-receive
+Content-Type: application/json
+
+{
+  "userId": {{buyerId}}
+}
+
+### =========================
+### 4. BUYER – review seller (+1 / -1)
+### =========================
+POST {{baseUrl}}/{{productId}}/review
+Content-Type: application/json
+
+{
+  "userId": {{buyerId}},
+  "score": 1,
+  "comment": "Seller shipped fast, item as described"
+}
+
+### =========================
+### 5. SELLER – review buyer
+### =========================
+POST {{baseUrl}}/{{productId}}/review
+Content-Type: application/json
+
+{
+  "userId": {{sellerId}},
+  "score": 1,
+  "comment": "Buyer paid quickly and communicated well"
+}
+
+### =========================
+### 6. SELLER – cancel order (anytime)
+### =========================
+POST {{baseUrl}}/{{productId}}/cancel
+Content-Type: application/json
+
+{
+  "userId": {{sellerId}}
+}
+
+### =========================
+### 7. CHAT – buyer sends message
+### =========================
+POST {{baseUrl}}/{{productId}}/chat
+Content-Type: application/json
+
+{
+    "userId": {{buyerId}},
+    "message": "I have transferred the money, please confirm."
+}
+
+### =========================
+### 8. CHAT – seller replies
+### =========================
+POST {{baseUrl}}/{{productId}}/chat
+Content-Type: application/json
+
+{
+    "userId": {{sellerId}},
+    "message": "Payment received, I will ship today."
+}
+
+### =========================
+### 9. CHAT – get
+### =========================
+GET  {{baseUrl}}/{{productId}}/chat
+Content-Type: application/json
+
+
+### =========================
+### 10. ORDER
+### =========================
+GET  {{baseUrl}}/by-product/{{productId}}
+Content-Type: application/json
+
+### =========================
+### 11. ORDER REVIEWS
+### =========================
+GET  {{baseUrl}}/1/reviews
+Content-Type: application/json
+
