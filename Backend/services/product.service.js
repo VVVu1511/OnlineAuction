@@ -282,11 +282,27 @@ export async function getActiveProducts(userId) {
 export async function getWonProducts(userId) {
     return await db('PRODUCT as P')
         .leftJoin('USER as U', 'P.best_bidder', 'U.id')
+
+        .leftJoin('RATING as R', function () {
+            this.on('R.product_id', '=', 'P.id')
+                .andOn('R.rater_id', '=', db.raw('?', [userId]))
+                .andOn('R.rated_id', '=', 'P.best_bidder');
+        })
+
         .where('P.seller', userId)
         .andWhere('P.end_date', '<=', db.fn.now())
+
         .select(
             'P.*',
-            'U.full_name as best_bidder_name'
+            'P.id as id',
+            'U.full_name as best_bidder_name',
+
+            db.raw(
+                '(?? IS NOT NULL) AS winner_rating',
+                [db.ref('R.id')]
+            ),
+            'R.rating as rating',
+            'R.comment as comment'
         )
         .orderBy('P.end_date', 'desc');
 }

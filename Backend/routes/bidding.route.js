@@ -188,7 +188,7 @@ router.get('/bid_history/:product_id',  async (req, res) => {
 /**
  * Deny bidder (seller)
  */
-router.post('/denyBidder/:product_id/:id', async (req, res) => {
+router.post('/denyBidder/:product_id', async (req, res) => {
     try {
         const productId = req.params.product_id;
         const { bidderId } = req.body;

@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import * as productService from "../../services/product.service.jsx";
+import * as biddingService from "../../services/bidding.service.jsx";
 import { LoadingContext } from "../../context/LoadingContext.jsx";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import ProductCard from "../ProductCard/ProductCard.jsx"
@@ -60,24 +61,26 @@ export default function SellerHome() {
         );
 
     /* ================= RATE BIDDER ================= */
-    const handleRateBidder = async () => {
+    const handleRateBidder = async (p) => {
         if (!rateComment.trim()) return;
 
         try {
             setRating(true);
             setLoading(true);
 
-            const res = await productService.rateBidder(
-                rateTarget.id,
-                rateTarget.winner_id,
-                rateValue,
-                rateComment
+            const res = await biddingService.rateBidder(
+                p.best_bidder,
+                p.id,
+                rateComment,
+                rateValue
             );
 
             if (res.success) {
                 alert("Đánh giá thành công");
                 setRateTarget(null);
                 setRateComment("");
+
+                loadData();
             } else {
                 alert(res.message || "Đánh giá thất bại");
             }
@@ -90,23 +93,31 @@ export default function SellerHome() {
     };
 
     /* ================= CANCEL TRANSACTION ================= */
-    const handleCancelTransaction = async () => {
+    const handleCancelTransaction = async (p) => {
         try {
             setCanceling(true);
             setLoading(true);
 
-            const res = await productService.cancelTransaction(cancelTarget.id);
+            const res = await biddingService.rateBidder(
+                p.best_bidder,
+                p.id,
+                "Người thắng không thanh toán",
+                -1,
+            );
 
             if (res.success) {
                 alert(
                     "Đã huỷ giao dịch\nNgười thắng không thanh toán (-1)"
                 );
                 setCancelTarget(null);
+
+                loadData();
+
             } else {
                 alert(res.message || "Huỷ thất bại");
             }
         } catch (err) {
-            alert(err.response?.data?.message || "Lỗi server");
+            alert(err || "Lỗi server");
         } finally {
             setCanceling(false);
             setLoading(false);
@@ -121,7 +132,6 @@ export default function SellerHome() {
         rateComment.length <= MAX_COMMENT_LENGTH;
 
     const [rateError, setRateError] = useState("");
-
 
     /* ================= RENDER ================= */
     return (
@@ -176,11 +186,7 @@ export default function SellerHome() {
                                         <span className="font-medium">
                                             Người thắng:
                                         </span>{" "}
-                                        {p.winner_name}
-                                    </p>
-                                    <p>
-                                        <span className="font-medium">Email:</span>{" "}
-                                        {p.winner_email}
+                                        {p.best_bidder_name}
                                     </p>
                                 </div>
 
@@ -191,13 +197,13 @@ export default function SellerHome() {
                                             <span className="font-medium">
                                                 Đánh giá:
                                             </span>{" "}
-                                            {p.winner_rating === 1 ? "Tốt" : "Xấu"}
+                                            {p.rating === 1 ? "Tốt" : "Xấu"}
                                         </p>
                                         <p>
                                             <span className="font-medium">
                                                 Nhận xét:
                                             </span>{" "}
-                                            {p.winner_comment}
+                                            {p.comment}
                                         </p>
                                     </div>
                                 )}
@@ -246,7 +252,7 @@ export default function SellerHome() {
                                                 onClick={() => {
                                                     setRateTarget(p);
                                                     setRateValue(1);
-                                                    handleRateBidder();
+                                                    handleRateBidder(p);
                                                 }}
                                                 disabled={rating || !isCommentValid}
                                             >
@@ -268,8 +274,7 @@ export default function SellerHome() {
                                             <button
                                                 className="px-3 py-1.5 text-sm rounded-lg border border-red-500 text-red-600 hover:bg-red-50 disabled:opacity-50"
                                                 onClick={() => {
-                                                    setCancelTarget(p);
-                                                    handleCancelTransaction();
+                                                    handleCancelTransaction(p);
                                                 }}
                                                 disabled={canceling}
                                             >

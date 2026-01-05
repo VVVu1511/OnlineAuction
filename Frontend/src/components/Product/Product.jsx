@@ -303,11 +303,6 @@ export default function Product() {
         }
     }, [product]);
 
-
-    if (loading) return <p>Loading...</p>;
-    if (error) return <p className="text-red-500">{error}</p>;
-    if (!product) return null;
-
     // ===== Helpers =====
     const formatTime = (endTime) => {
         const diff = new Date(endTime) - new Date();
@@ -360,6 +355,10 @@ export default function Product() {
 
     const [answerErrors, setAnswerErrors] = useState({});
     const [questionError, setQuestionError] = useState("");
+
+    if (loading) return <p>Loading...</p>;
+    if (error) return <p className="text-red-500">{error}</p>;
+    if (!product) return null;
 
     return (
         <div className="space-y-10">
@@ -622,10 +621,7 @@ export default function Product() {
                                                             bid.user_id
                                                         );
 
-                                                        setDenyBidders(p => [
-                                                            ...p,
-                                                            { user_id: bid.user_id }
-                                                        ]);
+                                                        alert("Đã từ chối người đấu giá này.");
                                                     }}
                                                     className="text-red-500 px-2 py-1 rounded-lg"
                                                 >

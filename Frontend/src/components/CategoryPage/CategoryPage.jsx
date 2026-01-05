@@ -70,8 +70,6 @@ export default function CategoryPage() {
 
     }, [selectedCat, user]);
 
-
-
     /* =========================
        SORT PRODUCTS
     ========================= */
