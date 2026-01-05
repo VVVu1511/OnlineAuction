@@ -48,8 +48,8 @@ export default function ProductCard({ product }) {
         : "Đã kết thúc";
 
     const isNew =
-        product.end_date &&
-        dayjs(product.end_date).diff(dayjs(), "day") >= 3;
+        product.upload_date &&
+        dayjs().diff(dayjs(product.upload_date), "minute") <= 10;
 
     const handleClick = () => {
         setLoading(true);
@@ -64,10 +64,19 @@ export default function ProductCard({ product }) {
         >
             <div className="relative">
                 {isNew && (
-                    <span className="absolute top-2 left-2 bg-red-500 text-white text-xs px-2 py-1 rounded font-semibold z-10">
+                    <span className="
+                        absolute top-2 left-2 z-10
+                        rounded-full
+                        bg-gradient-to-r from-red-500 to-orange-500
+                        px-3 py-1
+                        text-[11px] font-bold uppercase tracking-wide
+                        text-white
+                        shadow-md
+                    ">
                         NEW
                     </span>
                 )}
+
 
                 {user?.role === "bidder" && (
                     <div className="absolute top-2 right-2 z-10">

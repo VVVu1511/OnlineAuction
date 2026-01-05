@@ -320,6 +320,80 @@ export default function Profile() {
                             )}
 
                         {/* PRODUCT SECTIONS */}
+                            <h2>Sản phẩm đã thắng</h2>
+                            {won.length === 0 ? (
+                                <p>Không có sản phẩm</p>
+                            ) : (
+                                <div className="
+                                    grid grid-cols-2 
+                                    sm:grid-cols-3 
+                                    md:grid-cols-4 
+                                    lg:grid-cols-5 
+                                    gap-6
+                                ">
+                                    {won.map((item, i) => (
+                                        <div
+                                            key={i}
+                                            className="
+                                                relative
+                                                rounded-xl
+                                                overflow-hidden
+                                                bg-white
+                                                border
+                                                shadow-sm
+                                                transition-all
+                                                duration-300
+                                                hover:shadow-2xl
+                                                hover:-translate-y-1
+                                                hover:border-blue-400
+                                                focus-within:ring-2
+                                                focus-within:ring-blue-300
+                                            "
+                                        >
+                                            <ProductCard product={item} />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                        {/* PRODUCT SECTIONS */}
+                            <h2>Sản phẩm đang tham gia đấu giá</h2>
+                            {bidding.length === 0 ? (
+                                <p>Không có sản phẩm</p>
+                            ) : (
+                                <div className="
+                                    grid grid-cols-2 
+                                    sm:grid-cols-3 
+                                    md:grid-cols-4 
+                                    lg:grid-cols-5 
+                                    gap-6
+                                ">
+                                    {bidding.map((item, i) => (
+                                        <div
+                                            key={i}
+                                            className="
+                                                relative
+                                                rounded-xl
+                                                overflow-hidden
+                                                bg-white
+                                                border
+                                                shadow-sm
+                                                transition-all
+                                                duration-300
+                                                hover:shadow-2xl
+                                                hover:-translate-y-1
+                                                hover:border-blue-400
+                                                focus-within:ring-2
+                                                focus-within:ring-blue-300
+                                            "
+                                        >
+                                            <ProductCard product={item} />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                        {/* PRODUCT SECTIONS */}
                             <h2>Sản phẩm yêu thích</h2>
                             {favorites.length === 0 ? (
                                 <p>Không có sản phẩm</p>

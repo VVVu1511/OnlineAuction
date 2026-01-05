@@ -8,7 +8,7 @@ export async function getBiddingList(user_id) {
         return await db('BID_HISTORY')
             .where('BID_HISTORY.user_id', user_id)
             .join('PRODUCT', 'PRODUCT.id', 'BID_HISTORY.product_id')
-            .whereNot('PRODUCT.state_id', 2)
+            .where('PRODUCT.end_date', '>', db.fn.now())
             .groupBy('PRODUCT.id')
             .select('PRODUCT.*');
     } catch (err) {

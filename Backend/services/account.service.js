@@ -112,7 +112,8 @@ export async function getRating(userId) {
 
 export async function getWinProducts(userId) {
     return await db('PRODUCT')
-        .where('winner', userId)
+        .where('end_date', '<=', db.fn.now())
+        .where('best_bidder', userId)
         .select('*');
 }
 

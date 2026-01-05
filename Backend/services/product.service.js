@@ -80,6 +80,7 @@ export async function getTop5BidCounts() {
 
 export async function getTop5NearEnd() {
     return await db('PRODUCT')
+        .where('end_date', '>', db.fn.now())
         .orderBy('end_date', 'asc')
         .limit(5);
 }
@@ -228,7 +229,7 @@ export async function getWonProducts(userId) {
         //     'R.created_at'
         // )
         // .orderBy('PRODUCT.end_date', 'desc');
-        .where('PRODUCT.end_date', '<=', db.fn.now());
+        .where('PRODUCT.end_date', '<=', db.fn.now())
 }
 
 /**
