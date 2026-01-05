@@ -113,6 +113,16 @@ export default function SellerHome() {
         }
     };
 
+    const MIN_COMMENT_LENGTH = 5;
+    const MAX_COMMENT_LENGTH = 200;
+
+    const isCommentValid =
+        rateComment.trim().length >= MIN_COMMENT_LENGTH &&
+        rateComment.length <= MAX_COMMENT_LENGTH;
+
+    const [rateError, setRateError] = useState("");
+
+
     /* ================= RENDER ================= */
     return (
         <div className="max-w-7xl mx-auto px-6 py-8 space-y-12">
@@ -197,18 +207,38 @@ export default function SellerHome() {
                                     <div className="border rounded-lg p-3 space-y-3">
                                         <textarea
                                             rows={2}
-                                            placeholder="Nhập nhận xét..."
-                                            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            value={
-                                                rateTarget?.id === p.id
-                                                    ? rateComment
-                                                    : ""
-                                            }
+                                            placeholder="Nhập nhận xét (tối thiểu 5 ký tự)..."
+                                            className={`w-full border rounded-lg px-3 py-2 text-sm
+                                                focus:outline-none focus:ring-2
+                                                ${
+                                                    rateError
+                                                        ? "border-red-500 focus:ring-red-500"
+                                                        : "focus:ring-blue-500"
+                                                }`}
+                                            value={rateTarget?.id === p.id ? rateComment : ""}
                                             onChange={(e) => {
                                                 setRateTarget(p);
-                                                setRateComment(e.target.value);
+                                                const value = e.target.value;
+                                                setRateComment(value);
+
+                                                if (value.trim().length < MIN_COMMENT_LENGTH) {
+                                                    setRateError(
+                                                        `Nhận xét phải có ít nhất ${MIN_COMMENT_LENGTH} ký tự`
+                                                    );
+                                                } else if (value.length > MAX_COMMENT_LENGTH) {
+                                                    setRateError(`Nhận xét tối đa ${MAX_COMMENT_LENGTH} ký tự`);
+                                                } else {
+                                                    setRateError("");
+                                                }
                                             }}
                                         />
+
+                                        <div className="flex justify-between text-xs mt-1">
+                                            <span className="text-red-500">{rateError}</span>
+                                            <span className="text-gray-400">
+                                                {rateComment.length}/{MAX_COMMENT_LENGTH}
+                                            </span>
+                                        </div>
 
                                         <div className="flex gap-2 flex-wrap">
                                             <button
@@ -218,7 +248,7 @@ export default function SellerHome() {
                                                     setRateValue(1);
                                                     handleRateBidder();
                                                 }}
-                                                disabled={rating}
+                                                disabled={rating || !isCommentValid}
                                             >
                                                 +1
                                             </button>
@@ -230,7 +260,7 @@ export default function SellerHome() {
                                                     setRateValue(-1);
                                                     handleRateBidder();
                                                 }}
-                                                disabled={rating}
+                                                disabled={rating || !isCommentValid}
                                             >
                                                 -1
                                             </button>

@@ -24,7 +24,23 @@ export default function Register() {
         setForm({ ...form, [e.target.name]: e.target.value });
     };
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const isStep1Valid =
+        form.fullName.trim() !== "" &&
+        emailRegex.test(form.email) &&
+        form.password.length >= 6 &&
+        form.address.trim() !== "" &&
+        captcha;
+
+    const isOtpValid = form.otp.trim().length === 6;
+
     const sendOtp = async () => {
+        if (!isStep1Valid) {
+            setError("Vui lòng nhập đầy đủ thông tin hợp lệ");
+            return;
+        }
+
         try {
             setError("");
             setLoading(true);
@@ -38,7 +54,13 @@ export default function Register() {
         }
     };
 
+
     const verifyOtpAndRegister = async () => {
+        if (!isOtpValid) {
+            setError("OTP phải gồm 6 chữ số");
+            return;
+        }
+
         try {
             setError("");
             setLoading(true);
@@ -51,7 +73,7 @@ export default function Register() {
                 password: form.password,
                 address: form.address,
                 role: 1,
-                captcha: captcha,
+                captcha,
             });
 
             navigate("/login");
@@ -61,6 +83,7 @@ export default function Register() {
             setLoading(false);
         }
     };
+
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -77,29 +100,41 @@ export default function Register() {
                             name="fullName"
                             placeholder="Full name"
                             onChange={handleChange}
-                            className="mt-5 w-full border px-4 py-2 rounded"
+                            className={`mt-5 w-full border px-4 py-2 rounded ${
+                                form.fullName === "" && error ? "border-red-500" : ""
+                            }`}
                         />
 
                         <input
                             name="email"
                             placeholder="Email"
                             onChange={handleChange}
-                            className="w-full border px-4 py-2 rounded"
+                            className={`w-full border px-4 py-2 rounded ${
+                                form.email && !emailRegex.test(form.email)
+                                    ? "border-red-500"
+                                    : ""
+                            }`}
                         />
 
                         <input
                             name="password"
                             type="password"
-                            placeholder="Password"
+                            placeholder="Password (≥ 6 chars)"
                             onChange={handleChange}
-                            className="w-full border px-4 py-2 rounded"
+                            className={`w-full border px-4 py-2 rounded ${
+                                form.password && form.password.length < 6
+                                    ? "border-red-500"
+                                    : ""
+                            }`}
                         />
 
                         <input
                             name="address"
                             placeholder="Address"
                             onChange={handleChange}
-                            className="w-full border px-4 py-2 rounded"
+                            className={`w-full border px-4 py-2 rounded ${
+                                form.address === "" && error ? "border-red-500" : ""
+                            }`}
                         />
 
                         {/* CAPTCHA */}
@@ -111,9 +146,9 @@ export default function Register() {
 
                         <button
                             onClick={sendOtp}
-                            disabled={!captcha}
+                            disabled={!isStep1Valid}
                             className="mt-3 w-full bg-blue-600 text-white py-2 rounded
-                                    hover:bg-blue-700 disabled:bg-gray-400"
+                                    hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
                             Send OTP
                         </button>
@@ -131,7 +166,9 @@ export default function Register() {
 
                         <button
                             onClick={verifyOtpAndRegister}
-                            className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
+                            disabled={!isOtpValid}
+                            className="w-full bg-green-600 text-white py-2 rounded
+                                    hover:bg-green-700 disabled:bg-gray-400"
                         >
                             Verify & Register
                         </button>

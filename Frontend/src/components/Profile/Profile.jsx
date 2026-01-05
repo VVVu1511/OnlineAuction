@@ -175,6 +175,15 @@ export default function Profile() {
         setSelected(null);
     };
 
+    const isProfileValid =
+        profile.full_name?.trim() !== "" &&
+        profile.address?.trim() !== "";
+
+    const isPasswordValid =
+        passwordData.oldPassword.trim() !== "" &&
+        passwordData.newPassword.length >= 6 &&
+        passwordData.newPassword === passwordData.confirmPassword;
+
     return (
         <div className="max-w-7xl mx-auto px-4 space-y-8">
             <Back />
@@ -198,7 +207,11 @@ export default function Profile() {
                 
                 <div className="space-y-3">
                     <input
-                        className="border p-2 rounded w-full"
+                        className={`border p-2 rounded w-full ${
+                            isEditing && profile.full_name.trim() === ""
+                                ? "border-red-500"
+                                : ""
+                        }`}
                         placeholder="Họ tên"
                         value={isEditing ? profile.full_name : user?.full_name}
                         disabled={!isEditing}
@@ -214,7 +227,11 @@ export default function Profile() {
                     />
 
                     <input
-                        className="border p-2 rounded w-full"
+                        className={`border p-2 rounded w-full ${
+                            isEditing && profile.address.trim() === ""
+                                ? "border-red-500"
+                                : ""
+                        }`}
                         placeholder="Địa chỉ"
                         value={isEditing ? profile.address : user?.address}
                         disabled={!isEditing}
@@ -228,6 +245,7 @@ export default function Profile() {
                             <button
                                 onClick={handleUpdateProfile}
                                 className="bg-blue-600 text-white px-4 py-2 rounded"
+                                disabled={!isProfileValid}
                             >
                                 Lưu
                             </button>
@@ -250,7 +268,9 @@ export default function Profile() {
                 <div className="space-y-3">
                     <input
                         type="password"
-                        className="border p-2 rounded w-full"
+                        className={`border p-2 rounded w-full ${
+                            passwordData.oldPassword === "" ? "border-red-500" : ""
+                        }`}
                         placeholder="Mật khẩu hiện tại"
                         value={passwordData.oldPassword}
                         onChange={e =>
@@ -263,8 +283,13 @@ export default function Profile() {
 
                     <input
                         type="password"
-                        className="border p-2 rounded w-full"
-                        placeholder="Mật khẩu mới"
+                        className={`border p-2 rounded w-full ${
+                            passwordData.newPassword.length > 0 &&
+                            passwordData.newPassword.length < 6
+                                ? "border-red-500"
+                                : ""
+                        }`}
+                        placeholder="Mật khẩu mới (≥ 6 ký tự)"
                         value={passwordData.newPassword}
                         onChange={e =>
                             setPasswordData({
@@ -276,7 +301,12 @@ export default function Profile() {
 
                     <input
                         type="password"
-                        className="border p-2 rounded w-full"
+                        className={`border p-2 rounded w-full ${
+                            passwordData.confirmPassword &&
+                            passwordData.confirmPassword !== passwordData.newPassword
+                                ? "border-red-500"
+                                : ""
+                        }`}
                         placeholder="Xác nhận mật khẩu mới"
                         value={passwordData.confirmPassword}
                         onChange={e =>
@@ -287,13 +317,19 @@ export default function Profile() {
                         }
                     />
 
+
                     <button
-                        onClick={handleChangePassword}
-                        className="bg-green-600 text-white px-4 py-2 rounded mt-3"
+                        disabled={!isPasswordValid}
+                        className={`px-4 py-2 rounded text-white ${
+                            isPasswordValid
+                                ? "bg-green-600 hover:bg-green-700"
+                                : "bg-gray-400 cursor-not-allowed"
+                        }`}
                     >
                         Đổi mật khẩu
                     </button>
                 </div>
+
             </section>
 
             {/* BIDDER */}
