@@ -145,8 +145,22 @@ export default function OrderCompletion() {
 function BuyerPayment({ productId, buyerId, onSuccess }) {
     const [paymentInfo, setPaymentInfo] = useState("");
     const [address, setAddress] = useState("");
+    const [errors, setErrors] = useState({});
 
     const submit = async () => {
+        const newErrors = {};
+
+        if (!paymentInfo.trim()) {
+            newErrors.paymentInfo = "Vui lòng nhập hóa đơn thanh toán";
+        }
+
+        if (!address.trim()) {
+            newErrors.address = "Vui lòng nhập địa chỉ giao hàng";
+        }
+
+        setErrors(newErrors);
+        if (Object.keys(newErrors).length) return;
+
         await orderService.submitPayment(
             productId,
             buyerId,
@@ -161,30 +175,37 @@ function BuyerPayment({ productId, buyerId, onSuccess }) {
         <div className="rounded-xl border p-6 space-y-4">
             <h2 className="font-semibold">1️⃣ Thanh toán & địa chỉ</h2>
 
-            <input
-                className="border w-full p-2"
-                placeholder="Hóa đơn thanh toán"
-                value={paymentInfo}
-                onChange={(e) => setPaymentInfo(e.target.value)}
-            />
+            <div>
+                <input
+                    className="border w-full p-2"
+                    placeholder="Hóa đơn thanh toán"
+                    value={paymentInfo}
+                    onChange={(e) => {
+                        setPaymentInfo(e.target.value);
+                        if (errors.paymentInfo) setErrors(prev => ({ ...prev, paymentInfo: "" }));
+                    }}
+                />
+                {errors.paymentInfo && (
+                    <p className="text-sm text-red-600 mt-1">{errors.paymentInfo}</p>
+                )}
+            </div>
 
-            <input
-                className="border w-full p-2"
-                placeholder="Địa chỉ giao hàng"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-            />
+            <div>
+                <input
+                    className="border w-full p-2"
+                    placeholder="Địa chỉ giao hàng"
+                    value={address}
+                    onChange={(e) => {
+                        setAddress(e.target.value);
+                        if (errors.address) setErrors(prev => ({ ...prev, address: "" }));
+                    }}
+                />
+                {errors.address && (
+                    <p className="text-sm text-red-600 mt-1">{errors.address}</p>
+                )}
+            </div>
 
-            <button
-                onClick={submit}
-                className="
-                    mt-3 w-full rounded-lg bg-blue-600 px-4 py-2.5
-                    text-sm font-semibold text-white
-                    hover:bg-blue-700 active:bg-blue-800
-                    focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1
-                    transition
-                "
-            >
+            <button onClick={submit} className="mt-3 w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
                 Gửi thông tin
             </button>
         </div>
@@ -194,8 +215,14 @@ function BuyerPayment({ productId, buyerId, onSuccess }) {
 /* ================= SELLER CONFIRM ================= */
 function SellerConfirm({ productId, sellerId, onConfirm, onCancel, order }) {
     const [shippingInfo, setShippingInfo] = useState("");
+    const [error, setError] = useState("");
 
     const confirm = async () => {
+        if (!shippingInfo.trim()) {
+            setError("Vui lòng nhập hóa đơn vận chuyển");
+            return;
+        }
+
         await orderService.confirmShipping(
             productId,
             sellerId,
@@ -214,50 +241,32 @@ function SellerConfirm({ productId, sellerId, onConfirm, onCancel, order }) {
                 className="border w-full p-2"
                 placeholder="Hoá đơn vận chuyển"
                 value={shippingInfo}
-                onChange={(e) => setShippingInfo(e.target.value)}
+                onChange={(e) => {
+                    setShippingInfo(e.target.value);
+                    if (error) setError("");
+                }}
             />
 
+            {error && <p className="text-sm text-red-600">{error}</p>}
+
             <div className="flex gap-3 pt-2">
-                <button
-                    onClick={confirm}
-                    className="
-                        inline-flex items-center justify-center
-                        rounded-lg bg-blue-600 px-5 py-2.5
-                        text-sm font-semibold text-white
-                        shadow-sm
-                        hover:bg-blue-700
-                        active:bg-blue-800
-                        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-                        transition
-                    "
-                >
+                <button onClick={confirm} className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
                     Xác nhận đã gửi
                 </button>
 
-                <button
-                    onClick={onCancel}
-                    className="
-                        inline-flex items-center justify-center
-                        rounded-lg border border-red-300
-                        bg-red-50 px-5 py-2.5
-                        text-sm font-semibold text-red-600
-                        hover:bg-red-100
-                        active:bg-red-200
-                        focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2
-                        transition
-                    "
-                >
+                <button onClick={onCancel} className="rounded-lg border border-red-300 bg-red-50 px-5 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 transition">
                     Huỷ giao dịch
                 </button>
             </div>
-
         </div>
     );
 }
 
 /* ================= BUYER RECEIVE ================= */
-function BuyerReceive({ productId, buyerId, onConfirm,  order }) {
+function BuyerReceive({ productId, buyerId, onConfirm, order }) {
     const confirm = async () => {
+        if (!confirm("Bạn chắc chắn đã nhận hàng?")) return;
+
         await orderService.confirmReceive(productId, buyerId);
         onConfirm();
     };
@@ -265,23 +274,10 @@ function BuyerReceive({ productId, buyerId, onConfirm,  order }) {
     return (
         <div className="border p-4 rounded">
             <h2 className="font-semibold">3️⃣ Xác nhận nhận hàng</h2>
-            
+
             <p>{order.seller_shipping_info}</p>
 
-            <button
-                onClick={confirm}
-                className="
-                    mt-3 w-full
-                    inline-flex items-center justify-center
-                    rounded-lg bg-green-600 px-5 py-3
-                    text-sm font-semibold text-white
-                    shadow-sm
-                    hover:bg-green-700
-                    active:bg-green-800
-                    focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2
-                    transition
-                "
-            >
+            <button onClick={confirm} className="mt-3 w-full rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white hover:bg-green-700 transition">
                 Tôi đã nhận hàng
             </button>
         </div>
@@ -289,8 +285,18 @@ function BuyerReceive({ productId, buyerId, onConfirm,  order }) {
 }
 
 /* ================= REVIEW ================= */
-function ReviewSection({ productId, userId, review, setReview, reviews, onSuccess, role }) {
+function ReviewSection({ productId, userId, review, setReview, reviews, onSuccess }) {
+    const [errors, setErrors] = useState({});
+
     const submit = async () => {
+        const newErrors = {};
+
+        if (!review.score) newErrors.score = "Vui lòng chọn đánh giá";
+        if (!review.comment.trim()) newErrors.comment = "Vui lòng nhập nhận xét";
+
+        setErrors(newErrors);
+        if (Object.keys(newErrors).length) return;
+
         await orderService.submitReview(
             productId,
             userId,
@@ -298,102 +304,46 @@ function ReviewSection({ productId, userId, review, setReview, reviews, onSucces
             review.comment
         );
 
-        alert("Đã gửi đánh giá");
-
-        // ✅ RESET FORM
-        setReview({
-            score: null,
-            comment: "",
-        });
-
+        setReview({ score: null, comment: "" });
         onSuccess();
     };
 
     return (
         <div className="border p-4 rounded space-y-2">
-            <div className="space-y-3">
-                {reviews.map((r) => {
-                    const isMe = r.reviewer_id == userId;
-
-                    const label = isMe
-                        ? "You"
-                        : role === "bidder"
-                            ? "Seller"
-                            : "Bidder";
-
-                    return (
-                        <div
-                            key={r.id}
-                            className={`rounded-lg border p-3 ${
-                                isMe ? "bg-blue-50 border-blue-200" : "bg-white"
-                            }`}
-                        >
-                            {/* Label */}
-                            <div className="text-xs font-semibold text-gray-500 mb-1">
-                                {label}
-                            </div>
-
-                            {/* Score */}
-                            <div className="text-sm font-semibold">
-                                {r.score === 1 ? "👍 Tốt" : "👎 Không tốt"}
-                            </div>
-
-                            {/* Comment */}
-                            <div className="text-sm text-gray-700">
-                                {r.comment}
-                            </div>
-
-                            {/* Time */}
-                            <div className="text-xs text-gray-400 mt-1">
-                                {new Date(r.updated_at).toLocaleString()}
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-            
             <h2 className="font-semibold">4️⃣ Đánh giá giao dịch</h2>
 
             <select
                 className="border p-2"
                 value={review.score ?? ""}
-                onChange={(e) =>
-                    setReview({ ...review, score: Number(e.target.value) })
-                }
+                onChange={(e) => {
+                    setReview({ ...review, score: Number(e.target.value) });
+                    if (errors.score) setErrors(prev => ({ ...prev, score: "" }));
+                }}
             >
                 <option value="">Chọn đánh giá</option>
                 <option value={1}>👍 Tốt</option>
                 <option value={-1}>👎 Không tốt</option>
             </select>
+            {errors.score && <p className="text-sm text-red-600">{errors.score}</p>}
 
             <textarea
                 className="border w-full p-2"
                 placeholder="Nhận xét"
                 value={review.comment}
-                onChange={(e) =>
-                    setReview({ ...review, comment: e.target.value })
-                }
+                onChange={(e) => {
+                    setReview({ ...review, comment: e.target.value });
+                    if (errors.comment) setErrors(prev => ({ ...prev, comment: "" }));
+                }}
             />
+            {errors.comment && <p className="text-sm text-red-600">{errors.comment}</p>}
 
-            <button
-                onClick={submit}
-                className="
-                    mt-3 w-full
-                    inline-flex items-center justify-center
-                    rounded-lg bg-indigo-600 px-5 py-3
-                    text-sm font-semibold text-white
-                    shadow-sm
-                    hover:bg-indigo-700
-                    active:bg-indigo-800
-                    focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2
-                    transition
-                "
-            >
+            <button onClick={submit} className="mt-3 w-full rounded-lg bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700 transition">
                 Gửi đánh giá
             </button>
         </div>
     );
 }
+
 
 /* ================= CHAT ================= */
 function ChatBox({ productId, chat, setChat, user, onSuccess }) {

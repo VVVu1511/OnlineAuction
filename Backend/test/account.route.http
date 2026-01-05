@@ -65,7 +65,7 @@ Content-Type: application/json
 
 ###
 # GET RATING
-GET {{baseUrl}}/rating/15
+GET {{baseUrl}}/rating/13
 
 ###
 # GET PROFILE
@@ -192,3 +192,17 @@ Content-Type: application/json
 ### AUTH
 ### =========================
 GET http://localhost:3000/auth/me
+
+### =========================
+### RATING SCORE
+### =========================
+GET http://localhost:3000/account/ratingScore/15
+
+### Reset password user (no auth)
+PUT  http://localhost:3000/account/reset-password
+Content-Type: application/json
+
+{
+  "email": "vvvu23@clc.fitus.edu.vn",
+  "new_password": "123456"
+}

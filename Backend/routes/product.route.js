@@ -57,11 +57,36 @@ router.get('/myWonProducts/:id', async (req, res) => {
 
 router.get('/search', async (req, res) => {
     try {
-        const kw = (req.query.q || '').replace(/ /g, ' & ');
-        const data = await productService.search(kw);
-        res.json({ success: true, message: 'Search product successfully', data });
+        const {
+            q = '',
+            page = 1,
+            pageSize = 10,
+            sort = 'time_desc'
+        } = req.query;
+
+        const keyword = q.replace(/ /g, ' & ');
+
+        const data = await productService.search(
+            keyword,
+            Number(page),
+            Number(pageSize),
+            sort
+        );
+
+        res.json({
+            success: true,
+            message: 'Search product successfully',
+            data: data.items,
+            pagination: data.pagination
+        });
+
     } catch (err) {
-        res.status(400).json({ success: false, message: err.message, data: null });
+        console.error(err);
+        res.status(400).json({
+            success: false,
+            message: err.message,
+            data: null
+        });
     }
 });
 
@@ -163,13 +188,13 @@ router.post('/add/:id', (req, res) => {
                 current_price: req.body.startPrice,
                 sell_price: req.body.buyNowPrice || null,
                 bid_step: req.body.bidStep,
-                extend_after: autoExtend ? 5 : 0,
-                extend_minutes: autoExtend ? 10 : 0,
+                extend: autoExtend ? true : false,
                 description: req.body.description,
                 seller: sellerId,
                 upload_date: new Date(),
                 bid_counts: 0,
-                state_id: 1
+                state_id: 1,
+                end_date:  new Date(req.body.endDate)
             });
 
             const productDir = path.join("static/images", String(productId));

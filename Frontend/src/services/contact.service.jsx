@@ -6,7 +6,7 @@ const instance = axios.create({
 });
 
 /* =========================
-   CONTACT / Q&A SERVICES
+CONTACT / Q&A SERVICES
 ========================= */
 
 // Bidder asks seller a question
@@ -23,3 +23,19 @@ export const answerQuestion = ({ productId, questionId, answer }) =>
         questionId,
         answer,
     }).then(res => res.data);
+
+export const sendEndBidEmail = async ({
+    bestBidderId,
+    sellerId,
+    productId
+}) => {
+    const res = await instance.post('/end-bid', {
+        bestBidderId,
+        sellerId,
+        productId
+    });
+
+    return res.data;
+};
+
+

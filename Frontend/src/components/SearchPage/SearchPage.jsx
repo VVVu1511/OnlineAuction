@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useContext } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useParams } from "react-router-dom";
 import * as productService from "../../services/product.service.jsx";
 import ProductCard from "../ProductCard/ProductCard.jsx";
@@ -7,74 +7,55 @@ import Back from "../Back/Back.jsx";
 import { LoadingContext } from "../../context/LoadingContext.jsx";
 import { AuthContext } from "../../context/AuthContext.jsx";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 export default function SearchPage() {
     const { keyword } = useParams();
     const decodedKeyword = decodeURIComponent(keyword);
 
     const { setLoading } = useContext(LoadingContext);
-    const { user } = useContext(AuthContext); // hiện chưa dùng, để sẵn
+    const { user } = useContext(AuthContext); // chưa dùng
 
     const [products, setProducts] = useState([]);
     const [sort, setSort] = useState("time_desc");
     const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
 
     /* =========================
-    LOAD SEARCH RESULT
+    LOAD SEARCH (SERVER SIDE)
     ========================= */
     useEffect(() => {
-        let mounted = true;
 
         const load = async () => {
             try {
                 setLoading(true);
 
-                const res = await productService.searchProducts(decodedKeyword);
+                console.log(decodedKeyword);
 
-                if (!mounted) return;
+                const res = await productService.searchProducts(
+                    decodedKeyword,
+                    {
+                        page,
+                        pageSize: PAGE_SIZE,
+                        sort
+                    }
+                );
 
-                setProducts(res.data || res);
-                setPage(1);
+                console.log(res);
+
+                setProducts(res.data || []);
+                setTotalPages(res.pagination.totalPages || 1);
+
             } catch (err) {
                 console.error(err);
             } finally {
-                mounted && setLoading(false);
+                setLoading(false);
             }
         };
 
         load();
-        return () => (mounted = false);
-    }, [decodedKeyword, setLoading]);
 
-    /* =========================
-    SORT
-    ========================= */
-    const sortedProducts = useMemo(() => {
-        const list = [...products];
-        switch (sort) {
-            case "time_asc":
-                return list.sort(
-                    (a, b) => new Date(a.end_time) - new Date(b.end_time)
-                );
-            case "price_asc":
-                return list.sort((a, b) => a.current_price - b.current_price);
-            case "time_desc":
-            default:
-                return list.sort(
-                    (a, b) => new Date(b.end_time) - new Date(a.end_time)
-                );
-        }
-    }, [products, sort]);
-
-    /* =========================
-       PAGING
-    ========================= */
-    const totalPages = Math.ceil(sortedProducts.length / PAGE_SIZE);
-    const pagedProducts = sortedProducts.slice(
-        (page - 1) * PAGE_SIZE,
-        page * PAGE_SIZE
-    );
+    }, [decodedKeyword, page, sort, setLoading]);
 
     return (
         <div className="px-6">
@@ -86,22 +67,25 @@ export default function SearchPage() {
 
             {/* ===== SORT ===== */}
             <div className="flex gap-3 mb-6">
-                <Select value={sort} onChange={setSort} />
+                <Select value={sort} onChange={(v) => {
+                    setSort(v);
+                    setPage(1); // đổi sort → về page 1
+                }} />
             </div>
 
             {/* ===== CONTENT ===== */}
-            {pagedProducts.length === 0 ? (
+            {products.length === 0 ? (
                 <p>Không tìm thấy sản phẩm</p>
             ) : (
                 <div className="grid grid-cols-5 gap-4">
-                    {pagedProducts.map((p) => (
+                    {products.map((p) => (
                         <ProductCard key={p.id} product={p} />
                     ))}
                 </div>
             )}
 
             {/* ===== PAGINATION ===== */}
-            {totalPages > 1 && (
+            {totalPages >= 1 && (
                 <div className="flex justify-center gap-2 mt-8">
                     {Array.from({ length: totalPages }).map((_, i) => (
                         <button

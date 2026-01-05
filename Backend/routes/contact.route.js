@@ -1,7 +1,6 @@
 import express from 'express';
 import * as contactService from '../services/contact.service.js';
 import * as productService from '../services/product.service.js';
-import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 
@@ -93,5 +92,38 @@ router.post('/ask/:id', async (req, res) => {
         });
     }
 });
+
+/**
+ * POST /api/mail/end-bid
+ * body: { bestBidderId, sellerId, productId }
+ */
+router.post('/end-bid', async (req, res) => {
+    try {
+        const { bestBidderId, sellerId, productId } = req.body;
+
+        if (!sellerId || !productId) {
+            return res.status(400).json({
+                success: false,
+                message: 'sellerId and productId are required'
+            });
+        }
+
+        const result = await contactService.emailEndBid(
+            bestBidderId,
+            sellerId,
+            productId
+        );
+
+        return res.status(200).json(result);
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
+
+
 
 export default router;

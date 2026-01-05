@@ -161,6 +161,19 @@ export default function Profile() {
             alert("Lỗi khi tải dữ liệu bidder");
         }
     };
+    
+    const [open, setOpen] = useState(false);
+    const [selected, setSelected] = useState(null);
+
+    const openRate = (item) => {
+        setSelected(item);
+        setOpen(true);
+    };
+
+    const closeRate = () => {
+        setOpen(false);
+        setSelected(null);
+    };
 
     return (
         <div className="max-w-7xl mx-auto px-4 space-y-8">
@@ -319,8 +332,7 @@ export default function Profile() {
                                 </>
                             )}
 
-                        {/* PRODUCT SECTIONS */}
-                            <h2>Sản phẩm đã thắng</h2>
+                        <h2>Sản phẩm đã thắng</h2>
                             {won.length === 0 ? (
                                 <p>Không có sản phẩm</p>
                             ) : (
@@ -346,11 +358,25 @@ export default function Profile() {
                                                 hover:shadow-2xl
                                                 hover:-translate-y-1
                                                 hover:border-blue-400
-                                                focus-within:ring-2
-                                                focus-within:ring-blue-300
                                             "
                                         >
-                                            <ProductCard product={item} />
+                                            {won.map((item, i) => (
+                                                <div key={i} className="relative rounded-xl bg-white border shadow-sm">
+                                                    <ProductCard product={item} />
+
+                                                    <button
+                                                        onClick={() => openRate(item)}
+                                                        className="
+                                                            absolute bottom-2 right-2
+                                                            rounded-lg bg-blue-600 px-3 py-1
+                                                            text-sm text-white hover:bg-blue-700
+                                                        "
+                                                    >
+                                                        Đánh giá
+                                                    </button>
+                                                </div>
+                                            ))}
+
                                         </div>
                                     ))}
                                 </div>
@@ -486,9 +512,92 @@ export default function Profile() {
                                 })()
                             )}
                         </div>
+
+                        {selected && open && (
+                            <RateModal
+                                open={open}
+                                onClose={closeRate}
+                                onSubmit={(rating, comment) =>
+                                    biddingService.rateSeller(
+                                        selected.seller,
+                                        selected.id,
+                                        comment,
+                                        rating
+                                    )
+                                }
+                            />
+                        )}
                     </>
                 )
             }
+        </div>
+    );
+}
+
+function RateModal({ open, onClose, onSubmit }) {
+    const [rating, setRating] = useState("");
+    const [comment, setComment] = useState("");
+    const { loading, setLoading } = useContext(LoadingContext);
+
+    // ✅ Reset khi modal đóng
+    useEffect(() => {
+        if (!open) {
+            setRating("");
+            setComment("");
+        }
+    }, [open]);
+
+    if (!open) return null;
+
+    const handleSubmit = async () => {
+    if (!rating) return;
+
+    setLoading(true);
+        try {
+            await onSubmit(Number(rating), comment);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setLoading(false);
+            onClose(); // 👈 LUÔN ĐÓNG
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+                <h3 className="mb-4 text-lg font-semibold">
+                    Đánh giá người bán
+                </h3>
+
+                <select
+                    value={rating}
+                    onChange={(e) => setRating(e.target.value)}
+                    className="w-full mb-4 rounded border px-3 py-2"
+                >
+                    <option value="">-- Chọn đánh giá --</option>
+                    <option value="1">👍 Tốt</option>
+                    <option value="-1">👎 Không tốt</option>
+                </select>
+
+                <textarea
+                    rows={4}
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                    className="w-full mb-4 rounded border p-3"
+                    placeholder="Nhận xét (không bắt buộc)"
+                />
+
+                <div className="flex justify-end gap-3">
+                    <button onClick={onClose}>Hủy</button>
+                    <button
+                        disabled={!rating || loading}
+                        onClick={handleSubmit}
+                    >
+                        {loading ? "Đang gửi..." : "Gửi đánh giá"}
+                    </button>
+                </div>
+            </div>
         </div>
     );
 }

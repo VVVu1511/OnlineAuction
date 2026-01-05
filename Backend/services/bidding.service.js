@@ -114,9 +114,9 @@ export async function new_bid(data) {
  */
 export async function denyBidder(productId, bidderId) {
     try {
-        await db('BID_HISTORY')
-            .where({ product_id: productId, user_id: bidderId })
-            .del();
+        // await db('BID_HISTORY')
+        //     .where({ product_id: productId, user_id: bidderId })
+        //     .del();
 
         await db('DENIED_BIDDERS').insert({
             product_id: productId,
@@ -193,4 +193,57 @@ export async function rateBidder(bidderId, productId, comment, rating) {
         console.error('Cannot rate bidder', err);
         throw err;
     }
+}
+
+export async function rateSeller(sellerId, productId, comment, rating) {
+    try {
+        const product = await db('PRODUCT')
+            .where({ id: productId })
+            .first();
+
+        if (!product) {
+            throw new Error('Product not found');
+        }
+
+        // 🔐 chỉ winner mới được đánh giá seller
+        // if (!product.winner) {
+        //     throw new Error('Product has no winner');
+        // }
+
+        // if (product.seller !== sellerId) {
+        //     throw new Error('Invalid seller');
+        // }
+
+        await db('RATING').insert({
+            rater_id: product.best_bidder, // 👈 người mua
+            rated_id: sellerId,        // 👈 người bán
+            product_id: productId,
+            comment,
+            rating,
+            created_at: new Date()
+        });
+
+        return {
+            seller_id: sellerId,
+            product_id: productId,
+            rating,
+            comment
+        };
+
+    } catch (err) {
+        console.error('Cannot rate seller', err);
+        throw err;
+    }
+}
+
+// services/deniedBidder.service.js
+export async function isUserDeniedBid(productId, userId) {
+    const row = await db('DENIED_BIDDERS')
+        .where({
+            product_id: productId,
+            user_id: userId
+        })
+        .first();
+
+    return !!row; // true | false
 }

@@ -102,13 +102,51 @@ export function verifyOtp(email, otp) {
     return { success: true, message: "OTP verified" };
 }
 
-
 export async function getRating(userId) {
-    return await db('RATING')
-        .where('rated_id', userId)
-        .select('*');
+    return await db('RATING as R')
+        .join('USER as U', 'R.rater_id', 'U.id')
+        .join('PRODUCT as P', 'R.product_id', 'P.id')
+        .where('R.rated_id', userId)
+        .select(
+            'R.id',
+            'R.rating',
+            'R.comment',
+            'R.created_at',
+
+            'U.id as rater_id',
+            'U.full_name as rater_name',
+
+            'P.id as product_id',
+            'P.name as product_name'
+        )
+        .orderBy('R.created_at', 'desc');
 }
 
+// services/rating.service.js
+export async function getRatingPercent(userId) {
+    const rows = await db('RATING')
+        .where('rated_id', userId)
+        .select('rating');
+
+    const total = rows.length;
+
+    if (total === 0) {
+        return {
+            total: 0,
+            positive: 0,
+            percent: 0
+        };
+    }
+
+    const positive = rows.filter(r => r.rating === 1).length;
+    const percent = Math.round((positive / total) * 100);
+
+    return {
+        total,
+        positive,
+        percent
+    };
+}
 
 export async function getWinProducts(userId) {
     return await db('PRODUCT')
@@ -116,7 +154,6 @@ export async function getWinProducts(userId) {
         .where('best_bidder', userId)
         .select('*');
 }
-
 
 export async function getWatchList(user_id) {
     try {
@@ -319,7 +356,6 @@ export async function addUser(data) {
         throw new Error("Error adding user");
     }
 }
-
 
 /* UPDATE USER */
 export async function updateUserById(user_id, data) {

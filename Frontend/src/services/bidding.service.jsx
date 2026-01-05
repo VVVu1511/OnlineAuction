@@ -29,6 +29,14 @@ export const rateBidder = (bidderId, productId, comment, rating) =>
         rating
     }).then(res => res.data);
 
+export const rateSeller = (sellerId, productId, comment, rating) =>
+    instance.post("/rateSeller", {
+        seller_id: sellerId,
+        product_id: productId,
+        comment,
+        rating
+    }).then(res => res.data);
+
 export const checkCanBid = (productId, userId) =>
     instance.post(`/checkCanBid/${userId}`, {
         product_id: productId,
@@ -39,3 +47,11 @@ export const placeBid = (productId, price, userId) =>
         product_id: productId,
         price,
     }).then(res => res.data);
+
+export const checkUserDeniedBid = async (productId, userId) => {
+    const res = await instance.get('/check', {
+        params: { productId, userId }
+    });
+
+    return res.data;
+};

@@ -1,8 +1,9 @@
 import { useEffect, useState, useContext } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import * as productService from "../../services/product.service.jsx";
 import * as biddingService from "../../services/bidding.service.jsx";
 import * as contactService from "../../services/contact.service.jsx";
+import * as accountService from "../../services/account.service.jsx";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import { LoadingContext } from "../../context/LoadingContext.jsx";
 import Back from "../Back/Back.jsx";
@@ -85,9 +86,27 @@ export default function Product() {
     const [mainImage, setMainImage] = useState(null);
     const [newText, setNewText] = useState("");
     const [question, setQuestion] = useState("");
-
+    const [isDenied, setIsDenied] = useState(false);
     const [now, setNow] = useState(dayjs());
     const [endHandled, setEndHandled] = useState(false);
+    const [sellerRating, setSellerRating] = useState(null);
+    const [bidderRating, setBidderRating] = useState(null);
+    
+    useEffect(() => {
+        async function fetchRatings() {
+            if (product.seller) {
+                const res = await accountService.getUserRatingPercent(product.seller);
+                if (res.success) setSellerRating(res.data);
+            }
+
+            if (product.best_bidder) {
+                const res = await accountService.getUserRatingPercent(product.best_bidder);
+                if (res.success) setBidderRating(res.data);
+            }
+        }
+
+        fetchRatings();
+    }, [seller?.id, bestBidder?.id]);
 
     /* ⏱ Tick mỗi giây */
     useEffect(() => {
@@ -137,23 +156,15 @@ export default function Product() {
 
         console.log("⏹ Auction ended");
 
-        // 🔥 Gọi API (simulate)
-        // auctionService.finishAuction(product.id)
-        //     .then(() => {
-        //         if (
-        //             user?.id === product.winner ||
-        //             user?.id === product.seller
-        //         ) {
-        
+        contactService.sendEndBidEmail({
+            bestBidderId: product.best_bidder,
+            sellerId: product.seller_id,
+            productId: product.id
+        });
+
         if(user?.role === "seller" || (user?.role === "bidder" && user?.id === product?.best_bidder)){
             navigate(`/order/complete/${product.id}`);
         }
-
-        //         } else {
-        //             navigate(`/product/${product.id}`);
-        //         }
-        //     })
-        //     .catch(console.error);
 
     }, [isEnded, endHandled, product]);
 
@@ -180,12 +191,22 @@ export default function Product() {
         // setLoading(false);
     };
 
+    // strip HTML from Quill output
+    const stripHtml = (html) => {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || "";
+    };
+    
     const handleAppend = async () => {
         const plainText = stripHtml(newText);
+        
         if (!plainText.trim()) {
             alert("Nhập nội dung mới trước khi thêm.");
             return;
         }
+
+        console.log(plainText);
 
         try {
             setSaving(true);
@@ -211,6 +232,27 @@ export default function Product() {
         }
     };
 
+    useEffect(() => {
+        if (!user?.id || !product?.id) return;
+
+        const checkDenied = async () => {
+            try {
+                const res = await biddingService.checkUserDeniedBid(
+                    product.id,
+                    user.id
+                );
+
+                if (res.success) {
+                    setIsDenied(res.denied);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        checkDenied();
+    }, [user, product]);
+
     // ===== Load product detail =====
     const loadData = async () => {
         try {
@@ -232,22 +274,22 @@ export default function Product() {
                 biddingService.getBidHistory(id)
             ]);
 
-
             setProduct(productRes?.data || productRes);
             setSeller(sellerRes.success ? sellerRes.data : null);
             setBestBidder(bidderRes.success ? bidderRes.data : null);
             setQaHistory(qaRes.success ? qaRes.data : []);
             setRelated(relatedRes.success ? relatedRes.data : []);
             setBidHistory(bidHistoryRes.success ? bidHistoryRes.data : []);
-        } catch (err) {
-                setError(
-                    err.response?.data?.message ||
-                    "Không tải được sản phẩm"
-                );
-        } finally {
-            setLoading(false);
-        }
-    };
+
+            } catch (err) {
+                    setError(
+                        err.response?.data?.message ||
+                        "Không tải được sản phẩm"
+                    );
+                } finally {
+                    setLoading(false);
+                }
+            };
 
     useEffect(() => {
 
@@ -310,41 +352,64 @@ export default function Product() {
         }
     };
 
+    const uniqueBidders = [
+        ...new Map(
+            bidHistory.map(b => [b.user_id, b])
+        ).values()
+    ];
+
+    const [answerErrors, setAnswerErrors] = useState({});
+    const [questionError, setQuestionError] = useState("");
+
     return (
         <div className="space-y-10">
             <Back />
-           {/* ========= MAIN INFO ========= */}
-            <section className="grid grid-cols-2 gap-8">
-                <div>
-                    {/* ===== IMAGE LỚN ===== */}
+            {/* ========= MAIN INFO ========= */}
+                <section className="grid grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                {/* ===== IMAGE SLIDESHOW ===== */}
+                <div className="relative overflow-hidden rounded-lg border bg-gray-100">
                     <img
+                        key={mainImage} // 👈 quan trọng để trigger animation
                         src={
                             product.image_path[0]
                                 ? `http://localhost:3000/static/images/${product.id}/${mainImage}`
                                 : "/no-image.png"
                         }
                         alt={product.name}
-                        className="w-full h-96 object-cover rounded border"
+                        className="
+                            w-full h-96 object-cover
+                            transition-all duration-500 ease-in-out
+                            animate-fade
+                        "
                     />
+                </div>
 
-                    {/* ===== IMAGE NHỎ ===== */}
-                    <div className="grid grid-cols-4 gap-2 mt-3">
-                        {product.image_path.map((img, i) => (
+                {/* ===== THUMBNAILS ===== */}
+                <div className="grid grid-cols-4 gap-2">
+                    {product.image_path.map((img, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setMainImage(img)}
+                            className={`
+                                relative overflow-hidden rounded border
+                                transition
+                                ${
+                                    mainImage === img
+                                        ? "ring-2 ring-blue-500 scale-[1.02]"
+                                        : "hover:ring-1 hover:ring-gray-400"
+                                }
+                            `}
+                        >
                             <img
-                                key={i}
                                 src={`http://localhost:3000/static/images/${product.id}/${img}`}
                                 alt=""
-                                onClick={() => setMainImage(img)}
-                                className={`h-24 w-full object-cover rounded cursor-pointer border
-                                    ${
-                                        mainImage === img
-                                            ? "border-blue-600"
-                                            : "border-transparent hover:border-gray-400"
-                                    }`}
+                                className="h-24 w-full object-cover"
                             />
-                        ))}
-                    </div>
+                        </button>
+                    ))}
                 </div>
+            </div>
 
                 <div className="space-y-3">
                     <div className="d-flex justify-between">
@@ -353,29 +418,27 @@ export default function Product() {
                         {/* Actions */}
                         {user?.role === "bidder" && (
                             <div className="flex gap-4 text-2xl items-center">
-                                <Heart userId={user.id} productId={product.id}/>
+                                <Heart userId={user.id} productId={product.id} />
 
-                                {
-                                    (
-                                        <button
-                                            onClick={handleBid}
-                                            className="
-                                                group
-                                                flex items-center justify-center
-                                                rounded-full
-                                                text-gray-600
-                                                hover:text-red-600
-                                                transition
-                                                duration-200
-                                                hover:scale-110
-                                                active:scale-95
-                                            "
-                                            title="Đặt giá"
-                                        >
-                                            <FaDollarSign className="text-xl transition group-hover:rotate-6" />
-                                        </button>
-                                    )
-                                } 
+                                {/* ===== Bid button ===== */}
+                                {!isDenied && (
+                                    <button
+                                        onClick={handleBid}
+                                        title="Đặt giá"
+                                        className="
+                                            group
+                                            flex items-center justify-center
+                                            rounded-full
+                                            text-gray-600
+                                            transition duration-200
+                                            hover:text-green-600
+                                            hover:scale-110
+                                            active:scale-95
+                                        "
+                                    >
+                                        <FaDollarSign className="text-xl transition group-hover:rotate-6" />
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
@@ -394,14 +457,18 @@ export default function Product() {
                     )}
 
                     <p>
-                        Người bán: <b>{seller?.full_name}</b> (
-                        {seller?.rating || 0} ⭐)
+                        Người bán: <b>{seller?.full_name}</b>{" "}
+                        <span className="text-yellow-500 font-semibold">
+                            ({sellerRating?.percent ?? 0}%)
+                        </span>
                     </p>
 
                     <p>
                         Người ra giá cao nhất:{" "}
-                        <b>{bestBidder?.full_name || "—"}</b> (
-                        {bestBidder?.rating || 0} ⭐)
+                        <b>{bestBidder?.full_name || "—"}</b>{" "}
+                        <span className="text-yellow-500 font-semibold">
+                            ({bidderRating?.percent ?? 0}%)
+                        </span>
                     </p>
 
                     <p>
@@ -412,33 +479,55 @@ export default function Product() {
                     <p>
                         Kết thúc: <b>{endTimeText}</b>
                     </p>
+
+                </div>
+
+                <h2 className="text-lg font-semibold text-gray-900">
+                    Mô tả
+                </h2>
+
+                {/* ===== Current description ===== */}
+                <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4">
+                    <div className="space-y-2 text-gray-700 text-sm leading-relaxed">
+                        {product.description
+                            .replace(/\\n/g, "\n")
+                            .split("\n")
+                            .map((line, idx) => (
+                                <p key={idx}>
+                                    {line || <span className="block h-3" />}
+                                </p>
+                            ))}
+                    </div>
                 </div>
 
                 {/* ===== Seller editor ===== */}
                 {user?.role === "seller" && (
-                    <div className="border rounded-xl p-4 bg-gray-50 space-y-3">
-                        <p className="font-medium text-gray-800">
-                            ✏️ Thêm mô tả mới
+                    <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-4">
+                        <p className="font-semibold text-gray-800 flex items-center gap-2">
+                            ✏️ <span>Thêm mô tả mới</span>
                         </p>
 
-                        <ReactQuill
-                            theme="snow"
-                            value={newText}
-                            onChange={setNewText}
-                            placeholder="Thêm nội dung mô tả mới..."
-                        />
+                        <div className="rounded-lg overflow-hidden border border-gray-300 bg-white">
+                            <ReactQuill
+                                theme="snow"
+                                value={newText}
+                                onChange={setNewText}
+                                placeholder="Thêm nội dung mô tả mới..."
+                            />
+                        </div>
 
                         <div className="flex justify-end">
                             <button
                                 onClick={handleAppend}
                                 disabled={saving}
                                 className={`
-                                    px-5 py-2 rounded-lg text-sm font-medium
-                                    transition
+                                    inline-flex items-center gap-2
+                                    px-5 py-2 rounded-lg text-sm font-semibold
+                                    transition-all duration-200
                                     ${
                                         saving
-                                            ? "bg-gray-300 cursor-not-allowed"
-                                            : "bg-blue-600 text-white hover:bg-blue-700"
+                                            ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                            : "bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
                                     }
                                 `}
                             >
@@ -447,9 +536,35 @@ export default function Product() {
                         </div>
                     </div>
                 )}
-            
             </section>
-            
+                
+                {/* Xem danh gia nguoi ban */}
+                {user?.role === "bidder" && (
+                    <p>
+                        Người bán: <b>{seller.full_name}</b>{" "}
+                        <Link
+                            to={`/ratings/${seller.id}`}
+                            className="text-blue-600 text-sm hover:underline"
+                        >
+                            (Xem đánh giá)
+                        </Link>
+                    </p>
+                )}
+
+                {/* Xem danh gia nguoi dau gia */}
+                {user?.role === "seller" && uniqueBidders.map((bidder) => (
+                    <p key={bidder.user_id}>
+                        Người đấu giá: <b>{bidder.full_name}</b>{" "}
+                        <Link
+                            to={`/ratings/${bidder.user_id}`}
+                            className="text-blue-600 text-sm hover:underline"
+                        >
+                            (Xem đánh giá)
+                        </Link>
+                    </p>
+                ))}
+
+
             {
                 user && (
                     <section>
@@ -532,8 +647,8 @@ export default function Product() {
                 <h3 className="font-semibold mb-3">Q&A</h3>
 
                 {qaHistory.map((qa, i) => (
+                
                 <div key={i} className="mb-3">
-
                     {/* Question & Answer display */}
                     <div className="border rounded-lg p-3 mb-2">
                         <p><b>Q:</b> {qa.question}</p>
@@ -554,18 +669,30 @@ export default function Product() {
                                             copy[i] = { ...copy[i], answerDraft: value };
                                             return copy;
                                         });
+                                        setAnswerErrors("");
                                     }}
                                 />
+
+                                {answerErrors[i] && (
+                                    <p className="text-sm text-red-500">{answerErrors[i]}</p>
+                                )}
 
                                 <div className="flex justify-end">
                                     <button
                                         onClick={async () => {
                                             const answer = qa.answerDraft?.trim();
-                                            if (!answer) return;
+
+                                            if (!answer) {
+                                                setAnswerErrors((prev) => ({
+                                                    ...prev,
+                                                    [i]: "Câu trả lời không được để trống"
+                                                }));
+                                                return;
+                                            }
 
                                             await contactService.answerQuestion({
                                                 productId: product.id,
-                                                questionId: qa.id,        // ⚠️ nên dùng id, không dùng text
+                                                questionId: qa.id,
                                                 answer
                                             });
 
@@ -578,11 +705,15 @@ export default function Product() {
                                                 };
                                                 return copy;
                                             });
+
+                                            setAnswerErrors((prev) => ({ ...prev, [i]: "" }));
                                         }}
                                         className="px-4 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                                     >
                                         Gửi
                                     </button>
+
+
                                 </div>
                             </div>
                         )}
@@ -593,17 +724,34 @@ export default function Product() {
                 {user?.role === "bidder" && (
                     <div className="flex gap-2 mt-3">
                         <input
-                            className="border rounded-lg px-3 py-2 flex-1"
+                            className={`border rounded-lg px-3 py-2 flex-1
+                                ${questionError ? "border-red-400" : ""}`}
                             value={question}
-                            onChange={(e) => setQuestion(e.target.value)}
+                            onChange={(e) => {
+                                setQuestion(e.target.value);
+                                setQuestionError("");
+                            }}
                             placeholder="Nhập câu hỏi..."
                         />
+
+                        {questionError && (
+                            <p className="text-sm text-red-500 mt-1">{questionError}</p>
+                        )}
+
                         <button
-                            onClick={handleAskSeller}
+                            onClick={() => {
+                                if (!question.trim()) {
+                                    setQuestionError("Câu hỏi không được để trống");
+                                    return;
+                                }
+
+                                handleAskSeller();
+                            }}
                             className="bg-blue-600 text-white px-4 rounded-lg"
                         >
                             Gửi
                         </button>
+
                     </div>
                 )}
             </div>

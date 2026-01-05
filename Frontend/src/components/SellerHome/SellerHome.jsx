@@ -272,6 +272,7 @@ function AddAuctionProduct({ call }) {
     const [addError, setAddError] = useState(false);
     const { user } = useContext(AuthContext);
     const { setLoading } = useContext(LoadingContext);
+    const [endDate, setEndDate] = useState("");
 
     useEffect(() => {
         return () => {
@@ -280,9 +281,22 @@ function AddAuctionProduct({ call }) {
             );
         };
     }, [images]);
+    
+    const clearError = (field) => {
+        setErrors((prev) => ({ ...prev, [field]: undefined }));
+    };
+    
+    // strip HTML from Quill output
+    const stripHtml = (html) => {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = html;
+        return tmp.textContent || tmp.innerText || "";
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validateForm()) return;
 
         if (!user) {
             alert("Bạn cần đăng nhập");
@@ -307,6 +321,7 @@ function AddAuctionProduct({ call }) {
         formData.append("buyNowPrice", buyNowPrice);
         formData.append("description", description);
         formData.append("autoExtend", autoExtend);
+        formData.append("endDate", endDate);
 
         try {
             setLoading(true);
@@ -327,6 +342,7 @@ function AddAuctionProduct({ call }) {
                 setDescription("");
                 setAutoExtend(true);
                 setAddError(false);
+                setEndDate("");
                 
             } else {
                 alert(data?.message || "Lỗi hệ thống");
@@ -353,6 +369,64 @@ function AddAuctionProduct({ call }) {
         setImages(files);
     };
 
+    const [errors, setErrors] = useState({});
+
+    const validateForm = () => {
+        const newErrors = {};
+
+        // Name
+        if (!name.trim()) {
+            newErrors.name = "Tên sản phẩm không được để trống";
+        } else if (name.length < 5) {
+            newErrors.name = "Tên sản phẩm tối thiểu 5 ký tự";
+        }
+
+        // Images
+        if (!images || images.length < 3) {
+            newErrors.images = "Cần chọn tối thiểu 3 ảnh";
+        }
+
+        // Start price
+        if (!startPrice || Number(startPrice) <= 0) {
+            newErrors.startPrice = "Giá khởi điểm phải lớn hơn 0";
+        }
+
+        // Bid step
+        if (!bidStep || Number(bidStep) <= 0) {
+            newErrors.bidStep = "Bước giá phải lớn hơn 0";
+        }
+
+        // Buy now price
+        if (
+            buyNowPrice &&
+            Number(buyNowPrice) <= Number(startPrice)
+        ) {
+            newErrors.buyNowPrice =
+                "Giá mua ngay phải lớn hơn giá khởi điểm";
+        }
+
+        // Description
+        if (!stripHtml(description)) {
+            newErrors.description = "Mô tả không được để trống";
+        }
+
+        // End date
+        if (!endDate) {
+            newErrors.endDate = "Vui lòng chọn thời gian kết thúc";
+        } else {
+            const end = new Date(endDate);
+            const now = new Date();
+
+            if (end <= now) {
+                newErrors.endDate = "Thời gian kết thúc phải lớn hơn thời điểm hiện tại";
+            }
+        }
+
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
     return (
         <div className="flex justify-center py-10">
             <div className="w-full max-w-3xl bg-white shadow-lg rounded-xl p-6">
@@ -373,6 +447,11 @@ function AddAuctionProduct({ call }) {
                             onChange={(e) => setName(e.target.value)}
                             className="w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
+                        {errors.name && (
+                            <p className="text-sm text-red-600 mt-1">
+                                {errors.name}
+                            </p>
+                        )}
                     </div>
 
                     {/* Images */}
@@ -417,6 +496,12 @@ function AddAuctionProduct({ call }) {
                                 +{images.length - 3}
                             </div>
                         )}
+                        
+                        {errors.images && (
+                            <p className="text-sm text-red-600 mt-1">
+                                {errors.images}
+                            </p>
+                        )}
                     </div>
 
                     {/* Prices */}
@@ -434,6 +519,11 @@ function AddAuctionProduct({ call }) {
                                 }
                                 className="w-full rounded-lg border px-3 py-2"
                             />
+                            {errors.startPrice && (
+                                <p className="text-sm text-red-600 mt-1">
+                                    {errors.startPrice}
+                                </p>
+                            )}
                         </div>
 
                         <div>
@@ -447,6 +537,11 @@ function AddAuctionProduct({ call }) {
                                 onChange={(e) => setBidStep(e.target.value)}
                                 className="w-full rounded-lg border px-3 py-2"
                             />
+                            {errors.bidStep && (
+                                <p className="text-sm text-red-600 mt-1">
+                                    {errors.bidStep}
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -463,6 +558,11 @@ function AddAuctionProduct({ call }) {
                             }
                             className="w-full rounded-lg border px-3 py-2"
                         />
+                        {errors.buyNowPrice && (
+                            <p className="text-sm text-red-600 mt-1">
+                                {errors.buyNowPrice}
+                            </p>
+                        )}
                     </div>
 
                     {/* Description */}
@@ -476,6 +576,11 @@ function AddAuctionProduct({ call }) {
                                 value={description}
                                 onChange={setDescription}
                             />
+                            {errors.description && (
+                                <p className="text-sm text-red-600 mt-1">
+                                    {errors.description}
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -499,6 +604,27 @@ function AddAuctionProduct({ call }) {
                             lại.
                         </p>
                     )}
+
+                    {/* End date */}
+                    <div>
+                        <label className="block font-medium mb-1">
+                            Thời gian kết thúc đấu giá
+                        </label>
+                        <input
+                            type="datetime-local"
+                            value={endDate}
+                            onChange={(e) => {
+                                setEndDate(e.target.value);
+                                clearError("endDate");
+                            }}
+                            className="w-full rounded-lg border px-3 py-2"
+                        />
+                        {errors.endDate && (
+                            <p className="text-sm text-red-600 mt-1">
+                                {errors.endDate}
+                            </p>
+                        )}
+                    </div>
 
                     {/* Submit */}
                     <button

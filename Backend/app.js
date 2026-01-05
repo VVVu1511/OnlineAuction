@@ -43,10 +43,10 @@ app.use(session({
 
 app.use(passport.initialize());
 app.use(passport.session());
-app.use('/product', productRouter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use('/product', productRouter);
 app.use('/static', express.static(path.join(__dirname, 'static')));
 app.use('/account', accountRouter);
 app.use('/category', categoryRouter);

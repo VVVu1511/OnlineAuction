@@ -13,10 +13,22 @@ export const getProductsByCategory = (categoryId) =>
     instance.get(`/getByCat/${categoryId}`)
         .then(res => res.data);
 
-export const searchProducts = (keyword) =>
-    instance.get("/search", {
-        params: { q: keyword },
-    }).then(res => res.data);
+// services/product.service.jsx
+export async function searchProducts(
+    keyword,
+    { page = 1, pageSize = 5, sort = "time_desc" } = {}
+) {
+    const res = await instance.get("/search", {
+        params: {
+            q: keyword,
+            page,
+            pageSize,
+            sort
+        }
+    });
+
+    return res.data;
+}
 
 export const appendProductDescription = (productId, newDescription) =>
     instance.put(`/appendDescription/${productId}`, {
@@ -75,3 +87,4 @@ export const removeProduct = (id) =>
 export const getProductInfo = (productId) =>
     instance.get(`/infor/${productId}`)
         .then(res => res.data);
+

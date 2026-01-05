@@ -7,6 +7,20 @@ GET {{baseUrl}}/myActiveProducts/13
 ### Get my won products
 GET {{baseUrl}}/myWonProducts/13
 
+### Search product - default
+GET {{baseUrl}}/search?q=laptop
+Accept: application/json
+
+
+### Search product - pagination + sort time desc
+GET {{baseUrl}}/search?q=laptop&page=1&pageSize=10&sort=time_desc
+Accept: application/json
+
+
+### Search product - sort price asc
+GET {{baseUrl}}/search?q=iphone&page=1&pageSize=5&sort=price_asc
+Accept: application/json
+
 ### Search products
 GET {{baseUrl}}/search?q=laptop
 
@@ -65,7 +79,7 @@ PUT {{baseUrl}}/appendDescription/1
 Content-Type: application/json
 
 {
-    "newDescription": "Additional details about the product..."
+    "newDescription": "g"
 }
 
 ### End bidding
@@ -75,3 +89,6 @@ Content-Type: application/json
 {
     "newDescription": "Additional details about the product..."
 }
+
+### Get all
+GET {{baseUrl}}/all

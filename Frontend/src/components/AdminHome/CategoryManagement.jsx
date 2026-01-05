@@ -13,18 +13,18 @@ export default function CategoryManagement() {
     const [editingId, setEditingId] = useState(null);
     const [editingText, setEditingText] = useState("");
 
+    const loadCategories = async () => {
+        try {
+            setLoading(true);
+            const res = await categoryService.getAllCategories();
+            setCategories(res.data || []);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (!user) return;
-
-        const loadCategories = async () => {
-            try {
-                setLoading(true);
-                const res = await categoryService.getAllCategories();
-                setCategories(res.data || []);
-            } finally {
-                setLoading(false);
-            }
-        };
 
         loadCategories();
     }, [user]);
@@ -47,6 +47,7 @@ export default function CategoryManagement() {
 
         try {
             setLoading(true);
+            
             await categoryService.updateCategory(id, editingText.trim());
             setCategories(prev =>
                 prev.map(c =>
@@ -54,6 +55,7 @@ export default function CategoryManagement() {
                 )
             );
             setEditingId(null);
+
         } finally {
             setLoading(false);
         }
@@ -78,24 +80,56 @@ export default function CategoryManagement() {
         }
     };
 
+    const [catError, setCatError] = useState("");
+    const [editError, setEditError] = useState("");
+
+    const validateCategory = (name, currentId = null) => {
+        if (!name.trim()) return "Tên danh mục không được để trống";
+
+        const duplicated = categories.some(
+            c =>
+                c.description.toLowerCase() === name.trim().toLowerCase() &&
+                c.id !== currentId
+        );
+        if (duplicated) return "Danh mục đã tồn tại";
+
+        return "";
+    };
+
     return (
         <section>
-            <h2 className="text-2xl font-bold mb-4">Quản lý Category</h2>
+            <h2 className="text-2xl font-bold mb-4">Quản Lý Danh Mục</h2>
 
-            <div className="flex gap-2 mb-4">
+            <div className="flex gap-2 mb-3">
                 <input
                     value={newCat}
-                    onChange={e => setNewCat(e.target.value)}
-                    className="border px-3 py-2 rounded"
+                    onChange={e => {
+                        setNewCat(e.target.value);
+                        setCatError("");
+                    }}
+                    className={`border px-3 py-2 rounded w-64 ${
+                        catError ? "border-red-500" : ""
+                    }`}
                     placeholder="New category"
                 />
                 <button
-                    onClick={handleAddCategory}
-                    className="bg-blue-600 text-white px-4 rounded"
+                    onClick={() => {
+                        const err = validateCategory(newCat);
+                        if (err) {
+                            setCatError(err);
+                            return;
+                        }
+                        handleAddCategory();
+                    }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 rounded"
                 >
                     Thêm
                 </button>
             </div>
+
+            {catError && (
+                <p className="text-sm text-red-600 mb-3">{catError}</p>
+            )}
 
             {categories.map(c => (
                 <div key={c.id} className="flex gap-2 items-center mb-2">
@@ -103,23 +137,65 @@ export default function CategoryManagement() {
                         <>
                             <input
                                 value={editingText}
-                                onChange={e => setEditingText(e.target.value)}
-                                className="border px-2 py-1"
+                                onChange={e => {
+                                    setEditingText(e.target.value);
+                                    setEditError("");
+                                }}
+                                className={`border px-2 py-1 rounded ${
+                                    editError ? "border-red-500" : ""
+                                }`}
                             />
-                            <button onClick={() => handleUpdateCategory(c.id)}>✔</button>
+
+                            <button
+                                onClick={() => {
+                                    const err = validateCategory(editingText, c.id);
+
+                                    if (err) {
+                                        setEditError(err);
+                                        return;
+                                    }
+
+                                    handleUpdateCategory(c.id);
+                                }}
+                                className="text-green-600 hover:text-green-800"
+                            >
+                                ✔
+                            </button>
+
+                            {editError && (
+                                <p className="text-xs text-red-600 ml-2">
+                                    {editError}
+                                </p>
+                            )}
                         </>
                     ) : (
                         <>
-                            <span className="flex-1">{c.description}</span>
-                            <button onClick={() => {
-                                setEditingId(c.id);
-                                setEditingText(c.description);
-                            }}>✏</button>
-                            <button onClick={() => handleDeleteCategory(c.id)}>🗑</button>
+                            <span className="min-w-[200px]">{c.description}</span>
+                            <button
+                                onClick={() => {
+                                    setEditingId(c.id);
+                                    setEditingText(c.description);
+                                    setEditError("");
+                                }}
+                                className="text-blue-600 text-sm"
+                            >
+                                Sửa
+                            </button>
                         </>
                     )}
+
+                    <button
+                                onClick={() => {
+                                    handleDeleteCategory(c.id);
+                                    loadCategories();
+                                }}
+                                className="text-red-600 text-sm"
+                            >
+                                Xóa
+                            </button>
                 </div>
             ))}
+
         </section>
     );
 }

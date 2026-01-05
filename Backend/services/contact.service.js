@@ -215,3 +215,47 @@ export async function findById(id) {
         return { success: false, message: err.message, data: null };
     }
 }
+
+/* ================= EMAIL RESET PASSWORD ================= */
+export async function emailResetPassword(email, newPassword = '123456') {
+    try {
+        const user = await db('USER').where({ email }).first();
+        if (!user) throw new Error('User not found');
+
+        await sendMail(
+            user.email,
+            'Reset mật khẩu tài khoản',
+            `
+                <p>Xin chào <b>${user.full_name || user.email}</b>,</p>
+
+                <p>Mật khẩu tài khoản của bạn đã được <b>Admin reset</b>.</p>
+
+                <p>
+                    <b>Mật khẩu mới:</b> 
+                    <span style="color: red; font-size: 16px;">
+                        ${newPassword}
+                    </span>
+                </p>
+
+                <p>
+                    Vui lòng đăng nhập và đổi mật khẩu ngay để đảm bảo an toàn.
+                </p>
+
+                <p>Trân trọng,<br/>Hệ thống đấu giá</p>
+            `
+        );
+
+        return {
+            success: true,
+            message: 'Reset password email sent',
+            data: null
+        };
+    } catch (err) {
+        return {
+            success: false,
+            message: err.message,
+            data: null
+        };
+    }
+}
+

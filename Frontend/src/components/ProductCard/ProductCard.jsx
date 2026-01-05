@@ -63,9 +63,10 @@ export default function ProductCard({ product }) {
             className="border rounded-lg hover:shadow-lg transition cursor-pointer relative bg-white"
         >
             <div className="relative">
+            {/* ===== LEFT BADGES ===== */}
+            <div className="absolute top-2 left-2 z-10 flex gap-2">
                 {isNew && (
                     <span className="
-                        absolute top-2 left-2 z-10
                         rounded-full
                         bg-gradient-to-r from-red-500 to-orange-500
                         px-3 py-1
@@ -77,13 +78,27 @@ export default function ProductCard({ product }) {
                     </span>
                 )}
 
-
-                {user?.role === "bidder" && (
-                    <div className="absolute top-2 right-2 z-10">
-                        <Heart userId={user.id} productId={product.id} />
-                    </div>
+                {user?.id === product.best_bidder && (
+                    <span className="
+                        rounded-full
+                        bg-gradient-to-r from-yellow-400 to-amber-500
+                        px-3 py-1
+                        text-[11px] font-bold uppercase tracking-wide
+                        text-white
+                        shadow-md
+                    ">
+                        TOP 1
+                    </span>
                 )}
             </div>
+
+            {/* ===== HEART (KEEP SAME) ===== */}
+            {user?.role === "bidder" && (
+                <div className="absolute top-2 right-2 z-10">
+                    <Heart userId={user.id} productId={product.id} />
+                </div>
+            )}
+        </div>
 
             <img
                 src={thumbnail}
@@ -101,12 +116,26 @@ export default function ProductCard({ product }) {
                 </p>
 
                 <p className="text-xs text-gray-500">
-                    Giá khởi điểm:{" "}
-                    {(product.starting_price ?? 0).toLocaleString()} đ
+                    Giá hiện tại:{" "}
+                    {(product.current_price ?? 0).toLocaleString()} đ
                 </p>
 
                 <p className="text-xs text-gray-500">
-                    Winner: {product.winner ? product.winner : "Chưa có"}
+                    Người đặt giá cao nhất:{" "}
+                    {product.best_bidder_name}
+                </p>
+
+                <p className="text-xs text-gray-500">
+                    Giá mua ngay:{" "}
+                    {(product.sell_price ?? 0).toLocaleString()} đ
+                </p>
+
+                <p className="text-xs text-gray-500">
+                    Số lượt ra giá hiện tại: {product.bid_counts}
+                </p>
+
+                <p className="text-xs text-gray-500">
+                    Ngày kết thúc: {product.end_date ? dayjs(product.end_date).format("DD/MM/YYYY HH:mm") : "Đã kết thúc"}
                 </p>
 
                 <div className="flex justify-between text-xs text-gray-500 pt-1">

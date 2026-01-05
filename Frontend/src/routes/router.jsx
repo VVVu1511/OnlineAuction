@@ -10,6 +10,7 @@ import ForgotPassword from "../components/ForgotPassword/ForgotPassword.jsx"
 import Profile from "../components/Profile/Profile.jsx";
 import OrderCompletion from "../components/OrderCompletion/OrderCompletion.jsx";
 import OAuthSuccess from "../components/OAuthSuccess/OAuthSuccess.jsx"
+import RatingPage from "../components/RatingPage/RatingPage.jsx";
 
 const router = createBrowserRouter([
   {
@@ -61,6 +62,10 @@ const router = createBrowserRouter([
   {
     path: "/forgot-password",
     element: <ForgotPassword />
+  },
+  {
+    path: "/ratings/:id",
+    element: <RatingPage />
   }
 ]);
 

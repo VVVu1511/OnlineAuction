@@ -1,6 +1,7 @@
 import express from 'express'
 import bcrypt from 'bcryptjs'
 import * as accountService from '../services/account.service.js'
+import * as contactService from '../services/contact.service.js'
 import jwt from "jsonwebtoken";
 import { verifyCaptcha } from "../utils/verifyCaptcha.js";
 
@@ -217,6 +218,26 @@ router.get('/rating/:id', async (req, res) => {
     }
 });
 
+router.get('/ratingScore/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+
+        const data = await accountService.getRatingPercent(userId);
+
+        return res.status(200).json({
+            success: true,
+            data
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
+
+
 router.get('/profile/:id', async (req,res) => {
     const id = parseInt(req.params.id);
     const data =  await accountService.getProfileById(id);
@@ -384,7 +405,9 @@ router.put("/reset-password", async (req, res) => {
         const { email, new_password } = req.body;
 
         const hashed = bcrypt.hashSync(new_password, 10);
+
         await accountService.resetPassword(email, hashed);
+        await contactService.emailResetPassword(email, new_password);
 
         res.json({
             success: true,

@@ -15,6 +15,8 @@ export default function Login() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validate()) return;
         setError("");
 
         try {
@@ -24,6 +26,28 @@ export default function Login() {
         } catch {
             setError("Email hoặc mật khẩu không đúng");
         }
+    };
+
+    const [errors, setErrors] = useState({});
+    const validate = () => {
+        const newErrors = {};
+
+        // Email
+        if (!email.trim()) {
+            newErrors.email = "Email không được để trống";
+        } else if (!/^\S+@\S+\.\S+$/.test(email)) {
+            newErrors.email = "Email không hợp lệ";
+        }
+
+        // Password
+        if (!password) {
+            newErrors.password = "Mật khẩu không được để trống";
+        } else if (password.length < 6) {
+            newErrors.password = "Mật khẩu tối thiểu 6 ký tự";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
     };
 
     return (
@@ -45,31 +69,63 @@ export default function Login() {
                 )}
 
                 {/* Email */}
-                <div className="relative">
-                    <FaEnvelope className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border rounded-lg
-                                focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        required
-                    />
+                <div>
+                    <div className="relative">
+                        <FaEnvelope className="absolute left-3 top-3 text-gray-400" />
+                        <input
+                            type="text"
+                            placeholder="Email"
+                            value={email}
+                            onChange={(e) => {
+                                setEmail(e.target.value);
+                                if (errors.email)
+                                    setErrors((prev) => ({ ...prev, email: undefined }));
+                            }}
+                            className={`w-full pl-10 pr-4 py-2 border rounded-lg
+                                focus:outline-none focus:ring-2
+                                ${
+                                    errors.email
+                                        ? "border-red-500 focus:ring-red-400"
+                                        : "focus:ring-blue-400"
+                                }`}
+                        />
+                    </div>
+
+                    {errors.email && (
+                        <p className="text-sm text-red-600 mt-1">
+                            {errors.email}
+                        </p>
+                    )}
                 </div>
 
                 {/* Password */}
-                <div className="relative">
-                    <FaLock className="absolute left-3 top-3 text-gray-400" />
-                    <input
-                        type="password"
-                        placeholder="Mật khẩu"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border rounded-lg
-                                focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        required
-                    />
+                <div>
+                    <div className="relative">
+                        <FaLock className="absolute left-3 top-3 text-gray-400" />
+                        <input
+                            type="password"
+                            placeholder="Mật khẩu"
+                            value={password}
+                            onChange={(e) => {
+                                setPassword(e.target.value);
+                                if (errors.password)
+                                    setErrors((prev) => ({ ...prev, password: undefined }));
+                            }}
+                            className={`w-full pl-10 pr-4 py-2 border rounded-lg
+                                focus:outline-none focus:ring-2
+                                ${
+                                    errors.password
+                                        ? "border-red-500 focus:ring-red-400"
+                                        : "focus:ring-blue-400"
+                                }`}
+                        />
+                    </div>
+
+                    {errors.password && (
+                        <p className="text-sm text-red-600 mt-1">
+                            {errors.password}
+                        </p>
+                    )}
                 </div>
 
                 {/* Forgot password */}

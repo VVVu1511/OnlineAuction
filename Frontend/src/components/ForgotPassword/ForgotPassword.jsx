@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as accountService from "../../services/account.service.jsx";
 import { FaEnvelope, FaLock, FaKey } from "react-icons/fa";
+import Back from "../Back/Back.jsx"
 
 export default function ForgotPassword() {
     const navigate = useNavigate();
@@ -52,9 +53,33 @@ export default function ForgotPassword() {
         }
     };
 
+    const [errorr, setErrorr] = useState("");
+
+    const validateEmail = (email) => {
+        if (!email.trim()) return "Email không được để trống";
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!regex.test(email)) return "Email không hợp lệ";
+        return "";
+    };
+
+    const validateOtp = (otp) => {
+        if (!otp.trim()) return "OTP không được để trống";
+        if (!/^\d{6}$/.test(otp)) return "OTP phải gồm 6 chữ số";
+        return "";
+    };
+
+    const validatePassword = (pwd) => {
+        if (!pwd) return "Mật khẩu không được để trống";
+        if (pwd.length < 6) return "Mật khẩu tối thiểu 6 ký tự";
+        return "";
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-200">
+            
             <form className="bg-white w-full max-w-md p-8 rounded-2xl shadow-lg space-y-5">
+                <Back to="/login" />
+
                 <h1 className="mb-5 text-2xl font-bold text-center text-blue-600">
                     Quên mật khẩu
                 </h1>
@@ -82,18 +107,33 @@ export default function ForgotPassword() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2 border rounded-lg
-                                           focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                        focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 required
                             />
+
+                            {errorr && (
+                                <p className="text-sm text-red-600 mt-2 text-center">
+                                    {errorr}
+                                </p>
+                            )}
                         </div>
 
                         <button
-                            onClick={handleSendOtp}
+                            onClick={() => {
+                                const err = validateEmail(email);
+                                if (err) {
+                                    setErrorr(err);
+                                    return;
+                                }
+                                setErrorr("");
+                                handleSendOtp();
+                            }}
                             className="w-full bg-blue-600 text-white py-2 rounded-lg
-                                       font-semibold hover:bg-blue-700 transition"
+                                    font-semibold hover:bg-blue-700 transition"
                         >
                             Gửi OTP
                         </button>
+
                     </>
                 )}
 
@@ -108,18 +148,33 @@ export default function ForgotPassword() {
                                 value={otp}
                                 onChange={(e) => setOtp(e.target.value)}
                                 className="w-full pl-10 pr-4 py-2 border rounded-lg
-                                           focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                        focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 required
                             />
+
+                            {errorr && (
+                                <p className="text-sm text-red-600 mt-2 text-center">
+                                    {errorr}
+                                </p>
+                            )}
                         </div>
 
                         <button
-                            onClick={handleVerifyOtp}
+                            onClick={() => {
+                                const err = validateOtp(otp);
+                                if (err) {
+                                    setErrorr(err);
+                                    return;
+                                }
+                                setErrorr("");
+                                handleVerifyOtp();
+                            }}
                             className="w-full bg-blue-600 text-white py-2 rounded-lg
-                                       font-semibold hover:bg-blue-700 transition"
+                                    font-semibold hover:bg-blue-700 transition"
                         >
                             Xác nhận OTP
                         </button>
+
                     </>
                 )}
 
@@ -137,10 +192,25 @@ export default function ForgotPassword() {
                                         focus:outline-none focus:ring-2 focus:ring-blue-400"
                                 required
                             />
+
+                            {errorr && (
+                                <p className="text-sm text-red-600 mt-2 text-center">
+                                    {errorr}
+                                </p>
+                            )}
+
                         </div>
 
                         <button
-                            onClick={handleChangePassword}
+                            onClick={() => {
+                                const err = validatePassword(newPassword);
+                                if (err) {
+                                    setErrorr(err);
+                                    return;
+                                }
+                                setErrorr("");
+                                handleChangePassword();
+                            }}
                             className="w-full bg-green-600 text-white py-2 rounded-lg
                                     font-semibold hover:bg-green-700 transition"
                         >

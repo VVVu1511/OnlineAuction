@@ -9,6 +9,35 @@ const router = express.Router();
 
 
 /**
+ * GET /api/denied-bidders/check?productId=1&userId=2
+ */
+router.get('/check', async (req, res) => {
+    try {
+        const { productId, userId } = req.query;
+
+        if (!productId || !userId) {
+            return res.status(400).json({
+                success: false,
+                message: 'productId and userId are required'
+            });
+        }
+
+        const denied = await biddingService.isUserDeniedBid(productId, userId);
+
+        return res.status(200).json({
+            success: true,
+            denied
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
+
+/**
  * Refuse bidder (seller)
  */
 router.put('/refuse', async (req, res) => {
@@ -237,6 +266,37 @@ router.post('/rateBidder', async (req, res) => {
 });
 
 /**
+ * Rate seller
+ */
+router.post('/rateSeller', async (req, res) => {
+    try {
+        const { seller_id, product_id, comment, rating } = req.body;
+
+        const data = await biddingService.rateSeller(
+            seller_id,
+            product_id,
+            comment,
+            rating
+        );
+
+        return res.status(201).json({
+            success: true,
+            message: 'Seller rated successfully',
+            data
+        });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({
+            success: false,
+            message: err.message || 'Error rating seller',
+            data: null
+        });
+    }
+});
+
+
+/**
  * GET bidding list of current user
  */
 router.get('/:id', async (req, res) => {
@@ -256,4 +316,5 @@ router.get('/:id', async (req, res) => {
         });
     }
 });
+
 export default router;

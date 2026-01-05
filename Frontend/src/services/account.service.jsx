@@ -105,3 +105,14 @@ export const getRequestSellState = async (user_id) => {
     const res = await instance.get(`/requestSell/${user_id}`);
     return res.data.data; 
 };
+
+export const getUserRatingPercent = async (userId) => {
+    const res = await instance.get(`/ratingScore/${userId}`);
+    return res.data;
+};
+
+export const getRatingByUser = async (userId) => {
+    const res = await instance.get(`/rating/${userId}`);
+    return res.data;
+};
+

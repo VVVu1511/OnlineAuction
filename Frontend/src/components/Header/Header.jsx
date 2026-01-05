@@ -16,9 +16,31 @@ export default function Header() {
         setKeyword("");
     };
 
+    const handleSearchWithValidate = (e) => {
+        e?.preventDefault();
+
+        const err = validateKeyword(keyword);
+        if (err) {
+            setSearchError(err);
+            return;
+        }
+
+        setSearchError("");
+        handleSearch(); // giữ nguyên logic cũ
+    };
+
     const handleLogout = () => {
         logout();
         navigate("/"); // hoặc "/"
+    };
+
+    const [searchError, setSearchError] = useState("");
+
+    const validateKeyword = (kw) => {
+        if (!kw.trim()) return "Vui lòng nhập từ khóa tìm kiếm";
+        if (kw.trim().length < 2)
+            return "Từ khóa phải có ít nhất 2 ký tự";
+        return "";
     };
 
     return (
@@ -34,29 +56,43 @@ export default function Header() {
                 </Link>
 
                 {/* Search */}
-                {!user || user.role == "bidder" && (
-                    <form onSubmit={handleSearch} className="flex-1 mx-6 flex">
-                        <input
-                            value={keyword}
-                            onChange={(e) => setKeyword(e.target.value)}
-                            type="text"
-                            placeholder="Tìm kiếm sản phẩm..."
-                            className="flex-1 border border-r-0 rounded-l-lg px-4 py-2
-                                    focus:outline-none focus:ring-2 focus:ring-blue-400"
-                        />
+                {(!user || user.role === "bidder") && (
+                    <form
+                        onSubmit={handleSearchWithValidate}
+                        className="flex-1 mx-6 flex flex-col"
+                    >
+                        {/* INPUT + BUTTON */}
+                        <div className="flex">
+                            <input
+                                value={keyword}
+                                onChange={(e) => {
+                                    setKeyword(e.target.value);
+                                    if (searchError) setSearchError("");
+                                }}
+                                type="text"
+                                placeholder="Tìm kiếm sản phẩm..."
+                                className="flex-1 border border-r-0 rounded-l-lg px-4 py-2
+                                        focus:outline-none focus:ring-2 focus:ring-blue-400"
+                            />
 
-                        <button
-                            type="button"
-                            onClick={handleSearch}
-                            className="px-4 bg-blue-600 text-white rounded-r-lg
-                                    hover:bg-blue-500 transition
-                                    flex items-center justify-center"
-                        >
-                            <FaSearch />
-                        </button>
+                            <button
+                                type="submit"
+                                className="px-4 bg-blue-600 text-white rounded-r-lg
+                                        hover:bg-blue-500 transition
+                                        flex items-center justify-center"
+                            >
+                                <FaSearch />
+                            </button>
+                        </div>
+
+                        {/* ERROR MESSAGE */}
+                        {searchError && (
+                            <p className="text-sm text-red-600 mt-1 z-10">
+                                {searchError}
+                            </p>
+                        )}
                     </form>
                 )}
-
 
                 {/* Right */}
                 <div className="flex items-center gap-4 whitespace-nowrap">
