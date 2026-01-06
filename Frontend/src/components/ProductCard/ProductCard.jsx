@@ -47,9 +47,17 @@ export default function ProductCard({ product }) {
         ? dayjs(product.end_date).fromNow(true)
         : "Đã kết thúc";
 
-    const isNew =
-        product.upload_date &&
-        dayjs().diff(dayjs(product.upload_date), "minute") <= 10;
+    const isNew = (() => {
+        if (!product.upload_date) return false;
+
+        const diffMinutes = dayjs().diff(
+            dayjs(product.upload_date),
+            "minute"
+        );
+
+        return diffMinutes >= 0 && diffMinutes <= 10;
+    })();
+
 
     const handleClick = () => {
         setLoading(true);

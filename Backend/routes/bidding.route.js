@@ -3,7 +3,6 @@ import * as biddingService from '../services/bidding.service.js';
 import * as productService from '../services/product.service.js';
 import * as accountService from '../services/account.service.js';
 import * as contactService from '../services/contact.service.js';
-import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 

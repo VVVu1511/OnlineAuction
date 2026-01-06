@@ -1,6 +1,5 @@
 import express from 'express';
 import * as categoryService from '../services/category.service.js';
-import authMiddleware from "../middleware/auth.js";
 
 const router = express.Router();
 

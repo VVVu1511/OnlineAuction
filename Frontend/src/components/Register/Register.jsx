@@ -139,7 +139,7 @@ export default function Register() {
 
                         {/* CAPTCHA */}
                         <ReCAPTCHA
-                            sitekey="6Ld8pBksAAAAAG6ByWiUXsH77Do6NLFkH1W0DAAx"
+                            sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
                             onChange={(token) => setCaptcha(token)}
                             className="mt-3"
                         />

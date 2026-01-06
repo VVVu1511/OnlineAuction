@@ -248,3 +248,11 @@ export async function isUserDeniedBid(productId, userId) {
 
     return !!row; // true | false
 }
+
+export async function getBiddersByProduct(productId) {
+    return await db('BID_HISTORY as B')
+        .join('USER as U', 'B.user_id', 'U.id')
+        .where('B.product_id', productId)
+        .select('U.id', 'U.email', 'U.full_name')
+        .groupBy('U.id', 'U.email', 'U.full_name');
+}

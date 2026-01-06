@@ -1,5 +1,4 @@
 import express from 'express';
-import { createClient } from '@supabase/supabase-js';
 import accountRouter from '../Backend/routes/account.route.js';
 import productRouter from '../Backend/routes/product.route.js';
 import categoryRouter from '../Backend/routes/category.route.js';
@@ -11,9 +10,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import session from "express-session";
 import dotenv from 'dotenv';
-import jwt from "jsonwebtoken";
 import passport from "./config/passport.js";
 import orderRouter from '../Backend/routes/order.route.js';
+import { startAuctionCron } from "./cron/auction.cron.js"
 
 dotenv.config();
 
@@ -54,6 +53,8 @@ app.use('/bidding', biddingRouter);
 app.use('/contact',contactRouter);
 app.use('/auth', authRouter);
 app.use('/order', orderRouter);
+
+startAuctionCron();
 
 app.listen(PORT, function () {
     console.log(`Server is running on http://localhost:${PORT}`);

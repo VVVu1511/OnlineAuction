@@ -15,6 +15,7 @@ export default function CategoryPage() {
     const [category, setCategory] = useState(null);
     const [childCategories, setChildCategories] = useState([]);
     const [products, setProducts] = useState([]);
+    const [totalPages, setTotalPages] = useState(0);
 
     const [selectedCat, setSelectedCat] = useState(id);
     const [sortType, setSortType] = useState("endTimeDesc"); 
@@ -56,49 +57,24 @@ export default function CategoryPage() {
         const loadProducts = async () => {
             try {
                 setPageLoading(true);
-                const res = await productService.getProductsByCategory(selectedCat);
-                setProducts(res.data || res);
-                setCurrentPage(1);
+                const res = await productService.getProductsByCategory(
+                    selectedCat,
+                    currentPage,
+                    PAGE_SIZE,
+                    sortType
+                );
+
+                setProducts(res.data);
+                setTotalPages(res.totalPages);
             } catch (err) {
-                console.error("Load products error:", err);
+                console.error(err);
             } finally {
                 setPageLoading(false);
             }
         };
 
         loadProducts();
-
-    }, [selectedCat, user]);
-
-    /* =========================
-       SORT PRODUCTS
-    ========================= */
-    const sortedProducts = useMemo(() => {
-        const arr = [...products];
-
-        if (sortType === "endTimeDesc") {
-            arr.sort(
-                (a, b) =>
-                    new Date(b.end_time) - new Date(a.end_time)
-            );
-        }
-
-        if (sortType === "priceAsc") {
-            arr.sort((a, b) => a.current_price - b.current_price);
-        }
-
-        return arr;
-    }, [products, sortType]);
-
-    /* =========================
-       PAGINATION
-    ========================= */
-    const totalPages = Math.ceil(sortedProducts.length / PAGE_SIZE);
-
-    const pagedProducts = useMemo(() => {
-        const start = (currentPage - 1) * PAGE_SIZE;
-            return sortedProducts.slice(start, start + PAGE_SIZE);
-    }, [sortedProducts, currentPage]);
+    }, [selectedCat, currentPage, sortType]);
 
     return (
         <div className="px-6">
@@ -150,12 +126,12 @@ export default function CategoryPage() {
             {/* ===== PRODUCT GRID ===== */}
             {pageLoading ? (
                 <p>Đang tải sản phẩm...</p>
-            ) : pagedProducts.length === 0 ? (
+            ) : products.length === 0 ? (
                 <p>Không có sản phẩm</p>
             ) : (
                 <>
                     <div className="grid grid-cols-5 gap-4 mb-6">
-                        {pagedProducts.map((p) => (
+                        {products.map((p) => (
                             <ProductCard key={p.id} product={p} />
                         ))}
                     </div>

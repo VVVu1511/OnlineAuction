@@ -56,8 +56,8 @@ Content-Type: application/json
     "description": "Brand new"
 }
 
-### Get products by category
-GET {{baseUrl}}/getByCat/2
+### Get products by category - paging + sort
+GET {{baseUrl}}/getByCat/2?page=1&pageSize=5&sort=endTimeDesc
 
 ### Get product by ID
 GET {{baseUrl}}/1
@@ -75,7 +75,7 @@ GET {{baseUrl}}/sellerInfor/1
 GET {{baseUrl}}/related/1
 
 ### Append description
-PUT {{baseUrl}}/appendDescription/1
+PUT {{baseUrl}}/appendDescription/41
 Content-Type: application/json
 
 {

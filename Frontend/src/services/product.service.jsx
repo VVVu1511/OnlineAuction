@@ -9,10 +9,17 @@ const instance = axios.create({
 PRODUCT SERVICES
 ========================= */
 
-export const getProductsByCategory = (categoryId) =>
-    instance.get(`/getByCat/${categoryId}`)
-        .then(res => res.data);
+export const getProductsByCategory = (
+    categoryId,
+    page = 1,
+    pageSize = 5,
+    sort = "endTimeDesc"
+) =>
+    instance.get(`/getByCat/${categoryId}`, {
+        params: { page, pageSize, sort }
+    }).then(res => res.data);
 
+    
 // services/product.service.jsx
 export async function searchProducts(
     keyword,

@@ -1,6 +1,7 @@
 import express from 'express';
 import * as productService from '../services/product.service.js';
-import authMiddleware from "../middleware/auth.js";
+import * as contactService from '../services/contact.service.js';
+import * as biddingService from '../services/bidding.service.js';
 import { upload } from '../config/multer.js';
 import path from "path";
 import fs from "fs";
@@ -137,10 +138,29 @@ router.get('/top5Price', async (req, res) => {
 
 router.get('/getByCat/:cat_id', async (req, res) => {
     try {
-        const data = await productService.getByCategory(+req.params.cat_id);
-        res.json({ success: true, message: 'Get products by category successfully', data });
+        const catId = +req.params.cat_id;
+        const page = +req.query.page || 1;
+        const pageSize = +req.query.pageSize || 5;
+        const sort = req.query.sort || "endTimeDesc";
+
+        const result = await productService.getByCategory(
+            catId,
+            page,
+            pageSize,
+            sort
+        );
+
+        res.json({
+            success: true,
+            message: "Get products by category successfully",
+            ...result
+        });
     } catch (err) {
-        res.status(404).json({ success: false, message: err.message, data: null });
+        res.status(500).json({
+            success: false,
+            message: err.message,
+            data: null
+        });
     }
 });
 
@@ -224,10 +244,28 @@ router.post('/add/:id', (req, res) => {
 
 router.put('/appendDescription/:id', async (req, res) => {
     try {
-        const data = await productService.appendDescription(+req.params.id, req.body.newDescription);
-        res.json({ success: true, message: 'Description updated successfully', data });
+        const productId = +req.params.id;
+        const { newDescription } = req.body;
+
+        const data = await productService.appendDescription(
+            productId,
+            newDescription
+        );
+
+        // 📧 Gửi email cho các bidder đã bid
+        await contactService.emailNotifyDescriptionUpdated(productId);
+
+        res.json({
+            success: true,
+            message: 'Description updated & bidders notified',
+            data
+        });
     } catch (err) {
-        res.status(400).json({ success: false, message: err.message, data: null });
+        res.status(400).json({
+            success: false,
+            message: err.message,
+            data: null
+        });
     }
 });
 

@@ -105,13 +105,20 @@ export async function getTop5NearEnd() {
         .limit(5);
 }
 
+export async function getEndedAuctionsNotHandled() {
+    return db('PRODUCT')
+        .where('end_date', '<=', new Date())
+        .andWhere({ auction_ended: false });
+}
 
 /**
  * =========================
  * CATEGORY
  * =========================
  */
-export async function getByCategory(cat_id) {
+export async function getByCategory(cat_id, page, pageSize, sort) {
+    const offset = (page - 1) * pageSize;
+
     const childRows = await db('CATEGORY_PARENT')
         .where({ parent_id: cat_id })
         .select('child_id');
@@ -120,16 +127,39 @@ export async function getByCategory(cat_id) {
         ? childRows.map(r => r.child_id)
         : [cat_id];
 
-    return await db('PRODUCT as P')
+    // ===== SORT =====
+    let orderBy = { column: 'P.end_date', direction: 'desc' };
+    if (sort === "priceAsc") {
+        orderBy = { column: 'P.current_price', direction: 'asc' };
+    }
+
+    // ===== TOTAL COUNT =====
+    const [{ total }] = await db('PRODUCT as P')
+        .join('PRODUCT_CATEGORY as PC', 'P.id', 'PC.product_id')
+        .whereIn('PC.category_id', categoryIds)
+        .count('P.id as total');
+
+    // ===== DATA =====
+    const data = await db('PRODUCT as P')
         .join('PRODUCT_CATEGORY as PC', 'P.id', 'PC.product_id')
         .leftJoin('USER as U', 'P.best_bidder', 'U.id')
         .whereIn('PC.category_id', categoryIds)
+        .orderBy(orderBy.column, orderBy.direction)
+        .limit(pageSize)
+        .offset(offset)
         .select(
             'P.*',
             'U.full_name as best_bidder_name'
         );
-}
 
+    return {
+        data,
+        total,
+        page,
+        pageSize,
+        totalPages: Math.ceil(total / pageSize)
+    };
+}
 
 /**
  * =========================

@@ -131,14 +131,25 @@ export default function Product() {
     /* 📝 Text hiển thị */
     let endTimeText = "Đã kết thúc";
 
-    if (!isEnded && endTime) {
-        const diffSeconds = endTime.diff(now, "second");
+    if (endTime) {
+        const now = dayjs();
 
-        if (diffSeconds <= 300) {
-            const d = dayjs.duration(diffSeconds, "seconds");
-            endTimeText = `Còn ${d.minutes()}:${String(d.seconds()).padStart(2, "0")}`;
-        } else {
-            endTimeText = endTime.format("HH:mm DD/MM/YYYY");
+        if (endTime.isAfter(now)) {
+            const diffSeconds = endTime.diff(now, "second");
+
+            // ⏱️ Dưới 5 phút → mm:ss
+            if (diffSeconds <= 300) {
+                const d = dayjs.duration(diffSeconds, "seconds");
+                endTimeText = `Còn ${d.minutes()}:${String(d.seconds()).padStart(2, "0")}`;
+            }
+            // ⏳ Dưới 3 ngày → relative time
+            else if (diffSeconds < 3 * 24 * 60 * 60) {
+                endTimeText = endTime.fromNow(); // "2 ngày nữa"
+            }
+            // 📅 Trên 3 ngày → datetime
+            else {
+                endTimeText = endTime.format("HH:mm DD/MM/YYYY");
+            }
         }
     }
 
@@ -149,24 +160,23 @@ export default function Product() {
     /* 🚨 Khi kết thúc → gọi API + redirect */
     useEffect(() => {
         if (!product) return;
-        if (!isEnded) return;
-        if (endHandled) return;
+        if (!user) return;
 
-        setEndHandled(true);
+        const now = dayjs();
 
-        console.log("⏹ Auction ended");
+        // ⛔ Chưa kết thúc → không làm gì
+        if (!product.end_date || dayjs(product.end_date).isAfter(now)) return;
 
-        contactService.sendEndBidEmail({
-            bestBidderId: product.best_bidder,
-            sellerId: product.seller_id,
-            productId: product.id
-        });
+        // ✅ Chỉ seller hoặc bidder thắng mới được redirect
+        const canAccess =
+            user.role === "seller" ||
+            (user.role === "bidder" && user.id === product.best_bidder);
 
-        if(user?.role === "seller" || (user?.role === "bidder" && user?.id === product?.best_bidder)){
-            navigate(`/order/complete/${product.id}`);
-        }
+        if (!canAccess) return;
 
-    }, [isEnded, endHandled, product]);
+        navigate(`/order/complete/${product.id}`);
+    }, [product, user, navigate]);
+
 
 
     /* ================= ASK SELLER ================= */
@@ -317,7 +327,6 @@ export default function Product() {
         return `${hours} giờ nữa`;
     };
     
-
     const handleBid = async () => {
         if (!user.id) {
             alert("Please login to bid");
@@ -325,8 +334,6 @@ export default function Product() {
         }
 
         try {
-            setLoading(true);
-
             const check = await biddingService.checkCanBid(product.id, user.id);
             
             if (!check.data.canBid) return alert(check.reason);
@@ -342,8 +349,6 @@ export default function Product() {
         } catch (err) {
             alert("Bid error");
 
-        } finally {
-            setLoading(false);
         }
     };
 

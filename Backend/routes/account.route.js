@@ -2,7 +2,6 @@ import express from 'express'
 import bcrypt from 'bcryptjs'
 import * as accountService from '../services/account.service.js'
 import * as contactService from '../services/contact.service.js'
-import jwt from "jsonwebtoken";
 import { verifyCaptcha } from "../utils/verifyCaptcha.js";
 
 const router = express.Router();
