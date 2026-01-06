@@ -254,6 +254,7 @@ router.get('/win/:id', async (req, res) => {
             message: 'Get win products OK!',
             data: winProducts
         });
+        
     } catch (err) {
         console.error(err);
         res.status(500).json({

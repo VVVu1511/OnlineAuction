@@ -1,6 +1,5 @@
 import db from '../utils/db.js'
 
-
 export const getOrderByProduct = async (productId) => {
     const order = await db('ORDER_COMPLETION')
         .where({ product_id: productId })
@@ -54,7 +53,7 @@ export const submitPayment = async (productId, userId, payload) => {
         buyer_payment_info: payload.payment_info,
         buyer_address: payload.address,
         status: 'SELLER_CONFIRM_PAYMENT',
-        updated_at: db.fn.now()
+        updated_at: new Date()
         });
 
     return true;
@@ -71,7 +70,7 @@ export const confirmShipping = async (productId, sellerId, shippingInfo) => {
         .update({
         seller_shipping_info: shippingInfo,
         status: 'BUYER_CONFIRM_RECEIVE',
-        updated_at: db.fn.now()
+        updated_at: new Date()
         });
 
     return true;
@@ -86,8 +85,8 @@ export const confirmReceive = async (productId, userId) => {
     await db('ORDER_COMPLETION')
         .where({ product_id: productId })
         .update({
-        status: 'BOTH_REVIEW',
-        updated_at: db.fn.now()
+            status: 'RATING_OPEN',
+            updated_at: new Date()
         });
 
     return true;
@@ -96,28 +95,61 @@ export const confirmReceive = async (productId, userId) => {
 export const upsertReview = async (productId, reviewerId, payload) => {
     const order = await getOrderByProduct(productId);
 
+    if (order.status !== 'RATING_OPEN')
+        throw new Error('Rating closed');
+
     if (![order.seller_id, order.winner_id].includes(reviewerId))
         throw new Error('Not allowed');
 
     const target =
         reviewerId === order.seller_id
-        ? order.winner_id
-        : order.seller_id;
+            ? order.winner_id
+            : order.seller_id;
 
-    await db('ORDER_REVIEW')
-        .insert({
-        order_id: order.id,
-        reviewer_id: reviewerId,
-        target_user_id: target,
-        score: payload.score,
-        comment: payload.comment
-        })
-        .onConflict(['order_id', 'reviewer_id'])
-        .merge({
-        score: payload.score,
-        comment: payload.comment,
-        updated_at: db.fn.now()
+    await db.transaction(async trx => {
+        /* 1️⃣ Chặn đánh giá lại */
+        const existed = await trx('ORDER_REVIEW')
+            .where({
+                order_id: order.id,
+                reviewer_id: reviewerId
+            })
+            .first();
+
+        if (existed)
+            throw new Error('You already reviewed this order');
+
+        /* 2️⃣ Insert ORDER_REVIEW */
+        await trx('ORDER_REVIEW').insert({
+            order_id: order.id,
+            reviewer_id: reviewerId,
+            target_user_id: target,
+            score: payload.score,
+            comment: payload.comment,
+            updated_at: new Date()
         });
+
+        /* 3️⃣ Insert RATING (global user rating) */
+        await trx('RATING').insert({
+            rater_id: reviewerId,
+            rated_id: target,
+            product_id: productId,
+            rating: payload.score,
+            comment: payload.comment,
+            created_at: new Date()
+        });
+
+        /* 4️⃣ Nếu đủ 2 review → COMPLETED */
+        const count = await trx('ORDER_REVIEW')
+            .where({ order_id: order.id })
+            .count('* as total')
+            .first();
+
+        if (Number(count.total) === 2) {
+            await trx('ORDER_COMPLETION')
+                .where({ id: order.id })
+                .update({ status: 'COMPLETED' });
+        }
+    });
 
     return true;
 };
@@ -134,7 +166,7 @@ export const cancelOrder = async (productId, sellerId) => {
         .update({
             status: 'CANCELLED',
             cancelled_by: sellerId,
-            cancelled_at: trx.fn.now()
+            cancelled_at: new Date()
         });
 
         await trx('ORDER_REVIEW')
@@ -148,7 +180,7 @@ export const cancelOrder = async (productId, sellerId) => {
         .onConflict(['order_id', 'reviewer_id'])
         .merge({
             score: -1,
-            updated_at: trx.fn.now()
+            updated_at: new Date()
         });
     });
 

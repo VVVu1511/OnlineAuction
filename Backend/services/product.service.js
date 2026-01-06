@@ -78,6 +78,7 @@ export async function getTop5Price() {
             'P.*',
             'U.full_name as best_bidder_name'
         )
+        .where('end_date', '>', new Date())
         .orderBy('P.current_price', 'desc')
         .limit(5);
 }
@@ -89,6 +90,7 @@ export async function getTop5BidCounts() {
             'P.*',
             'U.full_name as best_bidder_name'
         )
+        .where('end_date', '>', new Date())
         .orderBy('P.bid_counts', 'desc')
         .limit(5);
 }
@@ -100,7 +102,7 @@ export async function getTop5NearEnd() {
             'P.*',
             'U.full_name as best_bidder_name'
         )
-        .where('P.end_date', '>', db.fn.now())
+        .where('end_date', '>', new Date())
         .orderBy('P.end_date', 'asc')
         .limit(5);
 }
@@ -108,7 +110,8 @@ export async function getTop5NearEnd() {
 export async function getEndedAuctionsNotHandled() {
     return db('PRODUCT')
         .where('end_date', '<=', new Date())
-        .andWhere({ auction_ended: false });
+        .andWhere({ state_id: 1 })
+        .select('*');
 }
 
 /**
@@ -216,12 +219,16 @@ export async function search(keyword, page = 1, pageSize = 10, sort = 'time_desc
  * =========================
  */
 export async function getBestBidder(productId) {
-    return await db('BID_HISTORY')
-        .where({ product_id: productId })
-        .join('USER', 'USER.id', 'BID_HISTORY.user_id')
-        .orderBy('price', 'desc')
-        .select('USER.*')
-        .first() || null;
+    const product = await db('PRODUCT')
+        .where({ id: productId })
+        .select('best_bidder')
+        .first();
+
+    if (!product || !product.best_bidder) return null;
+
+    return await db('USER')
+        .where({ id: product.best_bidder })
+        .first();
 }
 
 export async function getSellerInfor(productId) {
@@ -301,7 +308,7 @@ export async function getActiveProducts(userId) {
         .leftJoin('USER as U', 'P.best_bidder', 'U.id')
         .where('P.seller', userId)
         .whereNull('P.winner')
-        .andWhere('P.end_date', '>', db.fn.now())
+        .where('end_date', '>', new Date())
         .select(
             'P.*',
             'U.full_name as best_bidder_name'
@@ -320,7 +327,7 @@ export async function getWonProducts(userId) {
         })
 
         .where('P.seller', userId)
-        .andWhere('P.end_date', '<=', db.fn.now())
+        .where('end_date', '<=', new Date())
 
         .select(
             'P.*',
@@ -347,16 +354,120 @@ export async function productEndBid(productId) {
         .where({ id: productId })
         .update({ state_id: 2 });
 
-    const product = await getProductInfor(productId);
-
-    await contactService.emailEndBid(
-        product.best_bidder,
-        product.seller,
-        product.id
-    );
-
     return {
         productId,
         state: "ended"
     };
+}
+
+export async function advancedSearch(params) {
+    const {
+        keyword,
+        minPrice,
+        maxPrice,
+        category,
+        fromDate,
+        toDate,
+        page = 1,
+        limit = 10
+    } = params;
+
+    const currentPage = Number(page);
+    const pageSize = Number(limit);
+    const offset = (currentPage - 1) * pageSize;
+
+    /* ===== BASE QUERY ===== */
+    const baseQuery = db('PRODUCT')
+        .where('PRODUCT.state_id', 1);
+
+    if (keyword) {
+        baseQuery.andWhere('PRODUCT.name', 'ilike', `%${keyword}%`);
+    }
+
+    if (minPrice) {
+        baseQuery.andWhere('PRODUCT.current_price', '>=', Number(minPrice));
+    }
+
+    if (maxPrice) {
+        baseQuery.andWhere('PRODUCT.current_price', '<=', Number(maxPrice));
+    }
+
+    if (category) {
+        baseQuery.whereExists(function () {
+            this.select(1)
+                .from('PRODUCT_CATEGORY')
+                .whereRaw('"PRODUCT_CATEGORY"."product_id" = "PRODUCT"."id"')
+                .whereIn(
+                    'PRODUCT_CATEGORY.category_id',
+                    db('CATEGORY_PARENT')
+                        .select('child_id')
+                        .where('parent_id', Number(category))
+                        .union(function () {
+                            this.select(db.raw('?', [Number(category)]));
+                        })
+                );
+        });
+    }
+
+    if (fromDate) {
+        baseQuery.andWhere('PRODUCT.upload_date', '>=', fromDate);
+    }
+
+    if (toDate) {
+        baseQuery.andWhere('PRODUCT.upload_date', '<=', toDate);
+    }
+
+    /* ===== COUNT ===== */
+    const totalResult = await baseQuery.clone()
+        .count('* as total')
+        .first();
+
+    const total = Number(totalResult.total);
+
+    /* ===== DATA ===== */
+    const data = await baseQuery
+        .clone()
+        .orderBy('PRODUCT.upload_date', 'desc')
+        .limit(pageSize)
+        .offset(offset)
+        .select('PRODUCT.*');
+
+    return {
+        data,
+        pagination: {
+            page: currentPage,
+            limit: pageSize,
+            total,
+            totalPages: Math.ceil(total / pageSize)
+        }
+    };
+}
+
+// services/product.service.js
+export async function updateProductInfo({
+    productId,
+    sellerId,
+    name,
+    sell_price,
+    end_date
+}) {
+    const product = await db("PRODUCT")
+        .where({ id: productId, seller: sellerId })
+        .first();
+
+    if (!product) {
+        throw new Error("Không tìm thấy sản phẩm hoặc không có quyền");
+    }
+    
+    const updateData = {};
+
+    if (name) updateData.name = name;
+    if (sell_price !== undefined) updateData.sell_price = sell_price;
+    if (end_date) updateData.end_date = end_date;
+
+    await db("PRODUCT")
+        .where({ id: productId })
+        .update(updateData);
+
+    return updateData;
 }

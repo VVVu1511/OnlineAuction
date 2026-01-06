@@ -1,7 +1,7 @@
 @baseUrl = http://localhost:3000/order
-@productId = 18
+@productId = 43
 
-@buyerId = 15
+@buyerId = 19
 @sellerId = 13
 
 @baseUrl = http://localhost:3000/order

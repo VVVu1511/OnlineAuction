@@ -6,7 +6,6 @@ import * as contactService from '../services/contact.service.js';
 
 const router = express.Router();
 
-
 /**
  * GET /api/denied-bidders/check?productId=1&userId=2
  */
@@ -197,6 +196,7 @@ router.post('/denyBidder/:product_id', async (req, res) => {
         const data = await biddingService.denyBidder(productId, bidderId);
 
         const bidder = await accountService.findAllById(bidderId);
+        
         await contactService.emailDeniedBidder(product, bidder);
 
         return res.json({

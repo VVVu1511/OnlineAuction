@@ -74,7 +74,7 @@ GET {{baseUrl}}/profile
 
 ###
 # GET WIN PRODUCTS
-GET {{baseUrl}}/win/14
+GET {{baseUrl}}/win/19
 
 
 ###

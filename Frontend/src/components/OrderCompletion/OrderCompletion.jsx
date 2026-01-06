@@ -60,24 +60,27 @@ export default function OrderCompletion() {
     }, [productId]);
 
     const loadReviews = useCallback(async () => {
-        try {
-            const res = await orderService.getOrderReviews(order.id);
-            if (res.success) {
-                setReviews(res.data);
-            }
-        } catch (err) {
-            console.error("Load reviews failed", err);
-        }
-    }, [order]);
+        if (!order?.id) return;
+
+        const res = await orderService.getOrderReviews(order.id);
+        if (res.success) setReviews(res.data);
+    }, [order?.id]);
 
     useEffect(() => {
         if (!productId) return;
-
         loadChat();
         fetchOrder();
-        loadReviews();
+    }, [productId]);
 
-    }, [productId, loadChat, fetchOrder, loadReviews]);
+    useEffect(() => {
+        if (order?.id) {
+            loadReviews();
+        }
+    }, [order?.id]);
+
+    const userHasReviewed = reviews.some(
+        r => r.reviewer_id === user.id
+    );
 
     return (
         <div className="max-w-3xl mx-auto space-y-6">
@@ -85,42 +88,69 @@ export default function OrderCompletion() {
             
             <h1 className="text-2xl font-bold">Hoàn tất đơn hàng</h1>
 
-            {orderStatus === "BUYER_SUBMIT_PAYMENT" && user?.role === "bidder" && (
-                <BuyerPayment
-                    productId={productId}
-                    buyerId={user.id}
-                    onSuccess={() => fetchOrder()}
-                />
+            {orderStatus === "BUYER_SUBMIT_PAYMENT" && (
+                user?.role === "bidder" ? (
+                    <BuyerPayment
+                        productId={productId}
+                        buyerId={user.id}
+                        onSuccess={fetchOrder}
+                    />
+                ) : (
+                    <WaitingBox message="Đang chờ người mua thanh toán & cung cấp địa chỉ" />
+                )
             )}
 
-            {orderStatus === "SELLER_CONFIRM_PAYMENT" && user?.role === "seller" && (
-                <SellerConfirm
-                    productId={productId}
-                    sellerId={user.id}
-                    onConfirm={() => fetchOrder()}
-                    onCancel={handleCancel}
-                    order={order}
-                />
+            {orderStatus === "SELLER_CONFIRM_PAYMENT" && (
+                user?.role === "seller" ? (
+                    <SellerConfirm
+                        productId={productId}
+                        sellerId={user.id}
+                        onConfirm={fetchOrder}
+                        onCancel={handleCancel}
+                        order={order}
+                    />
+                ) : (
+                    <WaitingBox message="Đang chờ người bán xác nhận thanh toán & gửi hàng" />
+                )
             )}
 
-            {orderStatus === "BUYER_CONFIRM_RECEIVE" && user?.role === "bidder" && (
-                <BuyerReceive
-                    productId={productId}
-                    buyerId={user.id}
-                    onConfirm={() => fetchOrder()}
-                    order={order}
-                />
+            {orderStatus === "BUYER_CONFIRM_RECEIVE" && (
+                user?.role === "bidder" ? (
+                    <BuyerReceive
+                        productId={productId}
+                        buyerId={user.id}
+                        onConfirm={fetchOrder}
+                        order={order}
+                    />
+                ) : (
+                    <WaitingBox message="Đang chờ người mua xác nhận đã nhận hàng" />
+                )
             )}
 
-            {orderStatus === "BOTH_REVIEW" && (
-                <ReviewSection
-                    productId={productId}
-                    userId={user.id}
-                    review={review}
-                    setReview={setReview}
-                    reviews={reviews}
-                    onSuccess={() => loadReviews()}
-                    role={user.role}
+            {/* MỞ ĐÁNH GIÁ */}
+            {orderStatus === "RATING_OPEN" && (
+                userHasReviewed ? (
+                    <WaitingBox message="Bạn đã đánh giá, đang chờ đối phương đánh giá" />
+                ) : (
+                    <ReviewSection
+                        productId={productId}
+                        userId={user.id}
+                        review={review}
+                        setReview={setReview}
+                        reviews={reviews}
+                        onSuccess={() => {
+                            fetchOrder();
+                            loadReviews();
+                        }}
+                    />
+                )
+            )}
+
+            {/* STATE CUỐI */}
+            {orderStatus === "COMPLETED" && (
+                <ReviewResult 
+                    reviews={reviews} 
+                    userId={user.id} 
                 />
             )}
 
@@ -264,8 +294,9 @@ function SellerConfirm({ productId, sellerId, onConfirm, onCancel, order }) {
 
 /* ================= BUYER RECEIVE ================= */
 function BuyerReceive({ productId, buyerId, onConfirm, order }) {
-    const confirm = async () => {
-        if (!confirm("Bạn chắc chắn đã nhận hàng?")) return;
+    const handleConfirmReceive = async () => {
+        const ok = window.confirm("Bạn chắc chắn đã nhận hàng?");
+        if (!ok) return;
 
         await orderService.confirmReceive(productId, buyerId);
         onConfirm();
@@ -277,7 +308,10 @@ function BuyerReceive({ productId, buyerId, onConfirm, order }) {
 
             <p>{order.seller_shipping_info}</p>
 
-            <button onClick={confirm} className="mt-3 w-full rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white hover:bg-green-700 transition">
+            <button
+                onClick={handleConfirmReceive}
+                className="mt-3 w-full rounded-lg bg-green-600 px-5 py-3 text-sm font-semibold text-white hover:bg-green-700 transition"
+            >
                 Tôi đã nhận hàng
             </button>
         </div>
@@ -343,7 +377,6 @@ function ReviewSection({ productId, userId, review, setReview, reviews, onSucces
         </div>
     );
 }
-
 
 /* ================= CHAT ================= */
 function ChatBox({ productId, chat, setChat, user, onSuccess }) {
@@ -412,6 +445,62 @@ function ChatBox({ productId, chat, setChat, user, onSuccess }) {
                     Gửi
                 </button>
             </div>
+        </div>
+    );
+}
+
+function ReviewResult({ reviews, userId }) {
+    const myReviews = reviews.filter(
+        r => r.target_user_id == userId
+    );
+
+    if (!myReviews.length) {
+        return (
+            <div className="border p-4 rounded bg-gray-50 text-gray-600">
+                Chưa có đánh giá dành cho bạn
+            </div>
+        );
+    }
+
+    return (
+        <div className="border p-4 rounded space-y-3">
+            <h2 className="font-semibold">
+                ⭐ Đánh giá dành cho bạn
+            </h2>
+
+            {myReviews.map(r => (
+                <div
+                    key={r.id}
+                    className="rounded-lg border p-3 bg-white"
+                >
+                    <div className="flex items-center gap-2">
+                        <span className="text-lg">
+                            {r.score === 1 ? "👍" : "👎"}
+                        </span>
+                        <span className="text-sm font-medium">
+                            {r.score === 1 ? "Tốt" : "Không tốt"}
+                        </span>
+                    </div>
+
+                    <p className="mt-1 text-gray-700">
+                        {r.comment}
+                    </p>
+
+                    {r.updated_at && (
+                        <p className="mt-1 text-xs text-gray-400">
+                            {new Date(r.updated_at).toLocaleString()}
+                        </p>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function WaitingBox({ message }) {
+    return (
+        <div className="border rounded-lg p-4 bg-gray-50 text-gray-600">
+            ⏳ {message}
         </div>
     );
 }

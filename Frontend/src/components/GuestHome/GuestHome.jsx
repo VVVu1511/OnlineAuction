@@ -4,7 +4,7 @@ import CategoryCard from "../CategoryCard/CategoryCard.jsx";
 import ProductCard from "../ProductCard/ProductCard.jsx";
 import * as productService from "../../services/product.service.jsx";
 import * as categoryService from "../../services/category.service.jsx";
-
+import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import { LoadingContext } from "../../context/LoadingContext.jsx";
 
@@ -44,6 +44,15 @@ export default function GuestHome() {
 
     return (
         <div className="w-full">
+            <Section title="🔍 Tìm kiếm nâng cao">
+                <Link
+                    to="/advanced-search"
+                    className="!no-underline cursor-pointer text-black border rounded-lg overflow-hidden hover:shadow-lg transition p-3 text-center font-medium"
+                >
+                    Truy cập
+                </Link>
+            </Section>
+            
             {/* ===== CATEGORY CARD ===== */}
             <Section title="📂 Danh mục">
                 {categories.map((cat) => (

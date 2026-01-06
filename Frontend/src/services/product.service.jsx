@@ -95,3 +95,12 @@ export const getProductInfo = (productId) =>
     instance.get(`/infor/${productId}`)
         .then(res => res.data);
 
+export async function advancedSearch(params) {
+    const res = await instance.get("/advanced-search", { params });
+    return res.data;
+}
+
+export async function updateProductInfo(id, payload) {
+    return instance.put(`/${id}/update`, payload)
+        .then(res => res.data);
+}

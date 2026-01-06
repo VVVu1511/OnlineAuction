@@ -8,7 +8,7 @@ export async function getBiddingList(user_id) {
         return await db('BID_HISTORY')
             .where('BID_HISTORY.user_id', user_id)
             .join('PRODUCT', 'PRODUCT.id', 'BID_HISTORY.product_id')
-            .where('PRODUCT.end_date', '>', db.fn.now())
+            .where('end_date', '>', new Date())
             .groupBy('PRODUCT.id')
             .select('PRODUCT.*');
     } catch (err) {
@@ -114,28 +114,49 @@ export async function new_bid(data) {
  */
 export async function denyBidder(productId, bidderId) {
     try {
-        // await db('BID_HISTORY')
-        //     .where({ product_id: productId, user_id: bidderId })
-        //     .del();
-
+        /* 1️⃣ Thêm vào danh sách bị chặn */
         await db('DENIED_BIDDERS').insert({
             product_id: productId,
             user_id: bidderId
         });
 
-        const product = await db('PRODUCT').where({ id: productId }).first();
+        /* 2️⃣ Lấy thông tin sản phẩm */
+        const product = await db('PRODUCT')
+            .where({ id: productId })
+            .first();
 
+        if (!product) throw new Error('Product not found');
+
+        /* ❗ Nếu bidder KHÔNG phải best_bidder → dừng */
+        if (product.best_bidder !== bidderId) {
+            return {
+                product_id: productId,
+                current_price: product.current_price,
+                best_bidder: product.best_bidder,
+                updated: false
+            };
+        }
+
+        /* 3️⃣ Lấy bid cao nhất KHÔNG phải bidder bị deny */
         const highestBid = await db('BID_HISTORY')
             .where({ product_id: productId })
+            .andWhereNot({ user_id: bidderId })
             .orderBy([
                 { column: 'price', order: 'desc' },
                 { column: 'time', order: 'asc' }
             ])
             .first();
 
-        const newPrice = highestBid ? highestBid.price : product.starting_price;
-        const bestBidder = highestBid ? highestBid.user_id : null;
+        /* 4️⃣ Xác định giá & người thắng mới */
+        const newPrice = highestBid
+            ? highestBid.price
+            : product.starting_price;
 
+        const bestBidder = highestBid
+            ? highestBid.user_id
+            : null;
+
+        /* 5️⃣ Update PRODUCT (chỉ trong trường hợp này) */
         await db('PRODUCT')
             .where({ id: productId })
             .update({
@@ -146,7 +167,8 @@ export async function denyBidder(productId, bidderId) {
         return {
             product_id: productId,
             current_price: newPrice,
-            best_bidder: bestBidder
+            best_bidder: bestBidder,
+            updated: true
         };
 
     } catch (err) {

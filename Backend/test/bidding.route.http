@@ -18,11 +18,11 @@ Content-Type: application/json
 
 ###
 ### 3. Check if user can bid (auth required)
-POST {{baseUrl}}/checkCanBid/15
+POST {{baseUrl}}/checkCanBid/19
 Content-Type: application/json
 
 {
-    "product_id": 18
+    "product_id": 7
 }
 
 

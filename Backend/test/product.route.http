@@ -25,7 +25,7 @@ Accept: application/json
 GET {{baseUrl}}/search?q=laptop
 
 ### Get product info
-GET {{baseUrl}}/infor/1
+GET {{baseUrl}}/infor/41
 
 ### Get Q&A
 GET {{baseUrl}}/Q_A/1
@@ -66,7 +66,7 @@ GET {{baseUrl}}/1
 DELETE {{baseUrl}}/1
 
 ### Get best bidder
-GET {{baseUrl}}/bestBidder/1
+GET {{baseUrl}}/bestBidder/41
 
 ### Get seller info
 GET {{baseUrl}}/sellerInfor/1
@@ -92,3 +92,48 @@ Content-Type: application/json
 
 ### Get all
 GET {{baseUrl}}/all
+
+### 🔍 Tìm kiếm nâng cao – đầy đủ tiêu chí + phân trang
+GET {{baseUrl}}/advanced-search?keyword=&minPrice=50&maxPrice=200000000&category=1&fromDate=2024-01-01&toDate=2027-01-01&page=1&limit=10
+Accept: application/json
+
+
+### 🔍 Trang 2 (cùng điều kiện)
+GET {{baseUrl}}/advanced-search?keyword=laptop&minPrice=50&maxPrice=200000000&category=6&fromDate=2024-01-01&toDate=2027-01-01&page=2&limit=10
+Accept: application/json
+
+
+### 🔍 Chỉ tìm theo tên
+GET {{baseUrl}}/advanced-search?keyword=iphone&page=1&limit=10
+Accept: application/json
+
+
+### 💰 Tìm theo giá
+GET {{baseUrl}}/advanced-search?minPrice=10000000&maxPrice=30000000&page=1&limit=10
+Accept: application/json
+
+
+### 📂 Tìm theo danh mục
+GET {{baseUrl}}/advanced-search?category=6&page=1&limit=10
+Accept: application/json
+
+
+### 📅 Tìm theo ngày đăng
+GET {{baseUrl}}/advanced-search?fromDate=2024-01-01&toDate=2025-01-01&page=1&limit=10
+Accept: application/json
+
+
+### 🔍 Không truyền gì (mặc định – tất cả sản phẩm đang đấu giá)
+GET {{baseUrl}}/advanced-search?page=1&limit=10
+Accept: application/json
+
+### Seller update product
+PUT {{baseUrl}}/1/update
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Áo Khoác Gió Nam A Đi Đát Đội Tuyển Đức",
+    "sell_price": 2500000,
+    "end_date": "2026-01-05 07:22:00"
+}

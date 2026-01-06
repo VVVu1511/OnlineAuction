@@ -11,6 +11,7 @@ import Profile from "../components/Profile/Profile.jsx";
 import OrderCompletion from "../components/OrderCompletion/OrderCompletion.jsx";
 import OAuthSuccess from "../components/OAuthSuccess/OAuthSuccess.jsx"
 import RatingPage from "../components/RatingPage/RatingPage.jsx";
+import AdvancedSearch from "../components/AdvancedSearch/AdvancedSearch.jsx";
 
 const router = createBrowserRouter([
   {
@@ -46,8 +47,12 @@ const router = createBrowserRouter([
         element: <OrderCompletion />
       },
       {
-        path:"/oauth-success",
-        element: <OAuthSuccess />
+          path:"/oauth-success",
+          element: <OAuthSuccess />
+      },
+      {
+          path:"/advanced-search",
+          element: <AdvancedSearch />
       }
     ],
   },

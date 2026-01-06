@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import db from "../utils/db.js"
+import dayjs from "../utils/dayjs.js"
 import dotenv from "dotenv";
 import sendMail from "../utils/sendMail.js";
 
@@ -150,7 +151,7 @@ export async function getRatingPercent(userId) {
 
 export async function getWinProducts(userId) {
     return await db('PRODUCT')
-        .where('end_date', '<=', db.fn.now())
+        .andWhere('end_date', '<=', new Date())
         .where('best_bidder', userId)
         .select('*');
 }
@@ -207,19 +208,24 @@ export async function getRequestSellState(user_id) {
 }
 
 export async function requestSell(user_id) {
-    const affected = await db('USER')
+    const requestExpire = dayjs()
+        .add(7, "day")
+        .toDate();
+
+    const affected = await db("USER")
         .where({ id: user_id })
         .update({
             request_sell: true,
-            request_expire: db.raw(`CURRENT_TIMESTAMP + interval '7 days'`)
+            request_expire: requestExpire
         });
 
     return {
         success: affected > 0,
-        message: "Request sell submitted"
+        message: affected > 0
+            ? "Request sell submitted"
+            : "User not found"
     };
 }
-
 
 export async function findAllById(id) {
     try {
@@ -280,7 +286,6 @@ export async function confirmRequestSell(id, approve) {
         approved: approve
     };
 }
-
 
 // getProfileById
 export async function getProfileById(id) {

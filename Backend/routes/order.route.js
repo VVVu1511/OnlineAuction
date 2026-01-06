@@ -3,7 +3,6 @@ import * as orderService from '../services/order.service.js';
 
 const router = express.Router();
 
-
 // GET /api/orders/by-product/:productId
 router.get("/by-product/:productId", async (req, res) => {
     try {

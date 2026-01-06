@@ -28,6 +28,7 @@ const router = express.Router();
 
 /* ===================== GET ===================== */
 
+// routes/product.route.js
 router.get('/all', async (req, res) => {
     try {
         const data = await productService.getAllProducts();
@@ -289,5 +290,53 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
+router.get('/advanced-search', async (req, res) => {
+    try {
+        const result = await productService.advancedSearch(req.query);
+
+        res.json({
+            success: true,
+            ...result
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
+    }
+});
+
+router.put( "/:id/update",async (req, res) => {
+        try {
+            const productId = Number(req.params.id);
+            const product = await productService.getProductInfor(productId);
+            const sellerId = product.seller;
+
+            const { name, sell_price, end_date } = req.body;
+
+            const result = await productService.updateProductInfo({
+                productId,
+                sellerId,
+                name,
+                sell_price,
+                end_date
+            });
+
+            res.json({
+                success: true,
+                message: "Cập nhật sản phẩm thành công",
+                data: result
+            });
+        } catch (err) {
+            console.error(err);
+
+            res.status(400).json({
+                success: false,
+                message: err.message
+            });
+        }
+    }
+);
 
 export default router;

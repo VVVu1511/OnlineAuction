@@ -128,7 +128,6 @@ export default function Profile() {
         }
     };
 
-
     useEffect(() => {
         if(user?.role === "bidder"){
             loadBidderData();
@@ -400,7 +399,7 @@ export default function Profile() {
                                                 <div key={i} className="relative rounded-xl bg-white border shadow-sm">
                                                     <ProductCard product={item} />
 
-                                                    <button
+                                                    {/* <button
                                                         onClick={() => openRate(item)}
                                                         className="
                                                             absolute bottom-2 right-2
@@ -409,7 +408,7 @@ export default function Profile() {
                                                         "
                                                     >
                                                         Đánh giá
-                                                    </button>
+                                                    </button> */}
                                                 </div>
                                             ))}
 

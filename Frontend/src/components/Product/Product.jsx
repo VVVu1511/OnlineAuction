@@ -177,8 +177,6 @@ export default function Product() {
         navigate(`/order/complete/${product.id}`);
     }, [product, user, navigate]);
 
-
-
     /* ================= ASK SELLER ================= */
     const handleAskSeller = async () => {
         if (!user) {
@@ -327,6 +325,8 @@ export default function Product() {
         return `${hours} giờ nữa`;
     };
     
+    const [bidError, setBidError] = useState("");
+
     const handleBid = async () => {
         if (!user.id) {
             alert("Please login to bid");
@@ -335,14 +335,17 @@ export default function Product() {
 
         try {
             const check = await biddingService.checkCanBid(product.id, user.id);
-            
-            if (!check.data.canBid) return alert(check.reason);
+
+            if (!check.data.canBid) {
+                setBidError(check.data.reason);
+                return;
+            }
 
             if (!window.confirm(`Giá đề nghị: ${check.data.suggestedPrice}`)) return;
 
             await biddingService.placeBid(product.id, check.data.suggestedPrice, user.id);
 
-            loadData();
+            await loadData();
 
             alert("Đặt giá thành công!");
 
@@ -445,6 +448,7 @@ export default function Product() {
                                 )}
                             </div>
                         )}
+
                     </div>
 
                     <p>
@@ -485,14 +489,22 @@ export default function Product() {
                     </p>
 
                 </div>
+                
+                {user?.role === "seller" && user.id === product.seller && (
+                    <SellerEditProduct
+                        product={product}
+                        onUpdated={loadData}
+                    />
+                )}
 
-                <h2 className="text-lg font-semibold text-gray-900">
-                    Mô tả
-                </h2>
 
                 {/* ===== Current description ===== */}
                 <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4">
-                    <div className="space-y-2 text-gray-700 text-sm leading-relaxed">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                        Mô tả
+                    </h2>
+
+                    <div className="mt-3 space-y-2 text-gray-700 text-sm leading-relaxed">
                         {product.description
                             .replace(/\\n/g, "\n")
                             .split("\n")
@@ -772,6 +784,183 @@ export default function Product() {
                 </section>
             )
             }
+
+            <AlertModal
+                open={!!bidError}
+                message={bidError}
+                onClose={() => setBidError("")}
+            />
+        </div>
+    );
+}
+
+function AlertModal({ open, message, onClose }) {
+    if (!open) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
+                <h3 className="text-lg font-semibold text-red-600">
+                    ⚠️ Không thể đấu giá
+                </h3>
+
+                <p className="mt-3 text-gray-700">
+                    {message}
+                </p>
+
+                <button
+                    onClick={onClose}
+                    className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-2 text-white font-semibold hover:bg-blue-700 transition"
+                >
+                    Đóng
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function SellerEditProduct({ product, onUpdated }) {
+    const [name, setName] = useState(product.name);
+    const [sellPrice, setSellPrice] = useState(product.sell_price || "");
+    const [endDate, setEndDate] = useState(
+        dayjs(product.end_date).format("YYYY-MM-DDTHH:mm")
+    );
+    const [saving, setSaving] = useState(false);
+
+    const [modal, setModal] = useState({
+        open: false,
+        success: false,
+        message: ""
+    });
+
+    /* ===== VALIDATE ===== */
+    const validate = () => {
+        if (!name.trim()) {
+            return "Tên sản phẩm không được để trống";
+        }
+
+        if (sellPrice && Number(sellPrice) <= product.current_price) {
+            return "Giá mua ngay phải lớn hơn giá hiện tại";
+        }
+
+        if (dayjs(endDate).isSameOrBefore(dayjs(product.upload_date))) {
+            return "Ngày kết thúc phải sau ngày đăng";
+        }
+
+        return null;
+    };
+
+    const handleSave = async () => {
+        const error = validate();
+        if (error) {
+            setModal({
+                open: true,
+                success: false,
+                message: error
+            });
+            return;
+        }
+
+        try {
+            setSaving(true);
+
+            const res = await productService.updateProductInfo(product.id, {
+                name: name.trim(),
+                sell_price: sellPrice || null,
+                end_date: endDate
+            });
+
+            if (res.success) {
+                setModal({
+                    open: true,
+                    success: true,
+                    message: "Cập nhật sản phẩm thành công"
+                });
+                
+                onUpdated?.();
+            }
+        } catch (err) {
+            setModal({
+                open: true,
+                success: false,
+                message:
+                    err.response?.data?.message ||
+                    "Cập nhật thất bại"
+            });
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <>
+            <div className="mt-6 rounded-xl border bg-gray-50 p-4 space-y-4">
+                <h3 className="font-semibold">🛠 Chỉnh sửa sản phẩm</h3>
+
+                <input
+                    className="w-full border rounded-lg px-3 py-2"
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Tên sản phẩm"
+                />
+
+                <input
+                    type="number"
+                    className="w-full border rounded-lg px-3 py-2"
+                    value={sellPrice}
+                    onChange={e => setSellPrice(e.target.value)}
+                    placeholder="Giá mua ngay"
+                />
+
+                <input
+                    type="datetime-local"
+                    className="w-full border rounded-lg px-3 py-2"
+                    value={endDate}
+                    onChange={e => setEndDate(e.target.value)}
+                />
+
+                <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                >
+                    {saving ? "Đang lưu..." : "Lưu thay đổi"}
+                </button>
+            </div>
+
+            <ResultModal
+                open={modal.open}
+                success={modal.success}
+                message={modal.message}
+                onClose={() => setModal({ ...modal, open: false })}
+            />
+        </>
+    );
+}
+
+function ResultModal({ open, success, message, onClose }) {
+    if (!open) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
+                <h3
+                    className={`text-lg font-semibold ${
+                        success ? "text-green-600" : "text-red-600"
+                    }`}
+                >
+                    {success ? "✅ Thành công" : "❌ Lỗi"}
+                </h3>
+
+                <p className="mt-3 text-gray-700">{message}</p>
+
+                <button
+                    onClick={onClose}
+                    className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-2 text-white font-semibold hover:bg-blue-700"
+                >
+                    Đóng
+                </button>
+            </div>
         </div>
     );
 }

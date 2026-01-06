@@ -41,7 +41,7 @@ export async function askSeller({ userId, productId, question }) {
                 user_id: userId,
                 question,
                 answer: null,
-                created_at: db.fn.now()
+                created_at: new Date()
             })
             .returning('*');
 
