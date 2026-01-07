@@ -51,10 +51,46 @@ Hệ thống hỗ trợ đăng nhập OAuth (Google), đấu giá sản phẩm, 
 3. Copy toàn bộ nội dung file:
 
 ```
-database/data.sql
+schema.sql sau khi giải nén thư mục schema
 ```
 
 4. Nhấn **Run**
+
+---
+
+### 1.3 Tài khoản mẫu để test hệ thống
+
+Sau khi chạy thành công script tạo database, hệ thống đã được khởi tạo sẵn **các tài khoản mẫu** nhằm phục vụ cho việc **test chức năng và kiểm tra phân quyền (role)**.
+
+### Tài khoản mẫu để test hệ thống
+
+**Tài khoản 1**
+- Email: vvvu23@clc.fitus.edu.vn
+- Password: 123456
+- Vai trò: ADMIN
+- Mô tả: Quản trị hệ thống, toàn quyền quản lý
+
+**Tài khoản 2**
+- Email: Vanvu151105@gmail.com
+- Password: 123456
+- Vai trò: SELLER
+- Mô tả: Người bán, đăng và quản lý sản phẩm
+
+**Tài khoản 3**
+- Email: luyentuvung@gmail.com
+- Password: 123456
+- Vai trò: BIDDER
+- Mô tả: Người mua, tham gia đấu giá
+
+**Tài khoản 4**
+- Email: luyentuvung+1@gmail.com
+- Password: 123456
+- Vai trò: BIDDER
+- Mô tả: Người mua, tham gia đấu giá
+
+
+📎 **Nguồn dữ liệu:**  
+Các tài khoản trên được khởi tạo sẵn trong file database (`schema.sql`) để phục vụ mục đích test và phát triển hệ thống.
 
 ---
 
