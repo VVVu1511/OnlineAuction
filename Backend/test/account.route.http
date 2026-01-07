@@ -46,16 +46,16 @@ Content-Type: application/json
 
 ###
 # UPDATE PROFILE (address, full name)
-PUT {{baseUrl}}/profile/19
+PUT {{baseUrl}}/profile/15
 Content-Type: application/json
 
 {
-  "address": "New Address",
-  "full_name": "New Name"
+  "address": "400 đường Hiệp Thành 13, phường Hiệp Thành",
+  "full_name": "Trần Đăng Tùng"
 }
 
 ### UPDATE PASSWORD
-PUT {{baseUrl}}/change-password/13
+PUT {{baseUrl}}/change-password/15
 Content-Type: application/json
 
 {
@@ -148,13 +148,13 @@ Content-Type: application/json
 }
 
 ### UPDATE USER
-PUT http://localhost:3000/account/update/21
+PUT http://localhost:3000/account/update/13
 Content-Type: application/json
 
 {
-  "role": 2,
+  "email": "Vanvu151105@gmail.com",
   "address": "Ha Noi",
-  "full_name": "Vu"
+  "full_name": "Trần Thị B"
 }
 
 ### =========================

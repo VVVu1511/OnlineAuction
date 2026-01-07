@@ -139,28 +139,34 @@ router.put('/change-password/:id', async (req, res) => {
     }
 });
 
-//update profile
+// update profile
 router.put('/profile/:id', async (req, res) => {
     try {
         const user_id = parseInt(req.params.id);
         const { full_name, address } = req.body;
 
-        let updated = 0;
+        if (address !== undefined) {
+            await accountService.updateAddress({ user_id, address });
+        }
 
-        if (address) updated += await accountService.updateAddress({ user_id, address });
-        if (full_name) updated += await accountService.updateFullName({ user_id, full_name });
+        if (full_name !== undefined) {
+            await accountService.updateFullName({ user_id, full_name });
+        }
 
         res.json({
             success: true,
             message: "Profile updated successfully",
-            data: updated
+            data: {
+                full_name,
+                address
+            }
         });
 
     } catch (err) {
+        console.error(err);
         res.status(500).json({
             success: false,
-            message: "Update profile failed",
-            data: err.message
+            message: "Update profile failed"
         });
     }
 });
@@ -578,6 +584,33 @@ router.get("/requestSell/:id", async (req, res) => {
             success: false,
             message: "Get request sell state failed",
             data: null
+        });
+    }
+});
+
+// routes/account.route.js
+router.get("/check-email", async (req, res) => {
+    try {
+        const { email } = req.query;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is required"
+            });
+        }
+
+        const exists = await accountService.isEmailExists(email);
+
+        res.json({
+            success: true,
+            exists
+        });
+    } catch (err) {
+        console.error("Check email error:", err);
+        res.status(500).json({
+            success: false,
+            message: "Check email failed"
         });
     }
 });

@@ -5,12 +5,18 @@ import { createRoot } from "react-dom/client";
 import { StrictMode } from "react";
 import LoadingProvider from "./context/LoadingContext.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
+import { ConfirmModalProvider } from "./context/ConfirmModalContext.jsx"
+import { ResultModalProvider } from "./context/ResultModalContext.jsx";
 
 createRoot(document.getElementById("root")).render(
     <StrictMode>
         <LoadingProvider>
             <AuthProvider>
-                <RouterProvider router={router} />
+                <ConfirmModalProvider>
+                    <ResultModalProvider>
+                        <RouterProvider router={router} />
+                    </ResultModalProvider>
+                </ConfirmModalProvider>
             </AuthProvider>
         </LoadingProvider>
     </StrictMode>

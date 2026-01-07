@@ -24,9 +24,9 @@ export function AuthProvider({ children }) {
         setUser(null);
     };
 
-    const updateUser = (userData) => {
-        sessionStorage.setItem("user", JSON.stringify(userData));
-        setUser(userData);
+    const updateUser = (newData) => {
+        setUser(newData);
+        sessionStorage.setItem("user", JSON.stringify(newData));
     };
 
     return (

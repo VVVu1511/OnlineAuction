@@ -72,35 +72,29 @@ export async function getBidHistory(product_id) {
  */
 export async function new_bid(data) {
     try {
-        // insert bid + lấy id
-        const rows = await db('BID_HISTORY')
-            .insert({
-                user_id: data.user_id,
-                product_id: data.product_id,
-                time: data.time || new Date(),
-                price: data.price
-            })
-            
-        // get product
+        await db('BID_HISTORY').insert({
+            user_id: data.user_id,
+            product_id: data.product_id,
+            time: new Date(),
+            price: data.price
+        });
+
+        await db('PRODUCT')
+            .where({ id: data.product_id })
+            .increment('bid_counts', 1)
+            .update({
+                current_price: data.price,
+                best_bidder: data.user_id
+            });
+
         const product = await db('PRODUCT')
             .where({ id: data.product_id })
             .first();
 
-        const newBidCount = (product.bid_counts || 0) + 1;
-
-        // update product
-        await db('PRODUCT')
-            .where({ id: data.product_id })
-            .update({
-                current_price: data.price,
-                bid_counts: newBidCount,
-                best_bidder: data.user_id
-            });
-
         return {
-            product_id: data.product_id,
-            price: data.price,
-            bid_counts: newBidCount
+            product_id: product.id,
+            price: product.current_price,
+            bid_counts: product.bid_counts
         };
 
     } catch (err) {

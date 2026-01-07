@@ -92,68 +92,6 @@ export const confirmReceive = async (productId, userId) => {
     return true;
 };
 
-export const upsertReview = async (productId, reviewerId, payload) => {
-    const order = await getOrderByProduct(productId);
-
-    if (order.status !== 'RATING_OPEN')
-        throw new Error('Rating closed');
-
-    if (![order.seller_id, order.winner_id].includes(reviewerId))
-        throw new Error('Not allowed');
-
-    const target =
-        reviewerId === order.seller_id
-            ? order.winner_id
-            : order.seller_id;
-
-    await db.transaction(async trx => {
-        /* 1️⃣ Chặn đánh giá lại */
-        const existed = await trx('ORDER_REVIEW')
-            .where({
-                order_id: order.id,
-                reviewer_id: reviewerId
-            })
-            .first();
-
-        if (existed)
-            throw new Error('You already reviewed this order');
-
-        /* 2️⃣ Insert ORDER_REVIEW */
-        await trx('ORDER_REVIEW').insert({
-            order_id: order.id,
-            reviewer_id: reviewerId,
-            target_user_id: target,
-            score: payload.score,
-            comment: payload.comment,
-            updated_at: new Date()
-        });
-
-        /* 3️⃣ Insert RATING (global user rating) */
-        await trx('RATING').insert({
-            rater_id: reviewerId,
-            rated_id: target,
-            product_id: productId,
-            rating: payload.score,
-            comment: payload.comment,
-            created_at: new Date()
-        });
-
-        /* 4️⃣ Nếu đủ 2 review → COMPLETED */
-        const count = await trx('ORDER_REVIEW')
-            .where({ order_id: order.id })
-            .count('* as total')
-            .first();
-
-        if (Number(count.total) === 2) {
-            await trx('ORDER_COMPLETION')
-                .where({ id: order.id })
-                .update({ status: 'COMPLETED' });
-        }
-    });
-
-    return true;
-};
-
 export const cancelOrder = async (productId, sellerId) => {
     const order = await getOrderByProduct(productId);
 
@@ -182,7 +120,18 @@ export const cancelOrder = async (productId, sellerId) => {
             score: -1,
             updated_at: new Date()
         });
+        
+        await trx('RATING')
+                .insert({
+                    product_id: productId,
+                    rater_id: sellerId,
+                    rated_id: order.winner_id,
+                    rating: -1,
+                    comment: 'Buyer did not complete payment in time',
+                    created_at: new Date()
+                })
     });
+
 
     return true;
 };
@@ -236,3 +185,98 @@ export const getReviewsByOrder = async (orderId) => {
 
     return reviews;
 };
+
+export async function upsertReview(data) {
+    const {
+        product_id,
+        reviewer_id,
+        score,
+        comment
+    } = data;
+
+    // 🔹 Resolve target_user_id từ order
+    const order = await db('ORDER_COMPLETION')
+        .where({ product_id })
+        .first();
+
+    if (!order) {
+        throw new Error('Order not found');
+    }
+
+    const order_id = order.id;
+
+    const target_user_id =
+        reviewer_id === order.winner_id
+            ? order.seller_id
+            : order.winner_id;
+
+    // =====================
+    // REVIEW (per product)
+    // =====================
+    const existingReview = await db('ORDER_REVIEW')
+        .where({ reviewer_id, target_user_id, order_id })
+        .first();
+
+    let review;
+
+    if (existingReview) {
+        await db('ORDER_REVIEW')
+            .where({ id: existingReview.id })
+            .update({
+                score,
+                comment,
+                updated_at: new Date()
+            });
+
+        review = {
+            ...existingReview,
+            score,
+            comment,
+            updated_at: new Date()
+        };
+    } else {
+        const [id] = await db('ORDER_REVIEW').insert({
+            product_id,
+            reviewer_id,
+            target_user_id,
+            score,
+            comment,
+            created_at: new Date()
+        });
+
+        review = await db('ORDER_REVIEW').where({ id }).first();
+    }
+
+    // =====================
+    // RATING (reputation)
+    // =====================
+    const existingRating = await db('RATING')
+        .where({
+            product_id,
+            rater_id: reviewer_id,
+            rated_id: target_user_id
+        })
+        .first();
+
+    if (existingRating) {
+        await db('RATING')
+            .where({ id: existingRating.id })
+            .update({
+                rating: score,
+                comment,
+                created_at: new Date()
+            });
+    } else {
+        await db('RATING').insert({
+            product_id,
+            rater_id: reviewer_id,
+            rated_id: target_user_id,
+            rating: score,
+            comment,
+            created_at: new Date()
+        });
+    }
+
+    return review;
+}
+

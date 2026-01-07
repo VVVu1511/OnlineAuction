@@ -6,6 +6,8 @@ import Back from "../Back/Back.jsx";
 import * as accountService from "../../services/account.service.jsx"
 import * as biddingService from "../../services/bidding.service.jsx"
 import ProductCard from "../ProductCard/ProductCard.jsx";
+import { useConfirmModal } from "../../context/ConfirmModalContext";
+import { useResultModal } from "../../context/ResultModalContext";
 
 const getTimeLeft = (expire) => {
     const diff = new Date(expire) - new Date();
@@ -20,9 +22,9 @@ const getTimeLeft = (expire) => {
 export default function Profile() {
     const { user, updateUser } = useContext(AuthContext);
     const { setLoading } = useContext(LoadingContext);
-
+    const { showResult } = useResultModal();
     const [isEditing, setIsEditing] = useState(false);
-
+    const { showConfirm } = useConfirmModal();
     const [profile, setProfile] = useState({
         full_name: user?.full_name || "",
         email: user?.email || "",
@@ -57,81 +59,180 @@ export default function Profile() {
     };
 
     const sendUpgradeRequestHandler = async () => {
-        if (!window.confirm("Gửi yêu cầu nâng cấp thành Seller?")) return;
-        
-        try {
-            const data = await accountService.requestSell(user?.id);
-            
-            loadBidderData();
+        showConfirm({
+            title: "Xác nhận gửi yêu cầu nâng cấp",
+            message: (
+                <div className="space-y-2 text-sm">
+                    <p>
+                        Bạn muốn gửi yêu cầu nâng cấp tài khoản lên
+                        <b className="text-blue-600"> Seller</b>?
+                    </p>
+                    <p className="text-gray-500 text-xs">
+                        Yêu cầu sẽ được hệ thống xem xét trước khi phê duyệt.
+                    </p>
+                </div>
+            ),
+            onConfirm: async () => {
+                try {
+                    const data = await accountService.requestSell(user?.id);
 
-            alert(data.success ? "Yêu cầu đã được gửi" : data.message);
+                    loadBidderData();
 
-        } catch(err) {
-            alert("Lỗi gửi yêu cầu" + err);
-        }
+                    showResult({
+                        success: data.success,
+                        message: data.success
+                            ? "Yêu cầu nâng cấp đã được gửi"
+                            : data.message || "Gửi yêu cầu thất bại"
+                    });
+
+                } catch (err) {
+                    console.error("Upgrade request error:", err);
+
+                    showResult({
+                        success: false,
+                        message: "Lỗi khi gửi yêu cầu nâng cấp"
+                    });
+                }
+            }
+        });
     };
 
     /* ================= UPDATE PROFILE ================= */
     const handleUpdateProfile = async () => {
-        try {
-            setLoading(true);
+        showConfirm({
+            title: "Xác nhận cập nhật thông tin",
+            message: (
+                <div className="space-y-2 text-sm">
+                    <p>Bạn có chắc muốn cập nhật thông tin cá nhân?</p>
 
-            const updated = await updateProfile(
-                {
-                    full_name: profile.full_name,
-                    address: profile.address,
-                },
-                user.id
-            );
+                    <div className="border rounded p-2 bg-gray-50 text-xs space-y-1">
+                        <p>
+                            <b>Họ tên:</b> {profile.full_name || "(trống)"}
+                        </p>
+                        <p>
+                            <b>Địa chỉ:</b> {profile.address || "(trống)"}
+                        </p>
+                    </div>
+                </div>
+            ),
+            onConfirm: async () => {
+                try {
+                    setLoading(true);
 
+                    const updated = await updateProfile(
+                        {
+                            full_name: profile.full_name,
+                            address: profile.address,
+                        },
+                        user.id
+                    );
 
-            updateUser(updated); // cập nhật AuthContext
-            setIsEditing(false);
-            alert("Cập nhật thông tin thành công");
+                    const newUser = {
+                        ...user,
+                        ...updated.data
+                    };
 
-        } catch {
-            alert("Cập nhật thất bại");
-        } finally {
-            setLoading(false);
-        }
+                    updateUser(newUser);
+
+                    setIsEditing(false);
+
+                    showResult({
+                        success: true,
+                        message: "Cập nhật thông tin thành công"
+                    });
+
+                } catch (err) {
+                    console.error("Update profile error:", err);
+
+                    showResult({
+                        success: false,
+                        message:
+                            err.response?.data?.message ||
+                            "Cập nhật thông tin thất bại"
+                    });
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
     };
 
     /* ================= CHANGE PASSWORD ================= */
     const handleChangePassword = async () => {
         if (passwordData.newPassword !== passwordData.confirmPassword) {
-            alert("Mật khẩu xác nhận không khớp");
+            console.warn("Confirm password not match");
             return;
         }
 
-        try {
-            setLoading(true);
+        showConfirm({
+            title: "Xác nhận đổi mật khẩu",
+            message: (
+                <div className="space-y-2 text-sm">
+                    <p className="text-red-600 font-semibold">
+                        ⚠️ Bạn đang thay đổi mật khẩu tài khoản
+                    </p>
+                    <p>
+                        Sau khi đổi mật khẩu, bạn cần đăng nhập lại ở các thiết bị khác.
+                    </p>
+                    <p className="text-gray-500 text-xs">
+                        Hành động này không thể hoàn tác.
+                    </p>
+                </div>
+            ),
+            onConfirm: async () => {
+                try {
+                    setLoading(true);
 
-            await changePassword(
-                {
-                    old_password: passwordData.oldPassword,
-                    new_password: passwordData.newPassword,
-                },
-                user.id
-            );
+                    await changePassword(
+                        {
+                            old_password: passwordData.oldPassword,
+                            new_password: passwordData.newPassword,
+                        },
+                        user.id
+                    );
 
-            setPasswordData({
-                oldPassword: "",
-                newPassword: "",
-                confirmPassword: "",
-            });
+                    setPasswordData({
+                        oldPassword: "",
+                        newPassword: "",
+                        confirmPassword: "",
+                    });
 
-            alert("Đổi mật khẩu thành công");
-        } catch {
-            alert("Đổi mật khẩu thất bại");
-        } finally {
-            setLoading(false);
-        }
+                    showResult({
+                        success: true,
+                        message: "Đổi mật khẩu thành công"
+                    });
+
+                } catch (err) {
+                    console.error(
+                        "Change password error:",
+                        err.response?.data?.message || err
+                    );
+
+                    showResult({
+                        success: false,
+                        message:
+                            err.response?.data?.message ||
+                            "Đổi mật khẩu thất bại"
+                    });
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
     };
 
     useEffect(() => {
         if(user?.role === "bidder"){
             loadBidderData();
-        } 
+        }
+        
+        if (user) {
+            setProfile({
+                full_name: user.full_name || "",
+                address: user.address || "",
+                email: user.email || ""
+            });
+        }
     }, [user]);
 
     const loadBidderData = async () => {
@@ -212,7 +313,7 @@ export default function Profile() {
                                 : ""
                         }`}
                         placeholder="Họ tên"
-                        value={isEditing ? profile.full_name : user?.full_name}
+                        value={profile.full_name}
                         disabled={!isEditing}
                         onChange={e =>
                             setProfile({ ...profile, full_name: e.target.value })
@@ -221,7 +322,7 @@ export default function Profile() {
 
                     <input
                         className="border p-2 rounded w-full bg-gray-100"
-                        value={user?.email}
+                        value={profile.email}
                         disabled
                     />
 
@@ -232,7 +333,7 @@ export default function Profile() {
                                 : ""
                         }`}
                         placeholder="Địa chỉ"
-                        value={isEditing ? profile.address : user?.address}
+                        value={profile.address}
                         disabled={!isEditing}
                         onChange={e =>
                             setProfile({ ...profile, address: e.target.value })
@@ -319,7 +420,8 @@ export default function Profile() {
 
                     <button
                         disabled={!isPasswordValid}
-                        className={`px-4 py-2 rounded text-white ${
+                        onClick={handleChangePassword}
+                        className={`mt-3 px-4 py-2 rounded text-white transition ${
                             isPasswordValid
                                 ? "bg-green-600 hover:bg-green-700"
                                 : "bg-gray-400 cursor-not-allowed"
@@ -548,7 +650,7 @@ export default function Profile() {
                             )}
                         </div>
 
-                        {selected && open && (
+                        {/* {selected && open && (
                             <RateModal
                                 open={open}
                                 onClose={closeRate}
@@ -561,7 +663,7 @@ export default function Profile() {
                                     )
                                 }
                             />
-                        )}
+                        )} */}
                     </>
                 )
             }
@@ -569,70 +671,70 @@ export default function Profile() {
     );
 }
 
-function RateModal({ open, onClose, onSubmit }) {
-    const [rating, setRating] = useState("");
-    const [comment, setComment] = useState("");
-    const { loading, setLoading } = useContext(LoadingContext);
+// function RateModal({ open, onClose, onSubmit }) {
+//     const [rating, setRating] = useState("");
+//     const [comment, setComment] = useState("");
+//     const { loading, setLoading } = useContext(LoadingContext);
 
-    // ✅ Reset khi modal đóng
-    useEffect(() => {
-        if (!open) {
-            setRating("");
-            setComment("");
-        }
-    }, [open]);
+//     // ✅ Reset khi modal đóng
+//     useEffect(() => {
+//         if (!open) {
+//             setRating("");
+//             setComment("");
+//         }
+//     }, [open]);
 
-    if (!open) return null;
+//     if (!open) return null;
 
-    const handleSubmit = async () => {
-    if (!rating) return;
+//     const handleSubmit = async () => {
+//     if (!rating) return;
 
-    setLoading(true);
-        try {
-            await onSubmit(Number(rating), comment);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setLoading(false);
-            onClose(); // 👈 LUÔN ĐÓNG
-        }
-    };
+//     setLoading(true);
+//         try {
+//             await onSubmit(Number(rating), comment);
+//         } catch (e) {
+//             console.error(e);
+//         } finally {
+//             setLoading(false);
+//             onClose(); // 👈 LUÔN ĐÓNG
+//         }
+//     };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-                <h3 className="mb-4 text-lg font-semibold">
-                    Đánh giá người bán
-                </h3>
+//     return (
+//         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+//             <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+//                 <h3 className="mb-4 text-lg font-semibold">
+//                     Đánh giá người bán
+//                 </h3>
 
-                <select
-                    value={rating}
-                    onChange={(e) => setRating(e.target.value)}
-                    className="w-full mb-4 rounded border px-3 py-2"
-                >
-                    <option value="">-- Chọn đánh giá --</option>
-                    <option value="1">👍 Tốt</option>
-                    <option value="-1">👎 Không tốt</option>
-                </select>
+//                 <select
+//                     value={rating}
+//                     onChange={(e) => setRating(e.target.value)}
+//                     className="w-full mb-4 rounded border px-3 py-2"
+//                 >
+//                     <option value="">-- Chọn đánh giá --</option>
+//                     <option value="1">👍 Tốt</option>
+//                     <option value="-1">👎 Không tốt</option>
+//                 </select>
 
-                <textarea
-                    rows={4}
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    className="w-full mb-4 rounded border p-3"
-                    placeholder="Nhận xét (không bắt buộc)"
-                />
+//                 <textarea
+//                     rows={4}
+//                     value={comment}
+//                     onChange={(e) => setComment(e.target.value)}
+//                     className="w-full mb-4 rounded border p-3"
+//                     placeholder="Nhận xét (không bắt buộc)"
+//                 />
 
-                <div className="flex justify-end gap-3">
-                    <button onClick={onClose}>Hủy</button>
-                    <button
-                        disabled={!rating || loading}
-                        onClick={handleSubmit}
-                    >
-                        {loading ? "Đang gửi..." : "Gửi đánh giá"}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
+//                 <div className="flex justify-end gap-3">
+//                     <button onClick={onClose}>Hủy</button>
+//                     <button
+//                         disabled={!rating || loading}
+//                         onClick={handleSubmit}
+//                     >
+//                         {loading ? "Đang gửi..." : "Gửi đánh giá"}
+//                     </button>
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// }

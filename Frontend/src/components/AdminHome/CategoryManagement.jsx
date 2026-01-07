@@ -1,17 +1,20 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { LoadingContext } from "../../context/LoadingContext";
+import { useConfirmModal } from "../../context/ConfirmModalContext";
+import { useResultModal } from "../../context/ResultModalContext";
 import * as categoryService from "../../services/category.service";
 import * as productService from "../../services/product.service";
 
 export default function CategoryManagement() {
     const { user } = useContext(AuthContext);
     const { setLoading } = useContext(LoadingContext);
-
+    const { showResult } = useResultModal();
     const [categories, setCategories] = useState([]);
     const [newCat, setNewCat] = useState("");
     const [editingId, setEditingId] = useState(null);
     const [editingText, setEditingText] = useState("");
+    const { showConfirm } = useConfirmModal();
 
     const loadCategories = async () => {
         try {
@@ -29,55 +32,126 @@ export default function CategoryManagement() {
         loadCategories();
     }, [user]);
 
-    const handleAddCategory = async () => {
-        if (!newCat.trim()) return alert("Tên category không được để trống");
+    const handleAddCategory = () => {
+        const name = newCat.trim();
 
-        try {
-            setLoading(true);
-            const res = await categoryService.addCategory(newCat.trim());
-            setCategories(prev => [...prev, res.data]);
-            setNewCat("");
-        } finally {
-            setLoading(false);
+        if (!name) {
+            showResult({
+                success: false,
+                message: "Tên category không được để trống"
+            });
+            return;
         }
-    };
 
-    const handleUpdateCategory = async (id) => {
-        if (!editingText.trim()) return;
+        showConfirm({
+            title: "Thêm danh mục",
+            message: `Bạn có chắc chắn muốn thêm danh mục "${name}" không?`,
+            onConfirm: async () => {
+                try {
+                    setLoading(true);
 
-        try {
-            setLoading(true);
-            
-            await categoryService.updateCategory(id, editingText.trim());
-            setCategories(prev =>
-                prev.map(c =>
-                    c.id === id ? { ...c, description: editingText } : c
-                )
-            );
-            setEditingId(null);
+                    const res = await categoryService.addCategory(name);
 
-        } finally {
-            setLoading(false);
-        }
-    };
+                    setCategories(prev => [...prev, res.data]);
+                    setNewCat("");
 
-    const handleDeleteCategory = async (id) => {
-        if (!window.confirm("Xóa category này?")) return;
-
-        try {
-            setLoading(true);
-            const products = await productService.getProductsByCategory(id);
-
-            if (products.data.length > 0) {
-                alert("Không thể xóa danh mục đã có sản phẩm");
-                return;
+                    showResult({
+                        success: true,
+                        message: `Đã thêm danh mục "${name}"`
+                    });
+                } catch (err) {
+                    showResult({
+                        success: false,
+                        message:
+                            err.response?.data?.message ||
+                            "Thêm danh mục thất bại"
+                    });
+                } finally {
+                    setLoading(false);
+                }
             }
+        });
+    };
 
-            await categoryService.deleteCategory(id);
-            setCategories(prev => prev.filter(c => c.id !== id));
-        } finally {
-            setLoading(false);
-        }
+    const handleUpdateCategory = (id) => {
+        const name = editingText.trim();
+        if (!name) return;
+
+        showConfirm({
+            title: "Cập nhật danh mục",
+            message: `Bạn có chắc chắn muốn đổi tên thành "${name}" không?`,
+            onConfirm: async () => {
+                try {
+                    setLoading(true);
+
+                    await categoryService.updateCategory(id, name);
+
+                    setCategories(prev =>
+                        prev.map(c =>
+                            c.id === id
+                                ? { ...c, description: name }
+                                : c
+                        )
+                    );
+
+                    setEditingId(null);
+
+                    showResult({
+                        success: true,
+                        message: "Cập nhật danh mục thành công"
+                    });
+                } catch (err) {
+                    showResult({
+                        success: false,
+                        message:
+                            err.response?.data?.message ||
+                            "Cập nhật danh mục thất bại"
+                    });
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
+
+    const handleDeleteCategory = (id) => {
+        showConfirm({
+            title: "Xóa danh mục",
+            message: "Bạn có chắc chắn muốn xóa danh mục này không?",
+            onConfirm: async () => {
+                try {
+                    setLoading(true);
+
+                    const products = await productService.getProductsByCategory(id);
+
+                    if (products.data.length > 0) {
+                        showResult({
+                            success: false,
+                            message: "Không thể xóa danh mục đã có sản phẩm"
+                        });
+                        return;
+                    }
+
+                    await categoryService.deleteCategory(id);
+
+                    setCategories(prev => prev.filter(c => c.id !== id));
+
+                    showResult({
+                        success: true,
+                        message: "Xóa danh mục thành công"
+                    });
+                } catch (err) {
+                    showResult({
+                        success: false,
+                        message:
+                            err.response?.data?.message ||
+                            "Xóa danh mục thất bại"
+                    });
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
     };
 
     const [catError, setCatError] = useState("");

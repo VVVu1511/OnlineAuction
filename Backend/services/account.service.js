@@ -432,3 +432,12 @@ export async function removeWatchList(user_id, product_id) {
         throw new Error("Error removing watchlist");
     }
 }
+
+// services/account.service.js
+export async function isEmailExists(email) {
+    const user = await db("USER")
+        .where({ email })
+        .first();
+
+    return !!user;
+}

@@ -2,6 +2,8 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { LoadingContext } from "../../context/LoadingContext";
 import * as accountService from "../../services/account.service";
+import { useConfirmModal } from "../../context/ConfirmModalContext";
+import { useResultModal } from "../../context/ResultModalContext";
 
 export default function UserManagement() {
     const { user } = useContext(AuthContext);
@@ -9,6 +11,8 @@ export default function UserManagement() {
 
     const [users, setUsers] = useState([]);
     const [requests, setRequests] = useState([]);
+    const { showConfirm } = useConfirmModal();
+    const { showResult } = useResultModal();
 
     const loadUsers = async () => {
         try {
@@ -25,31 +29,65 @@ export default function UserManagement() {
             if (user) loadUsers();
         }, [user]);
 
-        const handleDelete = async (id) => {
-            if (!confirm("Bạn có chắc muốn xóa user này?")) return;
+    const handleDelete = (id) => {
+        showConfirm({
+            title: "Xác nhận xóa",
+            message: "Bạn có chắc chắn muốn xóa user này không?",
+            onConfirm: async () => {
+                try {
+                    setLoading(true);
 
-            try {
-                setLoading(true);
-                await accountService.deleteUser(id);
-                setUsers(prev => prev.filter(u => u.id !== id));
-            } finally {
-                setLoading(false);
+                    await accountService.deleteUser(id);
+                    setUsers(prev => prev.filter(u => u.id !== id));
+
+                    showResult({
+                        success: true,
+                        message: "Xóa user thành công"
+                    });
+                } catch (err) {
+                    console.error("Delete user error:", err);
+
+                    showResult({
+                        success: false,
+                        message:
+                            err.response?.data?.message ||
+                            "Xóa user thất bại"
+                    });
+                } finally {
+                    setLoading(false);
+                }
             }
-        };
-        
-    const handleResetPassword = async (email) => {
-        if (!confirm("Reset mật khẩu và gửi email cho user này?")) return;
+        });
+    };
 
-        try {
-            setLoading(true);
-            await accountService.resetPassword(email, "123456");
-            alert("Đã reset mật khẩu và gửi email cho người dùng");
-        } catch (err) {
-            console.error("Reset password error:", err);
-            alert(err.response?.data?.message || "Reset mật khẩu thất bại");
-        } finally {
-            setLoading(false);
-        }
+    const handleResetPassword = (email) => {
+        showConfirm({
+            title: "Xác nhận reset mật khẩu",
+            message: "Reset mật khẩu và gửi email cho user này?",
+            onConfirm: async () => {
+                try {
+                    setLoading(true);
+
+                    await accountService.resetPassword(email, "123456");
+
+                    showResult({
+                        success: true,
+                        message: "Đã reset mật khẩu và gửi email cho người dùng"
+                    });
+                } catch (err) {
+                    console.error("Reset password error:", err);
+
+                    showResult({
+                        success: false,
+                        message:
+                            err.response?.data?.message ||
+                            "Reset mật khẩu thất bại"
+                    });
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
     };
 
     return (
@@ -123,6 +161,8 @@ export default function UserManagement() {
 
 function UpgradeRequests({ user }) {
     const [requests, setRequests] = useState([]);
+    const { showConfirm } = useConfirmModal();
+    const { showResult } = useResultModal();
 
     const loadData = async () => {
         try {
@@ -140,14 +180,37 @@ function UpgradeRequests({ user }) {
     
     }, [user]);
 
-    const handleAction = async (id, action) => {
-        try {
-            await accountService.handleAccountAction(id, action);
-            loadData();
-        } catch (err) {
-            console.error("Account action error:", err);
-            alert(err.response?.data?.message || "Thao tác thất bại");
-        }
+    const handleAction = (id, action) => {
+        const actionTextMap = {
+            approve: "duyệt",
+            deny: "từ chối"
+        };
+
+        showConfirm({
+            title: "Xác nhận thao tác",
+            message: `Bạn có chắc chắn muốn ${actionTextMap[action]} tài khoản này không?`,
+            onConfirm: async () => {
+                try {
+                    await accountService.handleAccountAction(id, action);
+
+                    loadData();
+
+                    showResult({
+                        success: true,
+                        message: `Đã ${actionTextMap[action]} tài khoản thành công`
+                    });
+                } catch (err) {
+                    console.error("Account action error:", err);
+
+                    showResult({
+                        success: false,
+                        message:
+                            err.response?.data?.message ||
+                            "Thao tác thất bại"
+                    });
+                }
+            }
+        });
     };
 
     return (

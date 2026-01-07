@@ -143,7 +143,7 @@ export default function ProductCard({ product }) {
                 </p>
 
                 <p className="text-xs text-gray-500">
-                    Ngày kết thúc: {product.end_date ? dayjs(product.end_date).format("DD/MM/YYYY HH:mm") : "Đã kết thúc"}
+                    Ngày đăng: {product.upload_date ? dayjs(product.upload_date).format("DD/MM/YYYY HH:mm") : "Đã kết thúc"}
                 </p>
 
                 <div className="flex justify-between text-xs text-gray-500 pt-1">

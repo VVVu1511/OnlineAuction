@@ -115,11 +115,12 @@ router.post('/:productId/review', async (req, res) => {
     try {
         const { userId, score, comment } = req.body;
 
-        const data = await orderService.upsertReview(
-            +req.params.productId,
-            +userId,
-            { score, comment }
-        );
+        const data = await orderService.upsertReview({
+            product_id: Number(req.params.productId),
+            reviewer_id: Number(userId),
+            score,
+            comment
+        });
 
         res.json({ success: true, data });
     } catch (err) {
@@ -185,5 +186,7 @@ router.get("/:orderId/reviews", async (req, res) => {
         });
     }
 });
+
+
 
 export default router;

@@ -4,8 +4,12 @@ import * as biddingService from "../../services/bidding.service.jsx";
 import { LoadingContext } from "../../context/LoadingContext.jsx";
 import { AuthContext } from "../../context/AuthContext.jsx";
 import ProductCard from "../ProductCard/ProductCard.jsx"
+import { useConfirmModal } from "../../context/ConfirmModalContext";
+import { useResultModal } from "../../context/ResultModalContext";
 
 export default function SellerHome() {
+    const { showConfirm } = useConfirmModal();
+    const { showResult } = useResultModal();
     // ===== CONTEXT =====
     const { user } = useContext(AuthContext);
     const { setLoading } = useContext(LoadingContext);
@@ -61,68 +65,68 @@ export default function SellerHome() {
         );
 
     /* ================= RATE BIDDER ================= */
-    const handleRateBidder = async (p) => {
-        if (!rateComment.trim()) return;
+    // const handleRateBidder = async (p) => {
+    //     if (!rateComment.trim()) return;
 
-        try {
-            setRating(true);
-            setLoading(true);
+    //     try {
+    //         setRating(true);
+    //         setLoading(true);
 
-            const res = await biddingService.rateBidder(
-                p.best_bidder,
-                p.id,
-                rateComment,
-                rateValue
-            );
+    //         const res = await biddingService.rateBidder(
+    //             p.best_bidder,
+    //             p.id,
+    //             rateComment,
+    //             rateValue
+    //         );
 
-            if (res.success) {
-                alert("Đánh giá thành công");
-                setRateTarget(null);
-                setRateComment("");
+    //         if (res.success) {
+    //             alert("Đánh giá thành công");
+    //             setRateTarget(null);
+    //             setRateComment("");
 
-                loadData();
-            } else {
-                alert(res.message || "Đánh giá thất bại");
-            }
-        } catch (err) {
-            alert(err.response?.data?.message || "Lỗi server");
-        } finally {
-            setRating(false);
-            setLoading(false);
-        }
-    };
+    //             loadData();
+    //         } else {
+    //             alert(res.message || "Đánh giá thất bại");
+    //         }
+    //     } catch (err) {
+    //         alert(err.response?.data?.message || "Lỗi server");
+    //     } finally {
+    //         setRating(false);
+    //         setLoading(false);
+    //     }
+    // };
 
     /* ================= CANCEL TRANSACTION ================= */
-    const handleCancelTransaction = async (p) => {
-        try {
-            setCanceling(true);
-            setLoading(true);
+    // const handleCancelTransaction = async (p) => {
+    //     try {
+    //         setCanceling(true);
+    //         setLoading(true);
 
-            const res = await biddingService.rateBidder(
-                p.best_bidder,
-                p.id,
-                "Người thắng không thanh toán",
-                -1,
-            );
+    //         const res = await biddingService.rateBidder(
+    //             p.best_bidder,
+    //             p.id,
+    //             "Người thắng không thanh toán",
+    //             -1,
+    //         );
 
-            if (res.success) {
-                alert(
-                    "Đã huỷ giao dịch\nNgười thắng không thanh toán (-1)"
-                );
-                setCancelTarget(null);
+    //         if (res.success) {
+    //             alert(
+    //                 "Đã huỷ giao dịch\nNgười thắng không thanh toán (-1)"
+    //             );
+    //             setCancelTarget(null);
 
-                loadData();
+    //             loadData();
 
-            } else {
-                alert(res.message || "Huỷ thất bại");
-            }
-        } catch (err) {
-            alert(err || "Lỗi server");
-        } finally {
-            setCanceling(false);
-            setLoading(false);
-        }
-    };
+    //         } else {
+    //             alert(res.message || "Huỷ thất bại");
+    //         }
+    //     } catch (err) {
+    //         alert(err || "Lỗi server");
+    //     } finally {
+    //         setCanceling(false);
+    //         setLoading(false);
+    //     }
+    // };
 
     const MIN_COMMENT_LENGTH = 5;
     const MAX_COMMENT_LENGTH = 200;
@@ -191,7 +195,7 @@ export default function SellerHome() {
                                 </div>
 
                                 {/* ===== ALREADY RATED ===== */}
-                                {p.winner_rating && (
+                                {/* {p.winner_rating && (
                                     <div className="text-sm text-gray-700 bg-gray-50 border rounded-lg p-3">
                                         <p>
                                             <span className="font-medium">
@@ -206,10 +210,10 @@ export default function SellerHome() {
                                             {p.comment}
                                         </p>
                                     </div>
-                                )}
+                                )} */}
 
                                 {/* ===== NOT RATED ===== */}
-                                {!p.winner_rating && (
+                                {/* {!p.winner_rating && (
                                     <div className="border rounded-lg p-3 space-y-3">
                                         <textarea
                                             rows={2}
@@ -282,7 +286,8 @@ export default function SellerHome() {
                                             </button>
                                         </div>
                                     </div>
-                                )}
+                                )} */}
+                                
                             </div>
                         ))}
                     </div>
@@ -297,6 +302,7 @@ import ReactQuill from "react-quill";
 import "react-quill/dist/quill.snow.css";
 
 function AddAuctionProduct({ call }) {
+    const { showConfirm } = useConfirmModal();
     const [name, setName] = useState("");
     const [images, setImages] = useState([]);
     const [startPrice, setStartPrice] = useState("");
@@ -308,6 +314,7 @@ function AddAuctionProduct({ call }) {
     const { user } = useContext(AuthContext);
     const { setLoading } = useContext(LoadingContext);
     const [endDate, setEndDate] = useState("");
+    const { showResult } = useResultModal();
 
     useEffect(() => {
         return () => {
@@ -334,72 +341,117 @@ function AddAuctionProduct({ call }) {
         if (!validateForm()) return;
 
         if (!user) {
-            alert("Bạn cần đăng nhập");
+            showResult({
+                success: false,
+                message: "Bạn cần đăng nhập"
+            });
             return;
         }
 
         if (user.role !== "seller") {
-            alert("Chỉ seller mới được đăng sản phẩm");
+            showResult({
+                success: false,
+                message: "Chỉ seller mới được đăng sản phẩm"
+            });
             return;
         }
 
         if (images.length < 3) {
-            alert("Vui lòng tải lên ít nhất 3 ảnh.");
+            showResult({
+                success: false,
+                message: "Vui lòng tải lên ít nhất 3 ảnh"
+            });
             return;
         }
 
-        const formData = new FormData();
-        formData.append("name", name);
-        images.forEach(img => formData.append("images", img));
-        formData.append("startPrice", startPrice);
-        formData.append("bidStep", bidStep);
-        formData.append("buyNowPrice", buyNowPrice);
-        formData.append("description", description);
-        formData.append("autoExtend", autoExtend);
-        formData.append("endDate", endDate);
+        showConfirm({
+            title: "Xác nhận tạo sản phẩm",
+            message: (
+                <div className="space-y-2 text-sm">
+                    <p>Bạn có chắc muốn đăng sản phẩm với thông tin sau?</p>
 
-        try {
-            setLoading(true);
+                    <div className="border rounded bg-gray-50 p-2 text-xs space-y-1">
+                        <p><b>Tên:</b> {name}</p>
+                        <p><b>Giá khởi điểm:</b> {startPrice}</p>
+                        <p><b>Bước giá:</b> {bidStep}</p>
 
-            const data = await productService.addProduct(formData, user.id);
+                        {buyNowPrice && (
+                            <p><b>Giá mua ngay:</b> {buyNowPrice}</p>
+                        )}
 
-            if (data?.success) {
-                alert("Tạo sản phẩm thành công!");
+                        <p><b>Số ảnh:</b> {images.length}</p>
+                        <p>
+                            <b>Tự gia hạn:</b>{" "}
+                            {autoExtend ? "Có" : "Không"}
+                        </p>
+                        <p><b>Ngày kết thúc:</b> {endDate}</p>
+                    </div>
+                </div>
+            ),
+            onConfirm: async () => {
+                const formData = new FormData();
+                formData.append("name", name);
+                images.forEach(img => formData.append("images", img));
+                formData.append("startPrice", startPrice);
+                formData.append("bidStep", bidStep);
+                formData.append("buyNowPrice", buyNowPrice);
+                formData.append("description", description);
+                formData.append("autoExtend", autoExtend);
+                formData.append("endDate", endDate);
 
-                call?.();
-                
-                // reset form   
-                setName("");
-                setImages([]);
-                setStartPrice("");
-                setBidStep("");
-                setBuyNowPrice("");
-                setDescription("");
-                setAutoExtend(true);
-                setAddError(false);
-                setEndDate("");
-                
-            } else {
-                alert(data?.message || "Lỗi hệ thống");
+                try {
+                    setLoading(true);
+
+                    const data = await productService.addProduct(
+                        formData,
+                        user.id
+                    );
+
+                    if (data?.success) {
+                        showResult({
+                            success: true,
+                            message: "🎉 Tạo sản phẩm thành công!"
+                        });
+
+                        call?.();
+
+                        // reset form
+                        setName("");
+                        setImages([]);
+                        setStartPrice("");
+                        setBidStep("");
+                        setBuyNowPrice("");
+                        setDescription("");
+                        setAutoExtend(true);
+                        setAddError(false);
+                        setEndDate("");
+
+                    } else {
+                        showResult({
+                            success: false,
+                            message: data?.message || "Lỗi hệ thống"
+                        });
+                    }
+                } catch (err) {
+                    console.error("Add product error:", err);
+
+                    showResult({
+                        success: false,
+                        message:
+                            err.response?.data?.message ||
+                            "Lỗi hệ thống"
+                    });
+
+                    setAddError(true);
+                } finally {
+                    setLoading(false);
+                }
             }
-        } catch (err) {
-            console.error(err);
-            alert(err.response?.data?.message || "Lỗi hệ thống");
-            setAddError(true);
-        } finally {
-            setLoading(false);
-        }
+        });
     };
 
     const handleImageChange = (e) => {
         const files = Array.from(e.target.files);
-
-        if (files.length < 3) {
-            alert("Vui lòng chọn ít nhất 3 ảnh");
-            setImages([]);
-            e.target.value = ""; // reset input
-            return;
-        }
 
         setImages(files);
     };
@@ -456,7 +508,6 @@ function AddAuctionProduct({ call }) {
                 newErrors.endDate = "Thời gian kết thúc phải lớn hơn thời điểm hiện tại";
             }
         }
-
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;

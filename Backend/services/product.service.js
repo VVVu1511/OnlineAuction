@@ -64,7 +64,7 @@ export async function deleteProduct(id) {
  */
 export async function getAllProducts() {
     return await db('PRODUCT as P')
-        .join('USER as U', 'P.best_bidder', 'U.id')
+        .leftJoin('USER as U', 'P.best_bidder', 'U.id')
         .select(
             'P.*',
             'U.full_name as best_bidder_name'

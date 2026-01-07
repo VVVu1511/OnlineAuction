@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import ProductCard from "../ProductCard/ProductCard.jsx";
 import * as productService from "../../services/product.service.jsx";
 import * as categoryService from "../../services/category.service.jsx";
 import Back from "../Back/Back.jsx";
+import { LoadingContext } from "../../context/LoadingContext";
 
 export default function AdvancedSearch() {
     const [keyword, setKeyword] = useState("");
@@ -11,52 +12,43 @@ export default function AdvancedSearch() {
     const [category, setCategory] = useState("");
     const [fromDate, setFromDate] = useState("");
     const [toDate, setToDate] = useState("");
-
     const [categories, setCategories] = useState([]);
     const [results, setResults] = useState([]);
-
     const [page, setPage] = useState(1);
     const [pagination, setPagination] = useState(null);
+    const { setLoading } = useContext(LoadingContext);
 
     useEffect(() => {
         categoryService.getAllCategories()
             .then(res => setCategories(res.data || []));
     }, []);
 
-    const handleSearch = async () => {
-        const res = await productService.advancedSearch({
-            keyword,
-            minPrice,
-            maxPrice,
-            category,
-            fromDate,
-            toDate,
-            page: 1,
-            limit: 5
-        });
+    const fetchSearch = async (page) => {
+        try {
+            setLoading(true);
 
-        setResults(res.data || []);
-        setPagination(res.pagination);
-        setPage(1);
+            const res = await productService.advancedSearch({
+                keyword,
+                minPrice,
+                maxPrice,
+                category,
+                fromDate,
+                toDate,
+                page,
+                limit: 5
+            });
+
+            setResults(res.data || []);
+            setPagination(res.pagination);
+            setPage(page);
+
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const changePage = async (newPage) => {
-        const res = await productService.advancedSearch({
-            keyword,
-            minPrice,
-            maxPrice,
-            category,
-            fromDate,
-            toDate,
-            page: newPage,
-            limit: 5
-        });
-
-        setResults(res.data || []);
-        setPagination(res.pagination);
-        setPage(newPage);
-    };
-
+    const handleSearch = () => fetchSearch(1);
+    const changePage = (newPage) => fetchSearch(newPage);
 
     return (
         <div className="px-6">
@@ -124,12 +116,12 @@ export default function AdvancedSearch() {
 
             {/* ===== KẾT QUẢ ===== */}
             {results.length === 0 && (
-                <h2 className="text-xl font-semibold mb-4 text-gray-500">
+                <h2 className="mt-3 text-xl font-semibold mb-4 text-gray-500">
                     Không có kết quả phù hợp
                 </h2>
             )}
 
-            <div className="grid grid-cols-5 gap-4">
+            <div className="mt-3 grid grid-cols-5 gap-4">
                 {results.map(p => (
                     <ProductCard key={p.id} product={p} />
                 ))}

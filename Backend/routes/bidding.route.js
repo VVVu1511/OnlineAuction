@@ -135,7 +135,7 @@ router.post('/bid/:id',  async (req, res) => {
             });
         }
 
-        if (price === product.sell_price) {
+        if (price >= product.sell_price) {
             await productService.productEndBid(product_id);
         }
 

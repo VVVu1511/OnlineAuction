@@ -18,51 +18,90 @@ export default function Register() {
         address: "",
         otp: "",
     });
-    const [error, setError] = useState("");
+    
+    const [errors, setErrors] = useState({});
 
     const handleChange = (e) => {
+        const { name, value } = e.target;
+        
         setForm({ ...form, [e.target.name]: e.target.value });
+        setErrors(prev => ({ ...prev, [name]: "" }));
     };
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    const isStep1Valid =
-        form.fullName.trim() !== "" &&
-        emailRegex.test(form.email) &&
-        form.password.length >= 6 &&
-        form.address.trim() !== "" &&
-        captcha;
+    const checkEmail = async (email) => {
+        const res = await accountService.checkEmail(email);
+        return res.exists;
+    };
 
-    const isOtpValid = form.otp.trim().length === 6;
+    const validateStep1 = async () => {
+        const newErrors = {};
 
-    const sendOtp = async () => {
-        if (!isStep1Valid) {
-            setError("Vui lòng nhập đầy đủ thông tin hợp lệ");
-            return;
+        if (!form.fullName.trim()) {
+            newErrors.fullName = "Họ tên không được để trống";
         }
 
-        try {
-            setError("");
-            setLoading(true);
+        if (!form.email.trim()) {
+            newErrors.email = "Email không được để trống";
+        } else if (!emailRegex.test(form.email)) {
+            newErrors.email = "Email không hợp lệ";
+        } else {
+            const exists = await checkEmail(form.email);
+            if (exists) {
+                newErrors.email = "Email đã được sử dụng";
+            }
+        }
 
+        if (!form.password) {
+            newErrors.password = "Mật khẩu không được để trống";
+        } else if (form.password.length < 6) {
+            newErrors.password = "Mật khẩu phải có ít nhất 6 ký tự";
+        }
+
+        if (!form.address.trim()) {
+            newErrors.address = "Địa chỉ không được để trống";
+        }
+
+        if (!captcha) {
+            newErrors.captcha = "Vui lòng xác nhận captcha";
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const sendOtp = async () => {
+        const isValid = await validateStep1();
+        if (!isValid) return;
+
+        try {
+            setLoading(true);
             await accountService.sendOtp(form.email);
             setStep(2);
         } catch {
-            setError("Không gửi được OTP");
+            setErrors({ general: "Không gửi được OTP" });
         } finally {
             setLoading(false);
         }
     };
 
-
     const verifyOtpAndRegister = async () => {
-        if (!isOtpValid) {
-            setError("OTP phải gồm 6 chữ số");
+        const newErrors = {};
+
+        if (!form.otp || form.otp.trim() === "") {
+            newErrors.otp = "Vui lòng nhập OTP";
+        } else if (!/^\d{6}$/.test(form.otp)) {
+            newErrors.otp = "OTP phải gồm 6 chữ số";
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
             return;
         }
 
         try {
-            setError("");
+            setErrors({});
             setLoading(true);
 
             await accountService.verifyOtp(form.email, form.otp);
@@ -77,13 +116,14 @@ export default function Register() {
             });
 
             navigate("/login");
-        } catch {
-            setError("OTP không hợp lệ");
+        } catch (err) {
+            setErrors({
+                otp: "OTP không hợp lệ hoặc đã hết hạn"
+            });
         } finally {
             setLoading(false);
         }
     };
-
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -92,8 +132,6 @@ export default function Register() {
 
                 <h1 className="text-2xl font-semibold text-center">Register</h1>
 
-                {error && <p className="text-red-500 text-sm">{error}</p>}
-
                 {step === 1 && (
                     <>
                         <input
@@ -101,20 +139,24 @@ export default function Register() {
                             placeholder="Full name"
                             onChange={handleChange}
                             className={`mt-5 w-full border px-4 py-2 rounded ${
-                                form.fullName === "" && error ? "border-red-500" : ""
+                                errors.fullName ? "border-red-500" : ""
                             }`}
                         />
+                        {errors.fullName && (
+                            <p className="text-red-500 text-sm">{errors.fullName}</p>
+                        )}
 
                         <input
                             name="email"
                             placeholder="Email"
                             onChange={handleChange}
                             className={`w-full border px-4 py-2 rounded ${
-                                form.email && !emailRegex.test(form.email)
-                                    ? "border-red-500"
-                                    : ""
+                                errors.email ? "border-red-500" : ""
                             }`}
                         />
+                        {errors.email && (
+                            <p className="text-red-500 text-sm">{errors.email}</p>
+                        )}
 
                         <input
                             name="password"
@@ -122,20 +164,24 @@ export default function Register() {
                             placeholder="Password (≥ 6 chars)"
                             onChange={handleChange}
                             className={`w-full border px-4 py-2 rounded ${
-                                form.password && form.password.length < 6
-                                    ? "border-red-500"
-                                    : ""
+                                errors.password ? "border-red-500" : ""
                             }`}
                         />
+                        {errors.password && (
+                            <p className="text-red-500 text-sm">{errors.password}</p>
+                        )}
 
                         <input
                             name="address"
                             placeholder="Address"
                             onChange={handleChange}
                             className={`w-full border px-4 py-2 rounded ${
-                                form.address === "" && error ? "border-red-500" : ""
+                                errors.address ? "border-red-500" : ""
                             }`}
                         />
+                        {errors.address && (
+                            <p className="text-red-500 text-sm">{errors.address}</p>
+                        )}
 
                         {/* CAPTCHA */}
                         <ReCAPTCHA
@@ -146,11 +192,10 @@ export default function Register() {
 
                         <button
                             onClick={sendOtp}
-                            disabled={!isStep1Valid}
                             className="mt-3 w-full bg-blue-600 text-white py-2 rounded
                                     hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
-                            Send OTP
+                            Đăng kí
                         </button>
                     </>
                 )}
@@ -161,16 +206,23 @@ export default function Register() {
                             name="otp"
                             placeholder="Enter OTP"
                             onChange={handleChange}
-                            className="w-full border px-4 py-2 rounded"
+                            className={`mt-5 w-full border px-4 py-2 rounded ${
+                                errors.otp ? "border-red-500" : ""
+                            }`}
                         />
+
+                        {errors.otp && (
+                            <p className="text-red-500 text-sm mt-1">
+                                {errors.otp}
+                            </p>
+                        )}
 
                         <button
                             onClick={verifyOtpAndRegister}
-                            disabled={!isOtpValid}
-                            className="w-full bg-green-600 text-white py-2 rounded
+                            className="mt-3 w-full bg-green-600 text-white py-2 rounded
                                     hover:bg-green-700 disabled:bg-gray-400"
                         >
-                            Verify & Register
+                            Xác nhận OTP
                         </button>
                     </>
                 )}

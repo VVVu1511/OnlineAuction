@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import * as accountService from "../../services/account.service.jsx";
 import { FaEnvelope, FaLock, FaKey } from "react-icons/fa";
 import Back from "../Back/Back.jsx"
+import { useResultModal } from "../../context/ResultModalContext";
 
 export default function ForgotPassword() {
     const navigate = useNavigate();
@@ -13,43 +14,72 @@ export default function ForgotPassword() {
     const [newPassword, setNewPassword] = useState("");
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
+    const { showResult } = useResultModal();
 
-    /* STEP 1: Send OTP */
     const handleSendOtp = async (e) => {
         e.preventDefault();
-        setError("");
+
         try {
             await accountService.sendOtp(email);
-            setSuccess("OTP đã được gửi tới email");
+
+            showResult({
+                success: true,
+                message: "OTP đã được gửi tới email"
+            });
+
             setStep(2);
-        } catch {
-            setError("Không gửi được OTP");
+        } catch (err) {
+            showResult({
+                success: false,
+                message:
+                    err.response?.data?.message ||
+                    "Không gửi được OTP"
+            });
         }
     };
 
-    /* STEP 2: Verify OTP */
     const handleVerifyOtp = async (e) => {
         e.preventDefault();
-        setError("");
+
         try {
             await accountService.verifyOtp(email, otp);
-            setSuccess("Xác thực OTP thành công");
+
+            showResult({
+                success: true,
+                message: "Xác thực OTP thành công"
+            });
+
             setStep(3);
-        } catch {
-            setError("OTP không hợp lệ");
+        } catch (err) {
+            showResult({
+                success: false,
+                message:
+                    err.response?.data?.message ||
+                    "OTP không hợp lệ"
+            });
         }
     };
 
     /* STEP 3: Change password */
     const handleChangePassword = async (e) => {
         e.preventDefault();
-        setError("");
+
         try {
             await accountService.resetPassword(email, newPassword);
-            
+
+            showResult({
+                success: true,
+                message: "Đổi mật khẩu thành công"
+            });
+
             navigate("/login");
-        } catch {
-            setError("Không thể đổi mật khẩu");
+        } catch (err) {
+            showResult({
+                success: false,
+                message:
+                    err.response?.data?.message ||
+                    "Không thể đổi mật khẩu"
+            });
         }
     };
 

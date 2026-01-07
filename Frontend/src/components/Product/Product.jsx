@@ -16,7 +16,8 @@ import {
     removeWatchlist
 } from "../../services/account.service.jsx";
 import { FaDollarSign} from "react-icons/fa";
-
+import { useConfirmModal } from "../../context/ConfirmModalContext";
+import { useResultModal } from "../../context/ResultModalContext";
 
 export function Heart({ userId, productId }) {
     const [liked, setLiked] = useState(false);
@@ -71,10 +72,10 @@ export function maskName(fullName) {
 export default function Product() {
     const { id } = useParams();
     const navigate = useNavigate();
-
+    const { showConfirm } = useConfirmModal();
+    const { showResult } = useResultModal();
     const { user } = useContext(AuthContext);
     const { loading, setLoading } = useContext(LoadingContext);
-
     const [product, setProduct] = useState(null);
     const [seller, setSeller] = useState(null);
     const [bestBidder, setBestBidder] = useState(null);
@@ -208,36 +209,67 @@ export default function Product() {
     
     const handleAppend = async () => {
         const plainText = stripHtml(newText);
-        
+
         if (!plainText.trim()) {
-            alert("Nhập nội dung mới trước khi thêm.");
+            // giữ inline, không popup
+            console.warn("Empty append content");
             return;
         }
 
-        console.log(plainText);
+        showConfirm({
+            title: "Xác nhận thêm mô tả",
+            message: (
+                <div className="space-y-3 text-sm">
+                    <p className="font-semibold text-gray-700">
+                        Nội dung sẽ được thêm:
+                    </p>
 
-        try {
-            setSaving(true);
+                    <p className="bg-gray-100 p-2 rounded whitespace-pre-wrap max-h-40 overflow-auto">
+                        {plainText}
+                    </p>
 
-            const res = await productService.appendProductDescription(
-                product.id,
-                plainText
-            );
+                    <p className="text-orange-600 text-xs">
+                        Nội dung này sẽ được thêm vào mô tả hiện tại
+                    </p>
+                </div>
+            ),
+            onConfirm: async () => {
+                try {
+                    setSaving(true);
 
-            if (res.success) {
-                loadData();
-                setNewText("");
-                alert("Thêm mô tả thành công!");
+                    const res = await productService.appendProductDescription(
+                        product.id,
+                        plainText
+                    );
 
-            } else {
-                alert(res.message || "Thêm thất bại");
+                    if (res.success) {
+                        loadData();
+                        setNewText("");
+
+                        showResult({
+                            success: true,
+                            message: "Thêm mô tả thành công"
+                        });
+                    } else {
+                        showResult({
+                            success: false,
+                            message: res.message || "Thêm mô tả thất bại"
+                        });
+                    }
+                } catch (err) {
+                    console.error("Append description error:", err);
+
+                    showResult({
+                        success: false,
+                        message:
+                            err.response?.data?.message ||
+                            "Lỗi khi thêm mô tả"
+                    });
+                } finally {
+                    setSaving(false);
+                }
             }
-        } catch (err) {
-            console.error("Append description error:", err);
-            alert(err.response?.data?.message || "Lỗi khi thêm mô tả");
-        } finally {
-            setSaving(false);
-        }
+        });
     };
 
     useEffect(() => {
@@ -328,8 +360,8 @@ export default function Product() {
     const [bidError, setBidError] = useState("");
 
     const handleBid = async () => {
-        if (!user.id) {
-            alert("Please login to bid");
+        if (!user?.id) {
+            console.warn("User not logged in");
             return;
         }
 
@@ -341,17 +373,61 @@ export default function Product() {
                 return;
             }
 
-            if (!window.confirm(`Giá đề nghị: ${check.data.suggestedPrice}`)) return;
+            const price = check.data.suggestedPrice;
 
-            await biddingService.placeBid(product.id, check.data.suggestedPrice, user.id);
+            showConfirm({
+                title: "Xác nhận đặt giá",
+                message: (
+                    <div className="space-y-3 text-sm">
+                        <p>Bạn sắp đặt giá cho sản phẩm:</p>
 
-            await loadData();
+                        <p className="bg-gray-100 p-3 rounded text-center text-lg font-semibold text-green-600">
+                            {price.toLocaleString()} ₫
+                        </p>
 
-            alert("Đặt giá thành công!");
+                        <p className="text-orange-600 text-xs">
+                            Sau khi đặt giá, bạn không thể hoàn tác
+                        </p>
+                    </div>
+                ),
+                onConfirm: async () => {
+                    try {
+                        setLoading(true);
+
+                        await biddingService.placeBid(
+                            product.id,
+                            price,
+                            user.id
+                        );
+
+                        await loadData();
+
+                        showResult({
+                            success: true,
+                            message: "Đặt giá thành công"
+                        });
+                    } catch (err) {
+                        console.error("Bid error:", err);
+
+                        showResult({
+                            success: false,
+                            message:
+                                err.response?.data?.message ||
+                                "Đặt giá thất bại"
+                        });
+                    } finally{
+                        setLoading(false);
+                    }
+                }
+            });
 
         } catch (err) {
-            alert("Bid error");
+            console.error("Check bid error:", err);
 
+            showResult({
+                success: false,
+                message: "Không thể kiểm tra điều kiện đặt giá"
+            });
         }
     };
 
@@ -428,7 +504,7 @@ export default function Product() {
                                 <Heart userId={user.id} productId={product.id} />
 
                                 {/* ===== Bid button ===== */}
-                                {!isDenied && (
+                                {!isDenied && !isTimeEnded &&  (
                                     <button
                                         onClick={handleBid}
                                         title="Đặt giá"
@@ -496,7 +572,6 @@ export default function Product() {
                         onUpdated={loadData}
                     />
                 )}
-
 
                 {/* ===== Current description ===== */}
                 <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4">
@@ -770,7 +845,7 @@ export default function Product() {
             </div>
 
             {/* ========= RELATED PRODUCTS ========= */}
-            {!user || user.role === "bidder" && (
+            {(!user || user.role === "bidder") && (
                 <section>
                     <h2 className="text-xl font-bold mb-4">
                         Sản phẩm cùng chuyên mục
@@ -826,12 +901,9 @@ function SellerEditProduct({ product, onUpdated }) {
         dayjs(product.end_date).format("YYYY-MM-DDTHH:mm")
     );
     const [saving, setSaving] = useState(false);
+    const { showConfirm } = useConfirmModal();
+    const { showResult } = useResultModal();
 
-    const [modal, setModal] = useState({
-        open: false,
-        success: false,
-        message: ""
-    });
 
     /* ===== VALIDATE ===== */
     const validate = () => {
@@ -853,43 +925,70 @@ function SellerEditProduct({ product, onUpdated }) {
     const handleSave = async () => {
         const error = validate();
         if (error) {
-            setModal({
-                open: true,
+            showResult({
                 success: false,
                 message: error
             });
             return;
         }
 
-        try {
-            setSaving(true);
+        showConfirm({
+            title: "Xác nhận cập nhật sản phẩm",
+            message: (
+                <div className="space-y-2 text-sm">
+                    <p>Bạn có chắc muốn cập nhật thông tin sản phẩm?</p>
 
-            const res = await productService.updateProductInfo(product.id, {
-                name: name.trim(),
-                sell_price: sellPrice || null,
-                end_date: endDate
-            });
+                    <div className="border rounded p-2 bg-gray-50 text-xs space-y-1">
+                        <p>
+                            <b>Tên:</b> {name.trim()}
+                        </p>
+                        <p>
+                            <b>Giá bán ngay:</b>{" "}
+                            {sellPrice ? `${sellPrice.toLocaleString()} đ` : "Không có"}
+                        </p>
+                        <p>
+                            <b>Ngày kết thúc:</b>{" "}
+                            {new Date(endDate).toLocaleString()}
+                        </p>
+                    </div>
+                </div>
+            ),
+            onConfirm: async () => {
+                try {
+                    setSaving(true);
 
-            if (res.success) {
-                setModal({
-                    open: true,
-                    success: true,
-                    message: "Cập nhật sản phẩm thành công"
-                });
-                
-                onUpdated?.();
+                    const res = await productService.updateProductInfo(
+                        product.id,
+                        {
+                            name: name.trim(),
+                            sell_price: sellPrice || null,
+                            end_date: endDate
+                        }
+                    );
+
+                    showResult({
+                        success: res.success,
+                        message: res.success
+                            ? "Cập nhật sản phẩm thành công"
+                            : res.message || "Cập nhật thất bại"
+                    });
+
+                    if (res.success) {
+                        onUpdated?.();
+                    }
+
+                } catch (err) {
+                    showResult({
+                        success: false,
+                        message:
+                            err.response?.data?.message ||
+                            "Cập nhật thất bại"
+                    });
+                } finally {
+                    setSaving(false);
+                }
             }
-        } catch (err) {
-            setModal({
-                open: true,
-                success: false,
-                message:
-                    err.response?.data?.message ||
-                    "Cập nhật thất bại"
-            });
-        } finally {
-            setSaving(false);
-        }
+        });
     };
 
     return (
@@ -922,45 +1021,12 @@ function SellerEditProduct({ product, onUpdated }) {
                 <button
                     onClick={handleSave}
                     disabled={saving}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    className="bg-blue-600 mt-3 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
                 >
                     {saving ? "Đang lưu..." : "Lưu thay đổi"}
                 </button>
             </div>
-
-            <ResultModal
-                open={modal.open}
-                success={modal.success}
-                message={modal.message}
-                onClose={() => setModal({ ...modal, open: false })}
-            />
         </>
     );
 }
 
-function ResultModal({ open, success, message, onClose }) {
-    if (!open) return null;
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
-                <h3
-                    className={`text-lg font-semibold ${
-                        success ? "text-green-600" : "text-red-600"
-                    }`}
-                >
-                    {success ? "✅ Thành công" : "❌ Lỗi"}
-                </h3>
-
-                <p className="mt-3 text-gray-700">{message}</p>
-
-                <button
-                    onClick={onClose}
-                    className="mt-6 w-full rounded-lg bg-blue-600 px-4 py-2 text-white font-semibold hover:bg-blue-700"
-                >
-                    Đóng
-                </button>
-            </div>
-        </div>
-    );
-}

@@ -32,6 +32,8 @@ export default function CategoryPage() {
         const loadCategory = async () => {
             try {
                 setPageLoading(true);
+                setLoading(true);
+
                 const [catRes, childRes] = await Promise.all([
                     categoryService.getCategoryById(id),
                     categoryService.fetchChildCategory(id),
@@ -43,11 +45,11 @@ export default function CategoryPage() {
                 console.error("Load category error:", err);
             } finally {
                 setPageLoading(false);
+                setLoading(false);
             }
         };
 
         loadCategory();
-        
     }, [id, user]);
 
     /* =========================
@@ -57,6 +59,8 @@ export default function CategoryPage() {
         const loadProducts = async () => {
             try {
                 setPageLoading(true);
+                setLoading(true);
+
                 const res = await productService.getProductsByCategory(
                     selectedCat,
                     currentPage,
@@ -70,6 +74,7 @@ export default function CategoryPage() {
                 console.error(err);
             } finally {
                 setPageLoading(false);
+                setLoading(false);
             }
         };
 

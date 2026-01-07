@@ -116,3 +116,7 @@ export const getRatingByUser = async (userId) => {
     return res.data;
 };
 
+export const checkEmail = (email) =>
+    instance.get("/check-email", {
+        params: { email }
+    }).then(res => res.data);

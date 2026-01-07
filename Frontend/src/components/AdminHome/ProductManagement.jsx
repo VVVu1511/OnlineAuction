@@ -3,11 +3,15 @@ import { AuthContext } from "../../context/AuthContext";
 import { LoadingContext } from "../../context/LoadingContext";
 import * as productService from "../../services/product.service";
 import ProductCard from "../ProductCard/ProductCard.jsx"
+import { useConfirmModal } from "../../context/ConfirmModalContext";
+import { useResultModal } from "../../context/ResultModalContext";
 
 export default function ProductManagement() {
     const { user } = useContext(AuthContext);
     const { setLoading } = useContext(LoadingContext);
     const [products, setProducts] = useState([]);
+    const { showConfirm } = useConfirmModal();
+    const { showResult } = useResultModal();
 
     useEffect(() => {
         if (!user) return;
@@ -25,16 +29,34 @@ export default function ProductManagement() {
         loadProducts();
     }, [user]);
 
-    const removeProduct = async (id) => {
-        if (!window.confirm("Gỡ bỏ sản phẩm này?")) return;
+    const removeProduct = (id) => {
+        showConfirm({
+            title: "Gỡ bỏ sản phẩm",
+            message: "Bạn có chắc chắn muốn gỡ bỏ sản phẩm này không?",
+            onConfirm: async () => {
+                try {
+                    setLoading(true);
 
-        try {
-            setLoading(true);
-            await productService.removeProduct(id);
-            setProducts(prev => prev.filter(p => p.id !== id));
-        } finally {
-            setLoading(false);
-        }
+                    await productService.removeProduct(id);
+
+                    setProducts(prev => prev.filter(p => p.id !== id));
+
+                    showResult({
+                        success: true,
+                        message: "Gỡ bỏ sản phẩm thành công"
+                    });
+                } catch (err) {
+                    showResult({
+                        success: false,
+                        message:
+                            err.response?.data?.message ||
+                            "Gỡ bỏ sản phẩm thất bại"
+                    });
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
     };
 
     return (
